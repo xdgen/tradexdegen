@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Landing from './Pages/landing';
 
 function App() {
@@ -15,15 +15,14 @@ function App() {
 
   return (
     <>
-      <Router>
+      {/* <Router>
         <div>
-          {/* Define the routes */}
           <Routes>
-            {/* Each Route has a 'path' and an element that is rendered */}
             <Route path="/" element={<Landing />} />
           </Routes>
         </div>
-      </Router>
+      </Router> */}
+      <Landing />
     </>
   )
 }
