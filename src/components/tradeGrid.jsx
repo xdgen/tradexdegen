@@ -3,7 +3,7 @@ import AboutPNG from '../assets/images/about.png'
 
 export default function CryptoGrid() {
     return (
-        <div className=" text-white min-h-screen mt-10">
+        <div className=" text-white min-h-screen mt-10 strips">
             <div className="w-full flex flex-col gap-10">
                 <div className="flex flex-col lg:flex-row justify-between items-center w-full lg:col-span-2">
                     <div className='p-6'>

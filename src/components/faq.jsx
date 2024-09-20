@@ -31,7 +31,7 @@ const FAQ = () => {
   ];
 
   return (
-    <div className="bg-black text-white p-8 min-h-screen flex items-center justify-center">
+    <div className="strips text-white p-8 min-h-screen flex items-center justify-center">
       <div className="w-full max-w-2xl">
         <h2 className="text-center text-3xl font-bold mb-6" data-aos="fade-up">FAQs</h2>
         <h3 className="text-center text-xl mb-10" data-aos="fade-up">Got questions? We&apos;ve got answers</h3>

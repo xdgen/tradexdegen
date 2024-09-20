@@ -9,7 +9,7 @@ const Navbar = () => {
       </div>
       <div className='py-2 px-6 rounded-md bg-gray-400/10 text-white/50 hover:text-white hover:bg-gray-400/20 transition-all duration-300 ease-in-out flex items-center gap-2'>
         <img src={PlayStore} alt="logo" className="w-6 h-6" />
-        <button className="">App coming soon.</button>
+        <button className="" disabled>App coming soon.</button>
       </div>
     </div>
   )

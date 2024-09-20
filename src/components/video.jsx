@@ -3,7 +3,7 @@ import YouTube from '../assets/images/youtube.png';
 const Video = () => {
     return (
         <>
-            <div className="w-full h-full p-6 flex flex-col justify-center items-center text-center">
+            <div className="w-full h-full p-6 flex flex-col justify-center items-center text-center strips">
                 <div className="w-full md:w-1/2 h-full p-6 flex flex-col justify-center items-center text-center gap-4">
                     <h1 className="text-white text-4xl text-center pb-10" data-aos="fade-up">Don&apos;t gamble your hard-earned funds on guesswork</h1>
                     <div className="bg-secondary rounded-lg py-[40%] px-[60%] border border-gray-50/5 shadow-sm relative hover:border-gray-50/10" data-aos="fade-up">
