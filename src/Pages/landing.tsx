@@ -6,7 +6,7 @@ import Video from '../components/video'
 import FAQ from '../components/faq'
 import Footer from '../components/footer'
 
-const Landing = () => {
+const Landing: React.FC = () => {
   return (
     <div>
         <>

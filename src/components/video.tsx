@@ -1,4 +1,5 @@
-import YouTube from '../assets/images/youtube.png';
+import Waitlist from '../components/waitlist'
+
 
 const Video = () => {
     return (
@@ -11,9 +12,9 @@ const Video = () => {
                         <div className="p-[5%] rounded-bl-lg border-b border-l border-gray-50/5 shadow-sm w-10 h-10 absolute bottom-2 left-2"></div>
                         <div className="p-[5%] rounded-br-lg border-b border-r border-gray-50/5 shadow-sm w-10 h-10 absolute bottom-2 right-2"></div>
                         <div className="p-[5%] rounded-tr-lg border-t border-r border-gray-50/5 shadow-sm w-10 h-10 absolute top-2 right-2"></div>
-                        <img src={YouTube} alt="Youtube Icon" className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hover:scale-125 transition-all duration-300' />
+                        <img src='/images/youtube.png' alt="Youtube Icon" className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hover:scale-125 transition-all duration-300' />
                     </div>
-                    <button className="bg-primary rounded-full py-3 px-6 text-black hover:bg-primary/80">Join Waitlist</button>
+                    <Waitlist />
                 </div>
             </div>
         </>
