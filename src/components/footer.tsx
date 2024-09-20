@@ -52,7 +52,7 @@ const Footer: React.FC = () => {
                 <div className="text-center md:text-right justify-start flex flex-col items-start">
                     <h4 className="text-lg font-semibold">Join our newsletter</h4>
                     <p className="text-gray-400 mb-4 text-sm">
-                        Be the first to know when we launch new updates
+                        Be the first to know when we launch new updates.
                     </p>
                     <form className="flex justify-center md:justify-end gap-6" onSubmit={handleSubmit}>
                         <input
