@@ -3,7 +3,7 @@ body {
 }
 
 .strips{
-  background-image: url(../public/images/strips.png);
+  background-image: url(/images/strips.png);
   background-color: #0c0c0c;
   background-repeat: no-repeat;
   background-size: cover;
