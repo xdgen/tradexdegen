@@ -1,26 +1,26 @@
-'use client'
-import React from 'react'
-import { useState } from 'react'
-import { toast } from "sonner"
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 import {
     Dialog,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTrigger,
-} from "../components/ui/dialog"
-
-
+} from "../components/ui/dialog";
 
 const Waitlist: React.FC = () => {
-
     const [email, setEmail] = useState('');
     const [status, setStatus] = useState('');
-    // Dialog open state
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [buttonText, setButtonText] = useState('Join'); // Default button text
+    const [isLoading, setIsLoading] = useState(false);    // Loading state
+    const [isJoined, setIsJoined] = useState(false);      // Joined state
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
+
+        // Change button to "Joining" and set loading state
+        setButtonText('Joining...');
+        setIsLoading(true);
 
         // Send email to backend
         try {
@@ -35,25 +35,40 @@ const Waitlist: React.FC = () => {
             const result = await response.json();
 
             if (response.ok) {
-                toast.success("You have successfully been added to the list")
+                toast.success("You have successfully been added to the list");
                 setStatus('Email added successfully!');
-                setIsDialogOpen(false);
+                setIsJoined(true); // Update state to joined
+                setButtonText('Joined'); // Change button to "Joined"
             } else {
-                toast.error("Unsuccessfully added to the list")
+                toast.error(result.message); // Show the error message from the server
                 setStatus(result.message);
+                setButtonText('Join'); // Reset button text
             }
         } catch (error) {
-            toast.error("Couldn't connect, try again!")
+            toast.error("Couldn't connect, try again!");
             setStatus('Error submitting the email');
+            setButtonText('Join'); // Reset button text in case of error
+        }
+        finally {
+            setIsJoined(false); // Reset joining status after the request
         }
 
-        setEmail('');
+        setIsLoading(false); // End loading state
+        setEmail(''); // Clear the email input
     };
 
     return (
         <>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger><button className="bg-primary rounded-full py-3 px-6 text-black hover:bg-primary/80" data-aos="fade-up"onClick={() => setIsDialogOpen(true)}>Join Waitlist</button></DialogTrigger>
+            <Dialog open={isJoined} onOpenChange={() => setIsJoined(!isJoined)}>
+                <DialogTrigger>
+                    <button
+                        className={`bg-primary rounded-full py-3 px-6 text-black hover:bg-primary/80 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        data-aos="fade-up"
+                        onClick={() => setIsJoined(false)}
+                    >
+                        {buttonText} {/* Dynamic button text */}
+                    </button>
+                </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
                         <DialogDescription>
@@ -66,7 +81,13 @@ const Waitlist: React.FC = () => {
                                     className="bg-secondary text-white p-3 rounded-l-md focus:outline-none rounded-lg"
                                     required
                                 />
-                                <button type="submit" className="bg-primary rounded-full py-3 px-6 text-black hover:bg-primary/80">Join</button>
+                                <button
+                                    type="submit"
+                                    className={`bg-primary rounded-full py-3 px-6 text-black hover:bg-primary/80 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading} // Disable button when loading
+                                >
+                                    {buttonText} {/* Dynamic button text */}
+                                </button>
                                 {status && <p className="text-center mt-4 text-sm text-gray-600 absolute hidden">{status}</p>}
                             </form>
                         </DialogDescription>
