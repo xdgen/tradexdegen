@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
 
         // Send email to backend
         try {
-            const response = await fetch('https://xdegen-backend.vercel.app/api/waitlist', {
+            const response = await fetch('https://xdegen-backend.onrender.com/api/waitlist', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -49,9 +49,9 @@ const Footer: React.FC = () => {
                 </div>
 
                 {/* Right Section - Newsletter */}
-                <div className="text-center md:text-right justify-start flex flex-col items-start">
-                    <h4 className="text-lg font-semibold">Join our newsletter</h4>
-                    <p className="text-gray-400 mb-4 text-sm">
+                <div className="text-center md:text-right justify-start flex flex-col items-start p-6">
+                    <h4 className="text-lg font-semibold text-start">Join our newsletter</h4>
+                    <p className="text-gray-400 mb-4 text-sm text-start">
                         Be the first to know when we launch new updates and features.
                     </p>
                     <form className="flex justify-center md:justify-end gap-6" onSubmit={handleSubmit}>
