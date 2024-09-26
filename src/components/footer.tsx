@@ -88,7 +88,7 @@ const Footer: React.FC = () => {
 
             {/* Copyright */}
             <div className="mt-6 text-center text-white/80 w-full border-t border-secondary pt-4">
-                ©2024 All rights reserved xdgen.com
+                ©2024 All rights reserved xdgen.xyz
             </div>
         </footer>
     );
