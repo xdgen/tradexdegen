@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Landing from './Pages/landing';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Newpairs from './Pages/Dashboard/newPairs/newpairs'
 
 function App() {
   // Initialize AOS
@@ -13,9 +15,15 @@ function App() {
   }, []);
 
   return (
-    <>
-      <Landing />
-    </>
+    <Router>
+     
+      {/* <Landing /> */}
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/newpairs" element={<Newpairs  />} />
+      </Routes>
+   
+    </Router>
   )
 }
 
