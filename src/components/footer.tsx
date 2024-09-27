@@ -1,6 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import XIcon from '@mui/icons-material/X';
+import TelegramIcon from '@mui/icons-material/Telegram';
 
 const Footer: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -33,7 +35,7 @@ const Footer: React.FC = () => {
                 setStatus('Email added successfully!');
                 setIsJoined(true); // Mark as joined
                 setButtonText('Joined'); // Update button text to 'Joined'
-            }else {
+            } else {
                 toast.error(result.message); // Show the error message from the server
                 setStatus(result.message);
                 setButtonText('Join');// Reset button text in case of error
@@ -83,6 +85,14 @@ const Footer: React.FC = () => {
                         </button>
                         {status && <p className="text-center mt-4 text-sm text-gray-600">{status}</p>}
                     </form>
+                    <div className='flex justify-start items-center gap-4 py-4'>
+                        <a href='https://x.com/X_dgen?t=2-iNsB2NYvARfFG980ILnw&s=09' className='p-2 rounded-full cursor-pointer'>
+                            <XIcon className='w-full h-full hover:scale-125 transition-all' />
+                        </a>
+                        <a href='https://t.me/XDEGENCOMMUNITY' className='p-2 rounded-full cursor-pointer'>
+                            <TelegramIcon className='w-full h-full hover:scale-125 transition-all' />
+                        </a>
+                    </div>
                 </div>
             </div>
 
