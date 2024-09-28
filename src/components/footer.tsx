@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
             <div className="mx-auto lg:px-[10%] flex flex-col md:flex-row justify-between items-center" data-aos="fade-up">
                 <div className="flex items-center mb-6 md:mb-0">
                     <div className="">
-                        <img src="/images/logo.svg" alt="logo" className="w-full h-full" />
+                        <img src="/images/gen.svg" alt="logo" className="w-full h-full" />
                     </div>
                 </div>
 

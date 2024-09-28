@@ -1,8 +1,4 @@
 import { cn } from "../../lib/utils";
-import DonutSmallIcon from '@mui/icons-material/DonutSmall';
-import PermIdentityIcon from '@mui/icons-material/PermIdentity';
-import SchoolIcon from '@mui/icons-material/School';
-import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import React from "react";
 import { useNavigate, useLocation } from 'react-router-dom'; // For routing
 
@@ -91,8 +87,10 @@ const Sidebar: React.FC = () => {
     <div className="bg-background">
       <div className="w-60 py-10">
         <div className="space-y-2">
-          <div className='w-24 pl-6 mb-10'>
-            <img src='/images/logo.svg' alt="logo" className="w-full h-full" />
+          <div className="w-28 pl-4 mb-10">
+            <a href='/' className=''>
+              <img src='/images/gen.svg' alt="logo" className="w-full h-full" />
+            </a>
           </div>
           {routes.map((route) => (
             <div
