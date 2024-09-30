@@ -18,7 +18,7 @@ const appRoutes = [
     ),
   },
   {
-    path: "/dashboard/",
+    path: "/dashboard",
     element: (
       <Layout>
         <NewPair />
