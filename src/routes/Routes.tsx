@@ -1,5 +1,5 @@
-import NewPair from "../Pages/dashboard/newPairs";
 import Landing from "../Pages/landing";
+import NewPair from "../Pages/newPairs";
 import SwapPage from "../Pages/swap";
 import Layout from "../components/dashboard/layout";
 
