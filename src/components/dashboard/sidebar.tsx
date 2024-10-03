@@ -42,13 +42,13 @@ const Sidebar: React.FC = () => {
 
     {
       icon: SettingsIcon,
-      href: "/coming ",
+      href: "/settings",
       label: "Settings ",
       pro: false,
     },
     {
       icon: FolderIcon,
-      href: "/coming",
+      href: "/docs",
       label: "Docs",
       pro: true,
     },
