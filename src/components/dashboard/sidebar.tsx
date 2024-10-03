@@ -35,21 +35,20 @@ const Sidebar: React.FC = () => {
     },
     {
       icon: LocalAtmIcon,
-      href: "/analysis",
+      href: "/coming",
       label: "Analysis",
       pro: true,
     },
-  ];
-  const footerRoutes = [
+
     {
       icon: SettingsIcon,
-      href: "/settings ",
+      href: "/coming ",
       label: "Settings ",
       pro: false,
     },
     {
       icon: FolderIcon,
-      href: "/docs",
+      href: "/coming",
       label: "Docs",
       pro: true,
     },
@@ -85,23 +84,6 @@ const Sidebar: React.FC = () => {
               </div>
             </div>
           ))}
-          <div className="py-4 border-t border-white/10">
-            {footerRoutes.map((ftroute) => (
-              <div
-                key={ftroute.href} // Ensure each item has a unique key
-                onClick={() => onNavigate(ftroute.href, ftroute.pro)}
-                className={cn(
-                  "text-white/60 text-sm group p-3 w-full cursor-pointer hover:text-white hover:bg-secondary transition font-medium",
-                  location.pathname === ftroute.href && "bg-secondary text-white border-r-4 border-primary" // Apply active class based on current route
-                )}
-              >
-                <div className="flex flex-row gap-y-2 justify-start items-center flex-1 w-full gap-2">
-                  <ftroute.icon className="h-5 w-5" /> {/* Render the icon */}
-                  {ftroute.label} {/* Render the label */}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

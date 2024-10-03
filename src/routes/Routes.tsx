@@ -1,6 +1,7 @@
 import Layout from "../components/dashboard/layout";
-import SetBalancePage from "../Pages/balance";
-import HomePage from "../Pages/home";
+import SetBalancePage from "../Pages/balance/funds";
+import ComingSoon from "../Pages/comingSoon/coming";
+import HomePage from "../Pages/home/home";
 import Landing from "../Pages/landing/Landing";
 import NewPair from "../Pages/pairs/NewPairs";
 import SwapPage from "../Pages/swap/Swap";
@@ -49,6 +50,14 @@ const appRoutes = [
     element: (
       <Layout>
         <TradingPage />
+      </Layout>
+    ),
+  },
+  {
+    path: "/coming",
+    element: (
+      <Layout>
+        <ComingSoon />
       </Layout>
     ),
   },
