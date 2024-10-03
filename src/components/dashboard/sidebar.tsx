@@ -6,11 +6,8 @@ import CompassCalibrationIcon from '@mui/icons-material/CompassCalibration';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
-import WifiFindIcon from '@mui/icons-material/WifiFind';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SettingsIcon from '@mui/icons-material/Settings';
 import FolderIcon from '@mui/icons-material/Folder';
-import SensorOccupiedIcon from '@mui/icons-material/SensorOccupied';
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();  // To programmatically navigate
@@ -20,39 +17,27 @@ const Sidebar: React.FC = () => {
   const routes = [
     {
       icon: CompassCalibrationIcon,
-      href: "/dashboard/newpairs",
-      label: "New Pairs",
+      href: "/home",
+      label: "Home",
       pro: false,
     },
     {
       icon: AnalyticsIcon,
-      href: "/analytics",
-      label: "Analytics",
+      href: "/funds",
+      label: "Set balance",
       pro: true,
     },
     {
       icon: ManageAccountsIcon,
-      href: "/manage",
-      label: "Manage",
+      href: "/trade",
+      label: "Trade",
       pro: true,
     },
     {
       icon: LocalAtmIcon,
-      href: "/createfund",
-      label: "Create Fund",
+      href: "/analysis",
+      label: "Analysis",
       pro: true,
-    },
-    {
-      icon: WifiFindIcon,
-      href: "/discover",
-      label: "Discover",
-      pro: false,
-    },
-    {
-      icon: SwapHorizIcon,
-      href: "/swap",
-      label: "Swap",
-      pro: false,
     },
   ];
   const footerRoutes = [
@@ -68,13 +53,6 @@ const Sidebar: React.FC = () => {
       label: "Docs",
       pro: true,
     },
-    {
-      icon: SensorOccupiedIcon,
-      href: "/nFTs",
-      label: "NFTs",
-      pro: true,
-    },
-
   ];
 
   // Function to handle navigation

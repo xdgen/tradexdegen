@@ -10,9 +10,9 @@ const Navbar = () => {
           <img src='/images/play.png' alt="logo" className="w-6 h-6" />
           <button className="" disabled>App coming soon.</button>
         </div>
-        <button className='py-2 px-6 rounded-md bg-gray-400/10 text-white/70 flex items-center gap-2 font-thin cursor-not-allowed' disabled>
+        <a href='/home' className='py-2 px-6 rounded-md bg-gray-400/10 text-white/70 flex items-center gap-2 font-thin cursor-pointer'>
           Launch app
-        </button>
+        </a>
       </div>
     </div>
   )
