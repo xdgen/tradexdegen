@@ -41,6 +41,14 @@ export default function HomeView() {
           <div className="absolute bottom-0 right-0 w-full h-full rounded-tr-lg"></div>
           <img src="/images/bigstring.png" alt="Abstract design" className="absolute bottom-0 right-0 w-full h-full object-cover" />
         </div>
+        <div className="absolute bottom-0 right-0 w-1/2 h-full">
+          <div className="absolute bottom-0 right-0 w-full h-full rounded-tr-lg"></div>
+          <img src="/images/circle.png" alt="Abstract design" className="absolute top-0 -left-[40%] w-auto h-auto object-cover" />
+        </div>
+        <div className="absolute bottom-0 right-0 w-1/2 h-full">
+          <div className="absolute bottom-0 right-0 w-full h-full rounded-tr-lg"></div>
+          <img src="/images/spring.png" alt="Abstract design" className="absolute bottom-0 -left-[40%] w-auto h-auto object-cover" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

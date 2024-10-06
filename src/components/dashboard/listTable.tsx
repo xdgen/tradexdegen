@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Check, X } from "lucide-react";
@@ -20,11 +21,12 @@ export default function CryptoListing() {
     const navigate = useNavigate();
 
     const pairs: Pair[] = [
-        { id: "USD/SOL", created: "6h", liquidity: "$519.5K", initialLiquidity: 40, marketCap: "$2.75K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
-        { id: "USD/OL", created: "8h", liquidity: "$423.7K", initialLiquidity: 40, marketCap: "$2.74K", fees: 1, volume: "$0", auditResult: true, socialEnabled: true },
-        { id: "USD/SOL", created: "9h", liquidity: "$519.5K", initialLiquidity: 40, marketCap: "$2.75K", fees: 1, volume: "$0", auditResult: false, socialEnabled: true },
-        { id: "USD/SOL", created: "10h", liquidity: "$519.5K", initialLiquidity: 40, marketCap: "$2.75K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
-        { id: "USD/OL", created: "12h", liquidity: "$423.7K", initialLiquidity: 40, marketCap: "$2.74K", fees: 1, volume: "$0", auditResult: false, socialEnabled: true },
+        { id: "SHIB/SOL", created: "6h", liquidity: "$519.5K", initialLiquidity: 40, marketCap: "$2.75K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
+        { id: "DOGE/SOL", created: "8h", liquidity: "$423.7K", initialLiquidity: 40, marketCap: "$2.74K", fees: 1, volume: "$0", auditResult: true, socialEnabled: true },
+        { id: "FLOKI/SOL", created: "9h", liquidity: "$325.1K", initialLiquidity: 30, marketCap: "$1.95K", fees: 2, volume: "$1K", auditResult: false, socialEnabled: true },
+        { id: "SAMO/SOL", created: "10h", liquidity: "$710.2K", initialLiquidity: 50, marketCap: "$3.12K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
+        { id: "HOGE/SOL", created: "12h", liquidity: "$254.9K", initialLiquidity: 35, marketCap: "$1.64K", fees: 1, volume: "$0", auditResult: false, socialEnabled: true },
+        { id: "KITTY/SOL", created: "14h", liquidity: "$480.7K", initialLiquidity: 45, marketCap: "$2.58K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
     ];
 
     const handleRowClick = (pairId: string) => {
@@ -68,19 +70,17 @@ export default function CryptoListing() {
                                 <TableCell>{pair.volume}</TableCell>
                                 <TableCell className="flex gap-4">
                                     <div>
-                                        {pair.auditResult ?
-                                            <div className="">
+                                        {pair.auditResult ? (
+                                            <div>
                                                 <Check className="text-green-500" />
-                                                Mint auth
-                                                disabled
+                                                Mint auth disabled
                                             </div>
-                                            :
+                                        ) : (
                                             <div>
                                                 <X className="text-red-500" />
-                                                Free auth
-                                                disabled
+                                                Free auth disabled
                                             </div>
-                                        }
+                                        )}
                                     </div>
                                 </TableCell>
                                 <TableCell>
