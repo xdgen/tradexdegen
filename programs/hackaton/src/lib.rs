@@ -41,24 +41,7 @@ pub mod hackaton {
             );
             token::transfer(cpi_ctx, usdt_amount)?;
             msg!("transfer {} ico to buyer/user.", usdt_amount);
-            // transfer ICO admin to program ata
-            // let cpi_ctx = CpiContext::new(
-            //     ctx.accounts.token_program.to_account_info(),
-            //     token::Transfer {
-            //         from: ctx.accounts.ico_ata_for_admin.to_account_info(),
-            //         to: ctx.accounts.ico_ata_for_ico_program.to_account_info(),
-            //         authority: ctx.accounts.admin.to_account_info(),
-            //     },
-            // );
-            // token::transfer(cpi_ctx, ico_amount)?;
-            // msg!("send {} ICO to program ATA.", ico_amount);
-
-            // save data in data PDA
-            // let data = &mut ctx.accounts.data;
-            // // data.sol = sol_price;
-            // // data.usdt = usdt_price;
-            // data.admin = *ctx.accounts.admin.key;
-            // msg!("save data in program PDA.");
+           
             Ok(())
         }
 
@@ -66,7 +49,7 @@ pub mod hackaton {
         pub fn buy_with_sol(
             ctx: Context<BuyWithSol>,
             _ico_ata_for_ico_program_bump: u8,
-            vault_bump: u8,
+            _vault_bump: u8,
             sol_amount: u64,
         ) -> Result<()> {
 
@@ -131,7 +114,7 @@ pub mod hackaton {
         pub fn buy_with_usdt(
             ctx: Context<BuyWithSol>,
             _ico_ata_for_ico_program_bump: u8,
-            vault_bump: u8,
+            _vault_bump: u8,
             usdt_amount: u64
         ) -> Result<()> {
 
@@ -254,7 +237,7 @@ pub struct InitIcoATA<'info> {
 -----------------------------------------------------------
 */
 #[derive(Accounts)]
-#[instruction(_ico_ata_for_ico_program_bump: u8, vault_bump: u8)]
+#[instruction(_ico_ata_for_ico_program_bump: u8, _vault_bump: u8)]
 pub struct BuyWithSol<'info> {
     #[account(
     mut,
@@ -266,7 +249,7 @@ pub struct BuyWithSol<'info> {
     #[account(
         mut,
         seeds = [b"VAULT_DEMO".as_ref()],  // Use the same seed
-        bump = vault_bump  // Validate the bump matches
+        bump = _vault_bump  // Validate the bump matches
     )]
     pub vault: Account<'info, Vault>,
     
