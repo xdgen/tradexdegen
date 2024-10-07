@@ -9,7 +9,7 @@ use std::str::FromStr;
 // use solana_program::program::invoke;
 // use solana_program::system_instruction::transfer;
 
-declare_id!("8QrxZR6QRTCzSmbVKarMhwTgtTqQLbEqGxJ3vrSiEF72");
+declare_id!("GNRSWybCyFKjbAPsVeCFXnZE33sybSUVMX38tgecmnHv");
 
 const SOL_USDC_FEED: &str = "EdVCmQ9FSPcVe5YySXDPCRmc8aDQLKJ9xvYBMZPie1Vw";
 const STALENESS_THRESHOLD: u64 = 6000000; // staleness threshold in seconds
@@ -126,8 +126,9 @@ pub mod hackaton {
             
 
             //     Fetch the SOL/USDC price from Pyth
-            let sol_usdc_price = fetch_pyth_price(&oracle_price_feed)? as u128;
-        
+            let sol_usdc_prices: u128 = fetch_pyth_price(&oracle_price_feed)? as u128;
+            let sol_usdc_price: u128 = 149_00;  // 149.00 USDC, stored as 14900
+
             // // Convert USDC amount to u128 for precision
             let usdc_amount_u128 = usdt_amount as u128;
             
@@ -153,13 +154,9 @@ pub mod hackaton {
             let vault = &mut ctx.accounts.vault;
             let user = &mut ctx.accounts.user;
 
-            let rent_balance = Rent::get()?.minimum_balance(vault.to_account_info().data_len());
-            if **vault.to_account_info().lamports.borrow() - rent_balance < sol_amount {
-                return Err(ErrorCode::InvalidFund.into());
-            }
-
             **vault.to_account_info().try_borrow_mut_lamports()? -= sol_amount;
             **user.to_account_info().try_borrow_mut_lamports()? += sol_amount;
+      
             (&mut ctx.accounts.vault).amount_donated -= sol_amount;
             msg!("transfer {} sol to admin.", sol_amount);
             

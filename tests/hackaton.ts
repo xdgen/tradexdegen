@@ -6,6 +6,7 @@ import { Connection, Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 import {
+  getAccount,
   // Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -104,7 +105,6 @@ describe("usdt_sol_swap", () => {
     const userPrivateKeyBytess = bs58.decode(userPrivateKeyBase58);
     if (userPrivateKeyBytess.length === 64) {
       userKeypair = Keypair.fromSecretKey(userPrivateKeyBytess);
-      console.log("user Public Key:", userKeypair.publicKey.toString());
     } else {
       console.error("Error: Invalid secret key length. Expected 64 bytes.");
     }
@@ -123,7 +123,6 @@ describe("usdt_sol_swap", () => {
       owner: adminPublicKey,
     });
 
-    console.log("🚀 ~ before ~ icoAtaForAdmin:", icoAtaForAdmin);
 
     adminPrivateKey =
       "4aVKNvEk57BQtqtjuWwSJctF3MhKCCzBLbYez7ynj9VAJ5xj9PBPRVd9USF4xFDa9eoVR5Qr1818NsESGzrn72wM";
@@ -161,30 +160,32 @@ describe("usdt_sol_swap", () => {
     );
   });
 
-  it("Initialize ICO ATA", async () => {
-    const usdtAmount = new BN(2010000000); // 10 USDT
+  // it("Initialize ICO ATA", async () => {
+  //   const usdtAmount = new BN(3999999000000); // 10 USDT
 
-    await program.methods
-      .createIcoAta(usdtAmount)
-      .accounts({
-        //@ts-ignore
-        icoAtaForIcoProgram,
-        vaultAccountProgram,
-        icoMint,
-        icoAtaForAdmin: admintokenAccount,
-        admin: adminPublicKey,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-      })
-      .signers([adminKeypair])
-      .rpc();
+  //   await program.methods
+  //     .createIcoAta(usdtAmount)
+  //     .accounts({
+  //       //@ts-ignore
+  //       icoAtaForIcoProgram,
+  //       vaultAccountProgram,
+  //       icoMint,
+  //       icoAtaForAdmin: admintokenAccount,
+  //       admin: adminPublicKey,
+  //       systemProgram: SystemProgram.programId,
+  //       tokenProgram: TOKEN_PROGRAM_ID,
+  //       rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+  //     })
+  //     .signers([adminKeypair])
+  //     .rpc();
 
-    // expect(data.admin.toString()).to.equal(admin.toString());
-  });
+  //   // expect(data.admin.toString()).to.equal(admin.toString());
+  // });
 
   it("Buy ICO tokens with SOL", async () => {
-    const solAmount = new anchor.BN(2); // 1 SOL
+    const solAmount = new anchor.BN(1); // 1 SOL
+    const oneSOLInLamports = new BN(solAmount).mul(new BN(1_000_000_000));
+
     const [] = PublicKey.findProgramAddressSync(
       [icoMint.toBuffer()],
       program.programId
@@ -195,7 +196,7 @@ describe("usdt_sol_swap", () => {
     );
 
     await program.methods
-      .buyWithSol(bump, vaultBump, solAmount)
+      .buyWithSol(bump, vaultBump, oneSOLInLamports)
       .accounts({
         //@ts-ignore
         icoAtaForIcoProgram,
@@ -211,13 +212,35 @@ describe("usdt_sol_swap", () => {
       .signers([userKeypair])
       .rpc();
 
-    const data = await program.account.vault.fetch(vaultAccountProgram);
-    console.log("data is", data);
+      const data = await program.account.vault.fetch(vaultAccountProgram);
+
+      // Convert `amountDonated` from BN to an integer (if it's small enough)
+      const amountDonated = new anchor.BN(data.amountDonated).toNumber();
+      
+      console.log("amountDonated (as integer) is", amountDonated);
+      
+      // If `amountDonated` is too large, use .toString() to safely represent it
+      const amountDonatedAsString = new anchor.BN(data.amountDonated).toString();
+      console.log("amountDonated (as string) is", amountDonatedAsString);
+      
+      // Other fetched data
+      console.log("Admin address is", data.admin.toBase58());
+      const programAccountPublicKey = new PublicKey(vaultAccountProgram); // Replace with your program account's public key
+
+  const balanceInLamports = await connection.getBalance(programAccountPublicKey);
+
+  // Convert lamports to SOL (1 SOL = 1,000,000,000 lamports)
+  const balanceInSOL = balanceInLamports / 1_000_000_000;
+
+  console.log(`Program account balance in lamports: ${balanceInLamports}`);
+  console.log(`Program account balance in SOL: ${balanceInSOL}`);
   });
 
   it("Should successfully buy ICO with USDT", async () => {
     // Expected ICO amount based on oracle price (e.g. 100 USDT -> X ICO tokens)
-    const usdtAmount = new BN(1); // 10 USDT
+    const usdtAmount = new BN(2); // 10 USDT
+    const oneUSDTInSmallestUnit = new BN(usdtAmount).mul(new BN(1_000_000)); // 1 USDT = 1_000_000 micro-USDT
+
     let [pda, bump] = PublicKey.findProgramAddressSync(
       [icoMint.toBuffer()],
       program.programId

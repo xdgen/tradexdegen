@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-hackaton = "8QrxZR6QRTCzSmbVKarMhwTgtTqQLbEqGxJ3vrSiEF72"
+hackaton = "GNRSWybCyFKjbAPsVeCFXnZE33sybSUVMX38tgecmnHv"
 
 [registry]
 url = "https://api.apr.dev"
