@@ -1,0 +1,17 @@
+.anchor
+.DS_Store
+target
+**/*.rs.bk
+node_modules
+test-ledger
+.yarn
+
+programs\hackaton\src\other
+key.js
+other
+
+programs/src/hackaton/ico.rs
+programs/src/hackaton/swap.rs
+programs/src/hackaton/oracle.rs
+app
+C:\Users\ENOCH\Desktop\hackaton\hackaton\programs\hackaton\src\oracle.rs
