@@ -1,9 +1,8 @@
-// use anchor_lang::prelude::*;
 use anchor_lang::{
     prelude::*,
-    solana_program::{clock::Clock, program::invoke, system_instruction::transfer},
+    solana_program::{clock::Clock},
 };
-use anchor_spl::token::{self,Token, Mint, TokenAccount, Transfer};
+use anchor_spl::token::{self,Token, Mint, TokenAccount};
 // use anchor_spl::associated_token::AssociatedToken; 
 use pyth_sdk_solana::state::SolanaPriceAccount;
 use std::str::FromStr;
@@ -119,10 +118,10 @@ pub mod hackaton {
         ) -> Result<()> {
 
                 // Use the SOL/USDT oracle price feed from the constant
-            let oracle_price_feed = ctx.accounts.oracle_price_feed.to_account_info();
-            if oracle_price_feed.key().to_string() != SOL_USDC_FEED {
-                return Err(ErrorCode::InvalidPriceFeed.into());
-            }
+                let oracle_price_feed = ctx.accounts.oracle_price_feed.to_account_info();
+                if oracle_price_feed.key().to_string() != SOL_USDC_FEED {
+                    return Err(ErrorCode::InvalidPriceFeed.into());
+                }
 
             
 
@@ -203,8 +202,6 @@ pub struct InitIcoATA<'info> {
     )]
     pub ico_ata_for_ico_program: Account<'info, TokenAccount>,
 
-    // #[account(init, payer=admin, space=9000, seeds=[b"data", admin.key().as_ref()], bump)]
-    // pub data: Account<'info, Data>,
     #[account(init, payer=admin, space=9000, seeds=[b"VAULT_DEMO".as_ref()], bump)]
     pub vault: Account<'info, Vault>,
 
@@ -212,14 +209,6 @@ pub struct InitIcoATA<'info> {
     address = CUSTOM_USDT_MINT.parse::<Pubkey>().unwrap(),
     )]
     pub ico_mint: Account<'info, Mint>,
-
-    // #[account(
-    //     init,
-    //     payer = admin,
-    //     token::mint = ico_mint,
-    //     token::authority = admin,
-    //     )]
-    // pub ico_ata_for_admin: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub ico_ata_for_admin: Account<'info, TokenAccount>,
@@ -253,8 +242,6 @@ pub struct BuyWithSol<'info> {
     )]
     pub vault: Account<'info, Vault>,
     
-    // #[account(mut)]
-    // pub data: Account<'info, Data>,
 
     #[account(
     address = CUSTOM_USDT_MINT.parse::<Pubkey>().unwrap(),

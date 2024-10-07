@@ -1,7 +1,7 @@
 // import bs58 from 'bs58'; // You might need to install this if the key is base58 encoded
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 // import { Token, TOKEN_PROGRAM_ID, createMint, createAccount, mintTo } from "@solana/spl-token";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
@@ -11,7 +11,10 @@ import {
 } from "@solana/spl-token";
 import { BN } from "bn.js";
 import { Hackaton } from "../target/types/hackaton";
+import { clusterApiUrl } from "@solana/web3.js";
 
+
+const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 describe("usdt_sol_swap", () => {
   // Configure the client to use the local cluster.
   const provider = anchor.AnchorProvider.env();
@@ -22,7 +25,7 @@ describe("usdt_sol_swap", () => {
   // Define accounts needed for the tests
   let admin: anchor.web3.Keypair;
   let users: anchor.web3.Keypair;
- 
+
   let programUsdtVault: PublicKey;
   let programSolVault: anchor.web3.PublicKey;
   let oraclePriceFeed: anchor.web3.PublicKey; // Set this to the actual oracle price feed address
@@ -53,9 +56,7 @@ describe("usdt_sol_swap", () => {
     admin = anchor.web3.Keypair.generate();
     users = anchor.web3.Keypair.generate();
     icoMint = new PublicKey(CUSTOM_USDT_MINT);
-    // admin = user;
-    userSolAccount = anchor.web3.Keypair.generate();
-    userUsdtAccount = anchor.web3.Keypair.generate();
+
     // programUsdtVault = new anchor.web3.PublicKey("2MjB1se3u6Vvn6uwjJaCvmpiZFcM8feeiZRYDGKPU9JC"); // Example price feed
     programUsdtVault = new anchor.web3.PublicKey(
       "FpBwH9XTC3K4Z1asaTFhC9nqVDQhjFAvzTaXfaH4eJDV"
@@ -137,10 +138,6 @@ describe("usdt_sol_swap", () => {
     // Convert the private key from hex to Uint8Array
     // privateKeyUint8Array = Uint8Array.from(Buffer.from(privateKeyHex, 'hex'));
 
-    // Step 2: Create a Keypair from the private key bytes
-    //  adminKeypair = Keypair.fromSecretKey(adminPrivateKeyBytes);
-    //  adminKeypair = Keypair.fromSecretKey(adminPrivateKeyBytes);
-
     // Create a Keypair from the private key
     // userKeypair = Keypair.fromSecretKey(privateKeyUint8Array);
 
@@ -214,8 +211,8 @@ describe("usdt_sol_swap", () => {
       .signers([userKeypair])
       .rpc();
 
-    // const userAtaInfo = await Token.getAccountInfo(provider.connection, userAta);
-    // expect(userAtaInfo.amount.toNumber()).to.be.gt(0); // User should have received ICO tokens
+    const data = await program.account.vault.fetch(vaultAccountProgram);
+    console.log("data is", data);
   });
 
   it("Should successfully buy ICO with USDT", async () => {
