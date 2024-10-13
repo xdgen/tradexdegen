@@ -179,7 +179,7 @@ export default function TradingInterface() {
               </div>
             </div>
 
-            <Card className="w-full bg-[#1C1C1E] text-white">
+            <Card className="w-full bg-background text-white border-b border-secondary">
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {stats.map((item, index) => (
