@@ -5,7 +5,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const Navbar: React.FC = () => {
     return (
-        <nav className="text-white w-full flex items-center justify-between p-4 shadow-md">
+        <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">
             {/* Left section with profile and language */}
             <div className="flex items-center">
                 <div className="flex items-center bg-secondary rounded-full px-4 py-2 w-full">
