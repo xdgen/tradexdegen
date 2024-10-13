@@ -1,201 +1,251 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { createChart, ColorType } from 'lightweight-charts';
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import EngineeringIcon from '@mui/icons-material/Engineering';
-import { ArrowLeft, Twitter, MessageSquare } from "lucide-react"
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Card, CardContent } from "../../components/ui/card";
+import XIcon from '@mui/icons-material/X';
+import TelegramIcon from '@mui/icons-material/Telegram';
 
-// Mock data for the chart
-const initialData = [
-    { time: '2018-12-22', open: 75.16, high: 82.84, low: 36.16, close: 45.72 },
-    { time: '2018-12-23', open: 45.12, high: 53.90, low: 45.12, close: 48.09 },
-    { time: '2018-12-24', open: 60.71, high: 60.71, low: 53.39, close: 59.29 },
-    { time: '2018-12-25', open: 68.26, high: 68.26, low: 59.04, close: 60.50 },
-    { time: '2018-12-26', open: 67.71, high: 105.85, low: 66.67, close: 91.04 },
-    { time: '2018-12-27', open: 91.04, high: 121.40, low: 82.70, close: 111.40 },
-    { time: '2018-12-28', open: 111.51, high: 142.83, low: 103.34, close: 131.25 },
-    { time: '2018-12-29', open: 131.33, high: 151.17, low: 77.68, close: 96.43 },
-    { time: '2018-12-30', open: 106.33, high: 110.20, low: 90.39, close: 98.10 },
-    { time: '2018-12-31', open: 109.87, high: 114.69, low: 85.66, close: 111.26 },
-];
-
-const quickBuy = [
-    { id: "1", buyOne: '0.25' },
-    { id: "2", buyTwo: '0.5' },
-    { id: "3", buyThree: '1' },
-    { id: "4", buyFour: '2' },
-    { id: "5", buyFive: '5' },
-    { id: "6", buySix: '10' },
-]
+type StatItem = {
+  label: string;
+  oppositeLabel: string;
+  buyPercentage: number;
+  sellPercentage: number;
+  buyTag: number;
+  sellTag: number;
+  timeFrame: string;
+}
 
 export default function TradingInterface() {
-    const { id } = useParams<{ id: string }>();
-    const [price, setPrice] = useState(0.03420);
-    const [orderAmount, setOrderAmount] = useState('');
-    const [wallet, setWallet] = useState(null);
+  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const [pairData, setPairData] = useState<any>(null);
+  const [orderAmount, setOrderAmount] = useState('');
+  const [price, setPrice] = useState<number | null>(null);
+  const [stats, setStats] = useState<StatItem[]>([]);
 
-    useEffect(() => {
-        const chart = createChart(document.getElementById('chart') as HTMLElement, {
-            width: 600,
-            height: 400,
-            layout: {
-                background: { type: ColorType.Solid, color: '#09090A' },
-                textColor: 'white',
-            },
-            grid: {
-                vertLines: { color: 'rgba(197, 203, 206, 0.1)' },
-                horzLines: { color: 'rgba(197, 203, 206, 0.1)' },
-            },
-        });
+  useEffect(() => {
+    if (location.state && location.state.pairData) {
+      setPairData(location.state.pairData);
+      setPrice(parseFloat(location.state.pairData.priceUsd));
+      updateStats(location.state.pairData);
+    }
+  }, [location.state]);
 
-        const candlestickSeries = chart.addCandlestickSeries();
-        candlestickSeries.setData(initialData);
+  useEffect(() => {
+    if (pairData) {
+      const chart = createChart(document.getElementById('chart') as HTMLElement, {
+        width: 600,
+        height: 400,
+        layout: {
+          background: { type: ColorType.Solid, color: '#09090A' },
+          textColor: 'white',
+        },
+        grid: {
+          vertLines: { color: 'rgba(197, 203, 206, 0.1)' },
+          horzLines: { color: 'rgba(197, 203, 206, 0.1)' },
+        },
+      });
 
-        return () => {
-            chart.remove();
-        };
-    }, []);
+      const candlestickSeries = chart.addCandlestickSeries();
+      const dummyData = [
+        { time: '2023-01-01', open: 10, high: 15, low: 8, close: 12 },
+        { time: '2023-01-02', open: 12, high: 17, low: 10, close: 15 },
+      ];
+      candlestickSeries.setData(dummyData);
 
-    const connectWallet = async () => {
-        console.log('Connecting to Solflare wallet...');
-        // Implement Solflare wallet connection logic here
-    };
+      // Set up interval for periodic updates
+      const intervalId = setInterval(fetchData, 5000); // Update every 5 seconds
 
-    const handleBuy = () => {
-        console.log(`Buying ${orderAmount} ${id} at ${price}`);
-    };
+      return () => {
+        chart.remove();
+        clearInterval(intervalId);
+      };
+    }
+  }, [pairData]);
 
-    const handleSell = () => {
-        console.log(`Selling ${orderAmount} ${id} at ${price}`);
-    };
+  const fetchData = async () => {
+    if (!pairData) return;
 
-    return (
-        <div className='flex flex-col w-full h-full bg-secondary'>
-            <h1 className="text-2xl font-bold mb-4 text-white p-4">{id}</h1>
-            <div className="flex items-start justify-start gap-10 min-h-screen bg-secondary text-white p-4">
-                <div className='flex flex-col gap-4'>
-                    <div className='bg-background p-4 rounded-xl'>
-                        <div id="chart" className="mb-4"></div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Left Column */}
-                        <div className="space-y-4 bg-background p-4 rounded-lg">
-                            <span className="flex space-x-2 mb-4">
-                                <ArrowLeft className="w-4 h-4" />
-                                <Twitter className="w-4 h-4" />
-                                <MessageSquare className="w-4 h-4" />
-                            </span>
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch(`https://api.example.com/trading-stats/${pairData.pairAddress}`);
+      const data = await response.json();
 
-                            <div className="grid grid-cols-3 gap-4 pb-4 border-b border-white/20">
-                                <div>
-                                    <p className="text-gray-400 text-sm">USD price</p>
-                                    <p className="text-sm font-normal">0.044</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm">Sol Price</p>
-                                    <p className="text-sm font-normal">0.0284</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm">Supply</p>
-                                    <p className="text-sm font-normal">998M</p>
-                                </div>
-                            </div>
+      setPrice(data.price);
+      updateStats(data);
+    } catch (error) {
+      console.error("Failed to fetch trading statistics:", error);
+    }
+  };
 
-                            <div className="grid grid-cols-2 gap-2 justify-start">
-                                <div>
-                                    <p className="text-gray-400 text-sm">Liquidity</p>
-                                    <p className="text-sm font-normal">$28.3k</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm">Market cap</p>
-                                    <p className="text-sm font-normal">$41.03k</p>
-                                </div>
-                            </div>
+  const updateStats = (data: any) => {
+    const timeFrames = ['m5', 'h1', 'h6', 'h24'];
+    const newStats = timeFrames.map(tf => {
+      const buys = data.txns[tf].buys;
+      const sells = data.txns[tf].sells;
+      const total = buys + sells;
+      const buyPercentage = (buys / total) * 100;
+      const sellPercentage = (sells / total) * 100;
+      return {
+        label: "Buys",
+        oppositeLabel: "Sells",
+        buyPercentage,
+        sellPercentage,
+        buyTag: buys,
+        sellTag: sells,
+        timeFrame: tf,
+      };
+    });
+    setStats(newStats);
+  };
 
-                            <div className="flex items-center space-x-2">
-                                <div className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">B4vF...KcCu</div>
-                                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"></path></svg>
-                            </div>
+  const handleBuy = () => {
+    console.log(`Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+  };
 
-                            <div className="flex items-center space-x-2">
-                                <p className="font-semibold">RadiumV4</p>
-                                <span className="text-green-400 text-sm">Verify profile</span>
-                            </div>
-                        </div>
+  const handleSell = () => {
+    console.log(`Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+  };
 
-                        {/* Right Column */}
-                        <div className="space-y-4 bg-background p-4 rounded-lg">
-                            <div className='flex gap-4 pb-4 border-b border-white/20'>
-                                {["0.044", "0.044", "0.044", "0.044"].map((price, index) => (
-                                    <div key={index} className="">
-                                        <p className="text-gray-400 text-[11px]">USD price</p>
-                                        <p className="font-semibold text-[12px]">{price}</p>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="space-y-3">
-                                {[
-                                    { label: "Buys", oppositeLabel: "Sells", value: 100 },
-                                    { label: "Buy Vol", oppositeLabel: "Sell Vol", value: 100 },
-                                    { label: "Buyers", oppositeLabel: "Sellers", value: 100 },
-                                ].map((item, index) => (
-                                    <div key={index} className="space-y-1">
-                                        <div className="flex justify-between text-xs text-[#666666]">
-                                            <p>{item.label}</p>
-                                            <p>{item.oppositeLabel}</p>
-                                        </div>
-                                        <div className="h-1 bg-[#333333] rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full w-full bg-gradient-to-r from-70% from-[#319631] to-[#830f0f] to-30%"
-                                                style={{ width: `${item.value}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+  const formatNumber = (num: number) => {
+    return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
+
+  const getTimeFrameLabel = (tf: string) => {
+    switch (tf) {
+      case 'm5': return '5m';
+      case 'h1': return '1h';
+      case 'h6': return '6h';
+      case 'h24': return '24h';
+      default: return tf;
+    }
+  };
+
+  if (!pairData) {
+    return <div className="text-white">Loading...</div>;
+  }
+
+  return (
+    <div className='flex flex-col w-full h-full bg-secondary'>
+      <h1 className="text-2xl font-bold mb-4 text-white p-4">{pairData.baseToken.symbol}/{pairData.quoteToken.symbol}</h1>
+      <div className="flex items-start justify-start gap-10 min-h-screen bg-secondary text-white p-4">
+        <div className='flex flex-col gap-4'>
+          <div className='bg-background p-4 rounded-xl'>
+            <div id="chart" className="mb-4"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4 bg-background p-4 rounded-lg">
+              <span className="flex space-x-2 mb-4">
+                <XIcon />
+                <TelegramIcon />
+              </span>
+
+              <div className="grid grid-cols-3 gap-4 pb-4 border-b border-white/20">
+                <div>
+                  <p className="text-gray-400 text-sm">USD price</p>
+                  <p className="text-sm font-normal">${price !== null ? price.toFixed(6) : 'N/A'}</p>
                 </div>
-                <div className='p-4 rounded-xl bg-background w-full'>
-                    <div className='py-6'>
-                        <div className="flex space-x-4 mb-4 w-full">
-                            <Button onClick={handleBuy} className="bg-blue-500 hover:bg-blue-600 w-full">Buy</Button>
-                            <Button onClick={handleSell} className="bg-red-500 hover:bg-red-600 w-full">Sell</Button>
-                        </div>
-                        <div>
-                            <div className="grid grid-cols-5 justify-center items-center gap-4 mb-4">
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />0.5</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />0.5</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />1</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />1.3</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />2</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />5</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />1.5</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />4</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />2.5</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />5</div>
-                                <div className='flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10'><img src="/images/solana.svg" alt='solana' />5.5</div>
-                            </div>
-                        </div>
-                        <Input
-                            type="number"
-                            placeholder="Amount to buy or sell"
-                            value={orderAmount}
-                            onChange={(e) => setOrderAmount(e.target.value)}
-                            className="mb-4 text-white border border-white/30 focus:border-white/40 rounded-full overflow-hidden"
-                        />
-                        <div className='flex flex-col gap-2'>
-                            <Button onClick={handleSell} className="bg-green-500 hover:bg-green-600 w-full rounded-full text-black">Quick buy</Button>
-                            <p className='text-white/70 text-[12px]'>Once you click on Quick buy, your transaction is sent immediately.</p>
-                        </div>
-                    </div>
-                    <div className="border-t border-secondary py-4 flex gap-4">
-                        <EngineeringIcon />
-                        <a href="/setting">Advance settings</a>
-                    </div>
+                <div>
+                  <p className="text-gray-400 text-sm">{pairData.quoteToken.symbol} Price</p>
+                  <p className="text-sm font-normal">{parseFloat(pairData.priceNative).toFixed(6)}</p>
                 </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Supply</p>
+                  <p className="text-sm font-normal">{(pairData.fdv / parseFloat(pairData.priceUsd)).toFixed(0)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 justify-start">
+                <div>
+                  <p className="text-gray-400 text-sm">Liquidity</p>
+                  <p className="text-sm font-normal">${pairData.liquidity.usd.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Market cap</p>
+                  <p className="text-sm font-normal">${pairData.fdv.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <div className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs">{pairData.pairAddress.slice(0, 4)}...{pairData.pairAddress.slice(-4)}</div>
+                <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4"></path></svg>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <p className="font-semibold">{pairData.dexId}</p>
+                <span className="text-green-400 text-sm">Verify profile</span>
+              </div>
             </div>
+
+            <Card className="w-full bg-[#1C1C1E] text-white">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {stats.map((item, index) => (
+                    <div key={index} className="space-y-1">
+                      <div className="flex justify-between text-xs text-[#666666]">
+                        <p>{item.label} ({getTimeFrameLabel(item.timeFrame)})</p>
+                        <p>{item.oppositeLabel}</p>
+                      </div>
+                      <div className="flex justify-between text-xs text-[#666666]">
+                        <p>{formatNumber(item.buyTag)}</p>
+                        <p>{formatNumber(item.sellTag)}</p>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full flex"
+                        >
+                          <div 
+                            className="h-full bg-[#319631]" 
+                            style={{ width: `${item.buyPercentage}%` }}
+                          ></div>
+                          <div 
+                            className="h-full bg-[#830f0f]" 
+                            style={{ width: `${item.sellPercentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-    );
+        <div className='p-4 rounded-xl bg-background w-full'>
+          <div className='py-6'>
+            <div className="flex space-x-4 mb-4 w-full">
+              <Button onClick={handleBuy} className="bg-blue-500 hover:bg-blue-600 w-full">Buy</Button>
+              <Button onClick={handleSell} className="bg-red-500 hover:bg-red-600 w-full">Sell</Button>
+            </div>
+            <div>
+              <div className="grid grid-cols-5 justify-center items-center gap-4 mb-4">
+                {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((amount, index) => (
+                  <div key={index} className='flex text-[12px] justify-center w-auto  items-center gap-2 bg-secondary rounded-full hover:bg-white/10 cursor-pointer' onClick={() => setOrderAmount(amount.toString())}>
+                    <img src="/images/solana.svg" alt='solana' />{amount}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Input
+              type="number"
+              placeholder="Amount to buy or sell"
+              value={orderAmount}
+              onChange={(e) => setOrderAmount(e.target.value)}
+              className="mb-4 text-white border border-white/30 focus:border-white/40 rounded-full overflow-hidden"
+            />
+            <div className='flex flex-col gap-2'>
+              <Button onClick={handleBuy} className="bg-green-500 hover:bg-green-600 w-full rounded-full text-black">Quick buy</Button>
+              <p className='text-white/70 text-[12px]'>Once you click on Quick buy, your transaction is sent immediately.</p>
+            </div>
+          </div>
+          <div className="border-t border-secondary py-4 flex gap-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <a href="/setting">Advanced settings</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

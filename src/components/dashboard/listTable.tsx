@@ -1,98 +1,130 @@
-
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
-import { Check, X } from "lucide-react";
-import XIcon from '@mui/icons-material/X';
-import TelegramIcon from '@mui/icons-material/Telegram';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
+import { Skeleton } from "../../components/ui/skeleton";
 
-interface Pair {
-  id: string;
-  created: string;
-  liquidity: string;
-  initialLiquidity: number;
-  marketCap: string;
-  fees: number;
-  volume: string;
-  auditResult: boolean;
-  socialEnabled: boolean;
-}
-
-export default function CryptoListing() {
+export default function Component() {
+    const [pairs, setPairs] = useState<any[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    const pairs: Pair[] = [
-        { id: "SHIB/SOL", created: "6h", liquidity: "$519.5K", initialLiquidity: 40, marketCap: "$2.75K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
-        { id: "DOGE/SOL", created: "8h", liquidity: "$423.7K", initialLiquidity: 40, marketCap: "$2.74K", fees: 1, volume: "$0", auditResult: true, socialEnabled: true },
-        { id: "FLOKI/SOL", created: "9h", liquidity: "$325.1K", initialLiquidity: 30, marketCap: "$1.95K", fees: 2, volume: "$1K", auditResult: false, socialEnabled: true },
-        { id: "SAMO/SOL", created: "10h", liquidity: "$710.2K", initialLiquidity: 50, marketCap: "$3.12K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
-        { id: "HOGE/SOL", created: "12h", liquidity: "$254.9K", initialLiquidity: 35, marketCap: "$1.64K", fees: 1, volume: "$0", auditResult: false, socialEnabled: true },
-        { id: "KITTY/SOL", created: "14h", liquidity: "$480.7K", initialLiquidity: 45, marketCap: "$2.58K", fees: 1, volume: "$0", auditResult: true, socialEnabled: false },
-    ];
-
-    const handleRowClick = (pairId: string) => {
-        navigate(`/trading/${encodeURIComponent(pairId)}`);
+    const handleRowClick = (pair: any) => {
+        navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
     };
 
-    return (
-        <div className="p-6 space-y-4 text-gray-100">
-            <div className="flex justify-start items-start flex-col">
-                <h1 className="text-3xl lg:text-4xl font-bold text-white">New Pairs</h1>
-                <p className="text-sm ">New token pairs are updated in real-time</p>
+    useEffect(() => {
+        const fetchPairs = async () => {
+            try {
+                const response = await fetch('https://api.dexscreener.com/latest/dex/search?q=sol/sol');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                console.log("Success", data);
+                setPairs(data.pairs || []);
+                setLoading(false);
+            } catch (err) {
+                console.error('Error fetching data:', err);
+                setError('Failed to load pairs');
+                setLoading(false);
+            }
+        };
+
+        fetchPairs();
+    }, []);
+
+    const formatNumber = (num: number | undefined, prefix: string = '') => {
+        if (!num) return 'N/A';
+        if (num >= 1e9) return `${prefix}${(num / 1e9).toFixed(2)}B`;
+        if (num >= 1e6) return `${prefix}${(num / 1e6).toFixed(2)}M`;
+        if (num >= 1e3) return `${prefix}${(num / 1e3).toFixed(2)}K`;
+        return `${prefix}${num.toFixed(2)}`;
+    };
+
+    const formatAge = (timestamp: number | undefined) => {
+        if (!timestamp) return 'N/A';
+        const diff = Date.now() - timestamp;
+        const hours = Math.floor(diff / 3600000);
+        if (hours < 24) return `${hours}h`;
+        const days = Math.floor(hours / 24);
+        return `${days}d`;
+    };
+
+    const renderPriceChange = (change: number | undefined) => {
+        if (change === undefined) return 'N/A';
+        const color = change >= 0 ? 'text-green-500' : 'text-red-500';
+        const Icon = change >= 0 ? ArrowUpIcon : ArrowDownIcon;
+        return (
+            <span className={`flex items-center ${color}`}>
+                <Icon className="w-4 h-4 mr-1" />
+                {Math.abs(change).toFixed(2)}%
+            </span>
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="p-4 space-y-4 text-white">
+                <h1 className="text-2xl font-bold">Token Listing</h1>
+                <div className="space-y-2">
+                    {[...Array(10)].map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full bg-background" />
+                    ))}
+                </div>
             </div>
+        );
+    }
+
+    if (error) return <div className="text-white p-4">{error}</div>;
+
+    return (
+        <div className="p-4 space-y-4 text-white">
+            <h1 className="text-2xl font-bold">Token Listing</h1>
             <div className="overflow-x-auto">
                 <Table className="rounded-lg border border-secondary">
                     <TableHeader className="bg-background rounded-lg my-2 border-secondary hover:bg-background">
                         <TableRow className="bg-background rounded-lg my-2 border-secondary hover:bg-background">
-                            <TableHead className="w-[100px] text-white">Pair Info</TableHead>
-                            <TableHead className="text-white">Created</TableHead>
-                            <TableHead className="text-white">Liquidity</TableHead>
-                            <TableHead className="text-white">Initial Liquidity</TableHead>
-                            <TableHead className="text-white">Mkt Cap</TableHead>
-                            <TableHead className="text-white">Txns</TableHead>
-                            <TableHead className="text-white">Volume</TableHead>
-                            <TableHead className="text-white">Audit Result</TableHead>
-                            <TableHead className="text-white">Social</TableHead>
+                            <TableHead className="text-left">TOKEN</TableHead>
+                            <TableHead className="text-right">PRICE</TableHead>
+                            <TableHead className="text-right">AGE</TableHead>
+                            <TableHead className="text-right">TXNS</TableHead>
+                            <TableHead className="text-right">VOLUME</TableHead>
+                            <TableHead className="text-right">MAKERS</TableHead>
+                            <TableHead className="text-right">5M</TableHead>
+                            <TableHead className="text-right">1H</TableHead>
+                            <TableHead className="text-right">6H</TableHead>
+                            <TableHead className="text-right">24H</TableHead>
+                            <TableHead className="text-right">LIQUIDITY</TableHead>
+                            <TableHead className="text-right">MCAP</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody className="mt-4 w-full">
-                        {pairs.map((pair) => (
+                    <TableBody>
+                        {pairs.map((pair, index) => (
                             <TableRow 
-                                key={pair.id} 
-                                className="border-secondary hover:bg-secondary cursor-pointer" 
-                                onClick={() => handleRowClick(pair.id)}
+                                key={pair.pairAddress} 
+                                onClick={() => handleRowClick(pair)}
+                                className="cursor-pointer hover:bg-white/10 transition-colors"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`View details for ${pair.baseToken.symbol}/${pair.quoteToken.symbol}`}
                             >
-                                <TableCell className="font-medium">{pair.id}</TableCell>
-                                <TableCell>{pair.created}</TableCell>
-                                <TableCell>{pair.liquidity}</TableCell>
-                                <TableCell>{pair.initialLiquidity}</TableCell>
-                                <TableCell>{pair.marketCap}</TableCell>
-                                <TableCell>{pair.fees}</TableCell>
-                                <TableCell>{pair.volume}</TableCell>
-                                <TableCell className="flex gap-4">
-                                    <div>
-                                        {pair.auditResult ? (
-                                            <div>
-                                                <Check className="text-green-500" />
-                                                Mint auth disabled
-                                            </div>
-                                        ) : (
-                                            <div>
-                                                <X className="text-red-500" />
-                                                Free auth disabled
-                                            </div>
-                                        )}
+                                <TableCell className="font-medium">
+                                    <div className="flex items-center">
+                                        <img src={pair.info?.imageUrl || '/placeholder.svg'} alt={pair.baseToken.symbol} className="w-6 h-6 mr-2 rounded-full" />
+                                        {pair.baseToken.symbol}/{pair.quoteToken.symbol}
                                     </div>
                                 </TableCell>
-                                <TableCell>
-                                    <div className="flex justify-center self-center items-center space-x-2 rounded-full border border-white/20 px-4 w-20 h-8">
-                                        <a href='https://x.com/' className='rounded-full cursor-pointer' onClick={(e) => e.stopPropagation()}>
-                                            <XIcon className='hover:scale-125 transition-all' />
-                                        </a>
-                                        <a href='https://t.me/' className='rounded-full cursor-pointer' onClick={(e) => e.stopPropagation()}>
-                                            <TelegramIcon className='hover:scale-125 transition-all' />
-                                        </a>
-                                    </div>
-                                </TableCell>
+                                <TableCell className="text-right">${parseFloat(pair.priceUsd).toFixed(6)}</TableCell>
+                                <TableCell className="text-right">{formatAge(pair.pairCreatedAt)}</TableCell>
+                                <TableCell className="text-right">{(pair.txns?.h24?.buys || 0) + (pair.txns?.h24?.sells || 0)}</TableCell>
+                                <TableCell className="text-right">{formatNumber(pair.volume?.h24, '$')}</TableCell>
+                                <TableCell className="text-right">{pair.txns?.h24?.buys || 'N/A'}</TableCell>
+                                <TableCell className="text-right">{renderPriceChange(pair.priceChange?.m5)}</TableCell>
+                                <TableCell className="text-right">{renderPriceChange(pair.priceChange?.h1)}</TableCell>
+                                <TableCell className="text-right">{renderPriceChange(pair.priceChange?.h6)}</TableCell>
+                                <TableCell className="text-right">{renderPriceChange(pair.priceChange?.h24)}</TableCell>
+                                <TableCell className="text-right">{formatNumber(pair.liquidity?.usd, '$')}</TableCell>
+                                <TableCell className="text-right">{formatNumber(pair.marketCap, '$')}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
