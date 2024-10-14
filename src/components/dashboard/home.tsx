@@ -1,9 +1,20 @@
 import { X, Lock, Copy, DollarSign, BarChart3 } from "lucide-react"
 import { useState } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../components/ui/dialog"
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false)
   const [balance, setBalance] = useState('')
+  const { publicKey } = useWallet()
 
   const handleCreateFund = () => {
     setShowDialog(true)
@@ -15,27 +26,58 @@ export default function HomeView() {
     window.location.href = `/funds?balance=${balance}`
   }
 
-
   return (
     <div className="bg-black text-white min-h-screen p-6">
       <h1 className="text-4xl font-bold mb-2">Home page</h1>
       <p className="text-gray-400 mb-6">New token pairs are updated in real-time</p>
 
       <div className="bg-[#111] rounded-lg p-6 mb-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4">
+        {/* <div className="absolute top-0 right-0 p-4">
           <X className="h-6 w-6 text-gray-500 cursor-pointer" />
-        </div>
+        </div> */}
         <div className="relative z-10">
-          <h2 className="text-sm font-semibold mb-2">CRYPTO CURRENCY FUNDS</h2>
+          <h2 className="text-sm font-semibold mb-2 uppercase">Start demo trading</h2>
           <h3 className="text-3xl font-bold mb-4 max-w-md">
-            Explore on-chain funds deployed by the community or create yours.
+            Perfect Your Strategy Before You Trade for Real
           </h3>
-          <button
-            className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
-            onClick={handleCreateFund}
-          >
-            Create Demo Fund
-          </button>
+          <Dialog>
+            <DialogTrigger>{publicKey ? (
+              <button
+                className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
+                onClick={handleCreateFund}
+              >
+                Create Demo Fund
+              </button>
+            ) : (
+              <div className="flex flex-col items-start justify-start">
+                <p className="text-white mb-2 text-[13px] bg-primary/10 px-1">Connect your wallet to create a Demo Fund</p>
+                <WalletMultiButton style={{ padding: '10px 20px', borderRadius: '8px' }} />
+              </div>
+            )}</DialogTrigger>
+            {showDialog && (
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className='text-white'>Set balance for demo account</DialogTitle>
+                  <DialogDescription>
+                    <p className="text-gray-400 mb-2">Account: {publicKey ? `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}` : 'Not connected'}</p>
+                    <input
+                      type="number"
+                      placeholder="Amount to fund in dusdt"
+                      className="w-full bg-[#333] text-white p-2 rounded mb-4"
+                      value={balance}
+                      onChange={(e) => setBalance(e.target.value)}
+                    />
+                    <button
+                      className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full w-full"
+                      onClick={handleSetBalance}
+                    >
+                      Set Balance
+                    </button>
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            )}
+          </Dialog>
         </div>
         <div className="absolute bottom-0 right-0 w-1/2 h-full">
           <div className="absolute bottom-0 right-0 w-full h-full rounded-tr-lg"></div>
@@ -73,27 +115,6 @@ export default function HomeView() {
           </div>
         ))}
       </div>
-      {showDialog && (
-        <div className="fixed z-10 inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-[#222] p-6 rounded-lg w-80">
-            <h2 className="text-xl font-bold mb-4">Set balance for demo account</h2>
-            <p className="text-gray-400 mb-2">Account: B4vF...KcCu</p>
-            <input
-              type="number"
-              placeholder="Amount to fund in dusdt"
-              className="w-full bg-[#333] text-white p-2 rounded mb-4"
-              value={balance}
-              onChange={(e) => setBalance(e.target.value)}
-            />
-            <button
-              className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full w-full"
-              onClick={handleSetBalance}
-            >
-              Set Balance
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
