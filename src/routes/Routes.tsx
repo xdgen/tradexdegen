@@ -8,6 +8,7 @@ import NewPair from "../Pages/pairs/NewPairs";
 import SettingPage from "../Pages/setting/settings";
 import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
+import Waitlist from "../Pages/waitlist/waitlist";
 
 
 const appRoutes = [
@@ -15,6 +16,12 @@ const appRoutes = [
     path: "/",
     element: (
       <Landing />
+    ),
+  },
+  {
+    path: "/waitlist",
+    element: (
+      <Waitlist />
     ),
   },
   {
