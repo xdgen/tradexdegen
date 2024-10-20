@@ -1,8 +1,8 @@
-# XDEGEN Platform
-![XDEGEN - Trade Smart Risk-Free](https://github.com/user-attachments/assets/62c33cf0-a67f-4444-a644-005d8ce67cac)
+![WhatsApp Image 2024-10-01 at 10 59 40 PM](https://github.com/user-attachments/assets/a1ce9c64-8a0e-4663-a927-15e04c26ffd9)
 
-Welcome to **XDEGEN** – a revolutionary demo trading platform designed to teach and empower crypto traders, especially in the DeFi and Degen space. XDEGEN simulates real-world crypto trading scenarios with virtual assets, enabling users to learn trading strategies without the risk of using real funds.
-![10](https://github.com/user-attachments/assets/78dcdcad-376c-421f-a188-377d502cfc0a)
+# XDEGEN Platform
+Welcome to **XDEGEN** – a revolutionary demo trading platform designed to teach and empower crypto traders, especially in the DeFi and Degen space. XDEGEN simulates real-world crypto trading scenarios with virtual assets, enabling users to learn trading strategies without the risk of using real funds.![intro](https://github.com/user-attachments/assets/f735d5ab-28d2-4957-8c13-59f2c0b407a9)
+
 
 
 ## Overview
@@ -11,6 +11,8 @@ Welcome to **XDEGEN** – a revolutionary demo trading platform designed to teac
 - Practice trading Degen tokens.
 - Simulate real-time buying, selling, and liquidity adding/removal actions.
 - Compete in demo trading challenges to sharpen trading skills.
+  ![tokens](https://github.com/user-attachments/assets/b1a080c6-b6aa-4dc3-b5aa-1a05958896c0)
+
   
 This repository contains all the necessary files, smart contracts, and user interface code for XDEGEN's development and deployment.
 
@@ -21,6 +23,9 @@ This repository contains all the necessary files, smart contracts, and user inte
 - **Real-Time Charts:** View live token price charts, liquidity pools, and market movements.
 - **Leaderboard & Competitions:** Engage with fellow users and track your progress on the leaderboard.
 - **Token Swapping:** Simulate Uniswap/Sushiswap-like swapping with demo tokens.
+  
+![swap](https://github.com/user-attachments/assets/54e3523a-7bfb-4823-ac89-c37213077644)
+
 
 ## Installation & Setup
 
@@ -63,6 +68,9 @@ To run the platform locally, follow these steps:
 
 4. **Token Swapping:** We have integrated demo token swaps that mimic the behavior of decentralized exchanges (DEXes) like Uniswap or SushiSwap. This allows users to practice making trades and managing liquidity pools in a safe environment.
 
+![WhatsApp Image 2024-10-01 at 10 59 38 PM](https://github.com/user-attachments/assets/819d822e-9c31-4f98-b9a9-1036582c7cf7)
+
+
 ## Contribution Guidelines
 
 We welcome contributions from developers passionate about the DeFi space! To contribute:
@@ -84,3 +92,5 @@ Please ensure that your code is well-documented and follows the established styl
 
 
 Thank you for being part of the XDEGEN journey! We can't wait to see you thrive in the DeFi and Degen trading space!
+![WhatsApp Image 2024-10-01 at 10 59 39 PM](https://github.com/user-attachments/assets/2a0b8fee-3424-46e7-8bbe-12ee1ed5c7bc)
+
