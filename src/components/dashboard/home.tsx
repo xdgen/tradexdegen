@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../../components/ui/dialog"
+import { claimXSOL, SolToken } from "../testToken"
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false)
@@ -24,6 +25,32 @@ export default function HomeView() {
     // Here you would typically make an API call to create the fund
     // For this example, we'll just redirect to the demo fund page
     window.location.href = `/funds?balance=${balance}`
+  }
+
+  const testSol = async (walletAddress: string) => {
+    const response = await SolToken(walletAddress);
+    console.log(response);
+  }
+
+  const claim = async () => {
+    const amount = 1000;
+    if (!publicKey) {
+      alert('Please connect your wallet!');
+      return;
+    }
+    try {
+      const tx = await claimXSOL(publicKey, amount );
+
+      console.log(tx?.message);
+      return { message: tx?.message || "success" };
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error) {
+        throw new Error(error.message || "failed");
+      } else {
+        throw new Error("failed");
+      }
+    }
   }
 
   return (
@@ -42,12 +69,26 @@ export default function HomeView() {
           </h3>
           <Dialog>
             <DialogTrigger>{publicKey ? (
-              <button
-                className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
-                onClick={handleCreateFund}
-              >
-                Create Demo Fund
-              </button>
+              <>
+                <button
+                  className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
+                  onClick={() => testSol(publicKey.toBase58())}
+                >
+                  Devnet Sol
+                </button>
+                <button
+                  className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
+                  onClick={() => claim()}
+                >
+                  Claim XSOL
+                </button>
+                {/* <button
+                  className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
+                  onClick={handleCreateFund}
+                >
+                  Create Demo Fund
+                </button> */}
+              </>
             ) : (
               <div className="flex flex-col items-start justify-start">
                 <p className="text-white mb-2 text-[13px] bg-primary/10 px-1">Connect your wallet to create a Demo Fund</p>
