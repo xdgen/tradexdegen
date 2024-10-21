@@ -15,11 +15,12 @@ import { claimXSOL, SolToken } from "../testToken"
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false)
   const [balance, setBalance] = useState('')
+  const [loading, setLoading] = useState(false)
   const { publicKey } = useWallet()
 
-  const handleCreateFund = () => {
-    setShowDialog(true)
-  }
+  // const handleCreateFund = () => {
+  //   setShowDialog(true)
+  // }
 
   const handleSetBalance = () => {
     // Here you would typically make an API call to create the fund
@@ -28,8 +29,17 @@ export default function HomeView() {
   }
 
   const testSol = async (walletAddress: string) => {
-    const response = await SolToken(walletAddress);
-    console.log(response);
+    try {
+      setLoading(true)
+      const response = await SolToken(walletAddress);
+      console.log(response);
+      return
+    } catch (error) {
+      console.log(error)
+      return
+    } finally {
+      setLoading(false)
+    }
   }
 
   const claim = async () => {
@@ -39,7 +49,8 @@ export default function HomeView() {
       return;
     }
     try {
-      const tx = await claimXSOL(publicKey, amount );
+      setLoading(true)
+      const tx = await claimXSOL(publicKey, amount);
 
       console.log(tx?.message);
       return { message: tx?.message || "success" };
@@ -50,6 +61,8 @@ export default function HomeView() {
       } else {
         throw new Error("failed");
       }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -72,14 +85,15 @@ export default function HomeView() {
               <>
                 <button
                   className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
-                  onClick={() => testSol(publicKey.toBase58())}
+                  onClick={() => testSol(publicKey.toBase58())} disabled={loading}
                 >
                   Devnet Sol
                 </button>
                 <button
                   className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
-                  onClick={() => claim()}
+                  onClick={() => claim()} disabled={loading}
                 >
+
                   Claim XSOL
                 </button>
                 {/* <button
