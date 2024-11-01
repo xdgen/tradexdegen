@@ -6,6 +6,8 @@ import { Input } from "../../components/ui/input";
 import { Card, CardContent } from "../../components/ui/card";
 import XIcon from '@mui/icons-material/X';
 import TelegramIcon from '@mui/icons-material/Telegram';
+import { buy, getMeme, getSPLTokenBalance, sell } from '../testToken/swapfunction';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 type StatItem = {
   label: string;
@@ -24,6 +26,12 @@ export default function TradingInterface() {
   const [orderAmount, setOrderAmount] = useState('');
   const [price, setPrice] = useState<number | null>(null);
   const [stats, setStats] = useState<StatItem[]>([]);
+  const { publicKey, sendTransaction } = useWallet();
+  const [swap, setSwap] = useState<'Buy' | "Sell">('Buy');
+  const [XTokenMint, setXTokenMint] = useState<string>('');
+  const [XSol, setXSol] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [updateBal, setUpdateBal] = useState<boolean>(false);
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -65,6 +73,33 @@ export default function TradingInterface() {
     }
   }, [pairData]);
 
+  useEffect(() => {
+    const get = async () => {
+      if (!pairData) return;
+      if (!publicKey) { setXSol('0'); setXTokenMint('0'); return; }
+      try {
+        console.log("checking balance")
+        const Xdegen_mint = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
+        const getXdegenTokenMint = await getMeme(pairData.baseToken.address);
+        const xXSol = await getSPLTokenBalance(publicKey, Xdegen_mint);
+        if (!getXdegenTokenMint) {
+          setXTokenMint('0')
+        } else {
+          const xXToken = await getSPLTokenBalance(publicKey, getXdegenTokenMint);
+          setXTokenMint(xXToken);
+        }
+        if (!xXSol) {
+          setXSol('0')
+        } else {
+          setXSol(xXSol);
+        }
+      } catch (error) {
+        console.error("Failed to fetch trading :", error);
+      }
+    };
+    get();
+  }, [pairData, publicKey, updateBal]);
+
   const fetchData = async () => {
     if (!pairData) return;
 
@@ -100,13 +135,60 @@ export default function TradingInterface() {
     });
     setStats(newStats);
   };
+  const setOption = (option: 'Buy' | 'Sell') => {
+    setSwap(option)
+  }
 
-  const handleBuy = () => {
-    console.log(`Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+  const handleBuy = async () => {
+    if (!publicKey) {
+      alert('Please connect your wallet!');
+      return;
+    }
+    try {
+      setLoading(true)
+      console.log(pairData.baseToken)
+      const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9))
+      const tokenAmount = +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const tokenName = pairData.baseToken.symbol
+      const tokenMint = pairData.baseToken.address
+      const buyNow = await buy(+orderAmount, publicKey, tokenName, tokenMint, tokenAmount, sendTransaction)
+      console.log(buyNow)
+      console.log(`Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+    } catch (error) {
+      console.log(error)
+    } finally {
+      if (updateBal) {
+        setUpdateBal(false);
+      } else {
+        setUpdateBal(true);
+      }
+      setLoading(false);
+    }
   };
 
-  const handleSell = () => {
-    console.log(`Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+  const handleSell = async () => {
+    if (!publicKey) {
+      alert('Please connect your wallet!');
+      return;
+    }
+    try {
+      setLoading(true)
+      console.log(pairData.baseToken)
+      const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9))
+      const xSolAmount = +orderAmount * parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const sellNow = await sell(xSolAmount, publicKey, pairData.baseToken.address, +orderAmount, sendTransaction)
+      console.log(sellNow)
+      console.log(`Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+    } catch (error) {
+      console.log(error)
+    } finally {
+      if (updateBal) {
+        setUpdateBal(false);
+      } else {
+        setUpdateBal(true);
+      }
+      setLoading(false);
+    }
   };
 
   const formatNumber = (num: number) => {
@@ -196,12 +278,12 @@ export default function TradingInterface() {
                         <div
                           className="h-full flex"
                         >
-                          <div 
-                            className="h-full bg-[#319631]" 
+                          <div
+                            className="h-full bg-[#319631]"
                             style={{ width: `${item.buyPercentage}%` }}
                           ></div>
-                          <div 
-                            className="h-full bg-[#830f0f]" 
+                          <div
+                            className="h-full bg-[#830f0f]"
                             style={{ width: `${item.sellPercentage}%` }}
                           ></div>
                         </div>
@@ -216,28 +298,31 @@ export default function TradingInterface() {
         <div className='p-4 rounded-xl bg-background w-full'>
           <div className='py-6'>
             <div className="flex space-x-4 mb-4 w-full">
-              <Button onClick={handleBuy} className="bg-blue-500 hover:bg-blue-600 w-full">Buy</Button>
-              <Button onClick={handleSell} className="bg-red-500 hover:bg-red-600 w-full">Sell</Button>
+              <Button onClick={() => setOption('Buy')} className="bg-blue-500 hover:bg-blue-600 w-full" disabled={loading}>Buy</Button>
+              <Button onClick={() => setOption('Sell')} className="bg-red-500 hover:bg-red-600 w-full" disabled={loading}>Sell</Button>
             </div>
-            <div>
-              <div className="grid grid-cols-5 justify-center items-center gap-4 mb-4">
-                {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((amount, index) => (
-                  <div key={index} className='flex text-[12px] justify-center w-auto  items-center gap-2 bg-secondary rounded-full hover:bg-white/10 cursor-pointer' onClick={() => setOrderAmount(amount.toString())}>
-                    <img src="/images/solana.svg" alt='solana' />{amount}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {swap === 'Buy' ?
+              <div>
+                <div className="grid grid-cols-5 justify-center items-center gap-4 mb-4">
+                  {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((amount, index) => (
+                    <Button key={index} className='flex text-[12px] justify-center w-auto  items-center gap-2 bg-secondary rounded-full hover:bg-white/10 cursor-pointer' onClick={() => setOrderAmount(amount.toString())} disabled={loading}>
+                      <img src="/images/solana.svg" alt='solana' />{amount}
+                    </Button>
+                  ))}
+                </div>
+              </div> :
+              ""}
             <Input
               type="number"
-              placeholder="Amount to buy or sell"
+              placeholder={swap === "Buy" ? "Amount of XDEGEN SOL" : `Amount of ${pairData.baseToken.symbol}`}
               value={orderAmount}
               onChange={(e) => setOrderAmount(e.target.value)}
               className="mb-4 text-white border border-white/30 focus:border-white/40 rounded-full overflow-hidden"
             />
             <div className='flex flex-col gap-2'>
-              <Button onClick={handleBuy} className="bg-green-500 hover:bg-green-600 w-full rounded-full text-black">Quick buy</Button>
-              <p className='text-white/70 text-[12px]'>Once you click on Quick buy, your transaction is sent immediately.</p>
+              <Button onClick={swap === 'Buy' ? handleBuy : handleSell} disabled={swap === 'Sell' && XTokenMint === '0' || swap === 'Buy' && XSol === '0' || orderAmount === '' || loading} className={swap === 'Sell' ? "bg-red-500 hover:bg-red-600 w-full rounded-full" : "bg-blue-500 hover:bg-blue-600 w-full rounded-full"}>{loading ? 'Processing...' : swap}</Button>
+              <p className='text-white/70 text-[12px]'>{swap === 'Buy' ? `XDEGEN SOL: ${XSol}` : `XDEGEN ${pairData.baseToken.symbol}: ${XTokenMint}`}</p>
+              {/* <p className='text-white/70 text-[12px]'>Once you click on Quick buy, your transaction is sent immediately.</p> */}
             </div>
           </div>
           <div className="border-t border-secondary py-4 flex gap-4">
