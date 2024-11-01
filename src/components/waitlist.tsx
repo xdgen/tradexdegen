@@ -7,6 +7,7 @@ import {
     DialogHeader,
     DialogTrigger,
 } from "../components/ui/dialog";
+import supabase from './testToken/database';
 
 const Waitlist: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -24,24 +25,33 @@ const Waitlist: React.FC = () => {
 
         // Send email to backend
         try {
-            const response = await fetch('https://xdegen-backend.onrender.com/api/waitlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
+            const { error } = await supabase
+                .from('email')
+                .insert({ email })
 
-            const result = await response.json();
+            if (error) {
+                console.error(error)
+                throw error
+            }
 
-            if (response.ok) {
+            // const response = await fetch('https://xdegen-backend.onrender.com/api/waitlist', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({ email }),
+            // });
+
+            // const result = await response.json();
+
+            if (!error) {
                 toast.success("You have successfully been added to the list");
                 setStatus('Email added successfully!');
                 setIsJoined(true); // Update state to joined
                 setButtonText('Joined'); // Change button to "Joined"
             } else {
-                toast.error(result.message); // Show the error message from the server
-                setStatus(result.message);
+                toast.error("error Try again"); // Show the error message from the server
+                setStatus("error");
                 setButtonText('Join'); // Reset button text
             }
         } catch (error) {
