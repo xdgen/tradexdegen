@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "../../components/ui/dialog"
 import { claimXSOL, SolToken } from "../testToken"
+import { toast } from "sonner"
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false)
@@ -33,8 +34,10 @@ export default function HomeView() {
       setLoading(true)
       const response = await SolToken(walletAddress);
       console.log(response);
+      toast.success("Successful")
       return
     } catch (error) {
+      toast.warning("Transaction might have failed")
       console.log(error)
       return
     } finally {
@@ -53,8 +56,11 @@ export default function HomeView() {
       const tx = await claimXSOL(publicKey, amount);
 
       console.log(tx?.message);
+      
+      toast.success("Successful")
       return { message: tx?.message || "success" };
     } catch (error) {
+      toast.warning("Transaction might have failed")
       console.error(error);
       if (error instanceof Error) {
         throw new Error(error.message || "failed");

@@ -8,6 +8,7 @@ import XIcon from '@mui/icons-material/X';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import { buy, getMeme, getSPLTokenBalance, sell } from '../testToken/swapfunction';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { toast } from 'sonner';
 
 type StatItem = {
   label: string;
@@ -146,6 +147,7 @@ export default function TradingInterface() {
     }
     try {
       setLoading(true)
+      toast.success("Processing ... ")
       console.log(pairData.baseToken)
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9))
       const tokenAmount = +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
@@ -154,7 +156,9 @@ export default function TradingInterface() {
       const buyNow = await buy(+orderAmount, publicKey, tokenName, tokenMint, tokenAmount, sendTransaction)
       console.log(buyNow)
       console.log(`Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+      toast.success(`Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `)
     } catch (error) {
+      toast.warning("Transaction might have failed")
       console.log(error)
     } finally {
       if (updateBal) {
@@ -168,18 +172,21 @@ export default function TradingInterface() {
 
   const handleSell = async () => {
     if (!publicKey) {
-      alert('Please connect your wallet!');
+      toast.warning("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true)
+      toast.success("Processing ... ")
       console.log(pairData.baseToken)
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9))
       const xSolAmount = +orderAmount * parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const sellNow = await sell(xSolAmount, publicKey, pairData.baseToken.address, +orderAmount, sendTransaction)
       console.log(sellNow)
       console.log(`Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`);
+      toast.success(`Swapped ${orderAmount} ${pairData?.baseToken.symbol} to ${xSolAmount} XSol `)
     } catch (error) {
+      toast.warning("Transaction might have failed")
       console.log(error)
     } finally {
       if (updateBal) {
