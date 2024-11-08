@@ -120,3 +120,12 @@ body {
   border-radius: 5px;
   cursor: pointer;
 }
+
+.wallet-adapter-button-trigger,
+.wallet-adapter-dropdown,
+.wallet-adapter-button
+{
+  background-color: #09090A;
+  border: #05FF79;
+  border-radius: 50%;
+}

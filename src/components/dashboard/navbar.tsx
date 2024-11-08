@@ -1,7 +1,7 @@
 import React from "react";
 import SearchIcon from '@mui/icons-material/Search';
-import TuneIcon from '@mui/icons-material/Tune';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import WalletBar from './walletBar'
 
 const Navbar: React.FC = () => {
     return (
@@ -20,20 +20,9 @@ const Navbar: React.FC = () => {
 
             {/* Right section with settings and notification */}
             <div className="flex gap-4 items-center">
-
-
-                {/* Settings button */}
-                <div className="rounded-full bg-secondary hover:bg-gray-500/50 transition-all p-2">
-                    <TuneIcon />
-                </div>
-
-                {/* Notification */}
-                {/* <div className="relative rounded-full bg-secondary hover:bg-gray-500/50 transition-all p-2">
-                    <NotificationsIcon />
-                    <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-                </div> */}
-                <div>
+                <div className='flex justify-center items-center gap-2'>
                     <WalletMultiButton style={{ padding: '10px 20px', borderRadius: '8px' }} />
+                    <WalletBar />
                 </div>
             </div>
         </nav>
