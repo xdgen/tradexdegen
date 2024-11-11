@@ -1,5 +1,5 @@
 import { X, Lock, Copy, DollarSign, BarChart3 } from "lucide-react"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import {
@@ -12,12 +12,15 @@ import {
 } from "../../components/ui/dialog"
 import { claimXSOL, SolToken } from "../testToken"
 import { toast } from "sonner"
+import { Skeleton } from "../../components/ui/skeleton";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false)
   const [balance, setBalance] = useState('')
   const [loading, setLoading] = useState(false)
   const { publicKey } = useWallet()
+  const [pairs, setPairs] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // const handleCreateFund = () => {
   //   setShowDialog(true)
@@ -56,7 +59,7 @@ export default function HomeView() {
       const tx = await claimXSOL(publicKey, amount);
 
       console.log(tx?.message);
-      
+
       toast.success("Successful")
       return { message: tx?.message || "success" };
     } catch (error) {
@@ -71,6 +74,47 @@ export default function HomeView() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const fetchPairs = async () => {
+      try {
+        const response = await fetch('https://api.dexscreener.com/latest/dex/search?q=sol/sol');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        setPairs(data.pairs.slice(0, 4)); // Limit to the first 4 pairs
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load pairs');
+        setLoading(false);
+      }
+    };
+
+    fetchPairs();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-32 w-full bg-background" />
+        ))}
+      </div>
+    );
+  }
+
+  
+  const formatAge = (timestamp: number | undefined) => {
+    if (!timestamp) return 'N/A';
+    const diff = Date.now() - timestamp;
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+};
+
+  if (error) return <div className="text-white p-4">{error}</div>;
+
 
   return (
     <div className="bg-black text-white min-h-screen p-6">
@@ -88,27 +132,21 @@ export default function HomeView() {
           </h3>
           <Dialog>
             <DialogTrigger>{publicKey ? (
-              <>
+              <div className='flex gap-4'>
                 <button
-                  className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
+                  className="bg-white/10 rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary"
                   onClick={() => testSol(publicKey.toBase58())} disabled={loading}
                 >
-                  Devnet Sol
+                  Claim Faucet
                 </button>
                 <button
-                  className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
+                  className="bg-green-400 hover:bg-primary text-black font-semibold py-2 px-4 rounded-full"
                   onClick={() => claim()} disabled={loading}
                 >
 
                   Claim XSOL
                 </button>
-                {/* <button
-                  className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
-                  onClick={handleCreateFund}
-                >
-                  Create Demo Fund
-                </button> */}
-              </>
+              </div>
             ) : (
               <div className="flex flex-col items-start justify-start">
                 <p className="text-white mb-2 text-[13px] bg-primary/10 px-1">Connect your wallet to create a Demo Fund</p>
@@ -155,23 +193,18 @@ export default function HomeView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { icon: Lock, label: "TVL", value: "$2,313,055", change: "202%", positive: true },
-          { icon: Copy, label: "Volume", value: "$205,032,5...", change: "300%", positive: true },
-          { icon: DollarSign, label: "Fees", value: "$121,548", change: "12.4%", positive: true },
-          { icon: BarChart3, label: "Live funds", value: "118", change: "90%", positive: false },
-        ].map((item, index) => (
+        {pairs.map((pair, index) => (
           <div key={index} className="bg-[#111] rounded-lg p-4 flex flex-col">
             <div className="flex items-center mb-2">
-              <div className="bg-gradient-to-br from-[#193EFF] to-[#09090A] p-2 rounded-md mr-2">
-                <item.icon className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-gray-400">{item.label}</span>
-              <span className="text-gray-500 text-xs ml-auto">24H</span>
+                <div className="flex items-center">
+                  <img src={pair.info?.imageUrl || '/placeholder.svg'} alt={pair.baseToken.symbol} className="w-6 h-6 mr-2 rounded-full" />
+                </div>
+              <span className="text-gray-400">{pair.baseToken.symbol}/{pair.quoteToken.symbol}</span>
+              <span className="text-gray-500 text-xs ml-auto">{formatAge(pair.pairCreatedAt)}</span>
             </div>
-            <div className="text-2xl font-bold mb-1">{item.value}</div>
-            <div className={`text-sm ${item.positive ? 'text-green-400' : 'text-red-400'}`}>
-              {item.positive ? '↑' : '↓'} {item.change}
+            <div className="text-2xl font-bold mb-1">${parseFloat(pair.priceUsd).toFixed(6)}</div>
+            <div className={`text-sm ${pair.priceChange?.h24 >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {pair.priceChange?.h24 >= 0 ? '↑' : '↓'} {Math.abs(pair.priceChange?.h24 || 0).toFixed(2)}%
             </div>
           </div>
         ))}

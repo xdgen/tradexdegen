@@ -83,10 +83,10 @@ export const WalletBar = () => {
                             <div className="space-y-4">
                                 {!publicKey ? 'Connect Wallet' : tokens.map((token, index) => (
                                     <div key={index} className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <img src={token.imageUrl} className="w-8 h-8 rounded-full" />
-                                            <div>
-                                                <h3 className="font-medium">{token.name}</h3>
+                                        <div className="flex justify-start items-start space-x-3">
+                                            <img src={token.imageUrl} className="w-6 h-6 rounded-full" />
+                                            <div className='m-0 p-0'>
+                                                <h3 className="font-medium m-0 p-0">{token.name}</h3>
                                                 <p className="text-sm text-gray-500">
                                                     {token.amount} {token.symbol}
                                                 </p>

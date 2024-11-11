@@ -9,14 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/ui/dialog"
-
+} from "../../components/ui/dialog";
+import { claimXSOL, SolToken } from "../testToken";
+import { toast } from "sonner";
 
 export default function DemoFund() {
   const location = useLocation();
   const [balance, setBalance] = useState('');
   const [showEmptyState, setShowEmptyState] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { publicKey } = useWallet();
 
   const handleCreateFund = () => {
@@ -27,10 +29,42 @@ export default function DemoFund() {
     window.location.href = `/funds?balance=${balance}`;
   };
 
+  const testSol = async (walletAddress) => {
+    try {
+      setLoading(true);
+      const response = await SolToken(walletAddress);
+      console.log(response);
+      toast.success("Faucet claimed successfully");
+    } catch (error) {
+      toast.warning("Transaction might have failed");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const claim = async () => {
+    const amount = 1000;
+    if (!publicKey) {
+      alert('Please connect your wallet!');
+      return;
+    }
+    try {
+      setLoading(true);
+      const tx = await claimXSOL(publicKey, amount);
+      console.log(tx?.message);
+      toast.success("XSOL claimed successfully");
+    } catch (error) {
+      toast.warning("Transaction might have failed");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const balanceParam = searchParams.get('balance');
-
     if (balanceParam) {
       setBalance(balanceParam);
     } else {
@@ -41,30 +75,39 @@ export default function DemoFund() {
   if (showEmptyState) {
     return (
       <div className="bg-black text-white min-h-screen p-6">
-
         <h1 className="text-4xl font-bold mb-2">Demo Fund</h1>
         <p className="text-gray-400 mb-6">New token pairs are updated in real-time</p>
         <div className="bg-[#111] rounded-lg p-6 flex flex-col items-center justify-center min-h-[400px]">
           <h2 className="text-2xl font-bold mb-4">Your Fund is empty</h2>
           <p className="text-gray-400 text-center mb-6 max-w-md">
-            The fund will choose assets based on the specified rules. Rules can be changed by the
-            creator in the future. Each rule represents how many and what assets should be
-            included in a fund based on specific market conditions.
+            Claim the Faucet for gas fees and claim XSOL to start trading. 
           </p>
           <Dialog>
-            <DialogTrigger>{publicKey ? (
-              <button
-                className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full"
-                onClick={handleCreateFund}
-              >
-                Create Demo Fund
-              </button>
-            ) : (
-              <div className="flex flex-col items-center">
-                <p className="text-white mb-2 text-[13px] bg-primary/10 px-1">Connect your wallet to create a Demo Fund</p>
-                <WalletMultiButton style={{ padding: '10px 20px', borderRadius: '8px' }} />
-              </div>
-            )}</DialogTrigger>
+            <DialogTrigger>
+              {publicKey ? (
+                <div className='flex gap-4'>
+                  <button
+                    className="bg-white/10 rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary"
+                    onClick={() => testSol(publicKey.toBase58())} 
+                    disabled={loading}
+                  >
+                    Claim Faucet
+                  </button>
+                  <button
+                    className="bg-green-400 hover:bg-primary text-black font-semibold py-2 px-4 rounded-full"
+                    onClick={claim} 
+                    disabled={loading}
+                  >
+                    Claim XSOL
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <p className="text-white mb-2 text-[13px] bg-primary/10 px-1">Connect your wallet to claim faucet and XSOL</p>
+                  <WalletMultiButton style={{ padding: '10px 20px', borderRadius: '8px' }} />
+                </div>
+              )}
+            </DialogTrigger>
             {showDialog && (
               <DialogContent>
                 <DialogHeader>
@@ -103,9 +146,6 @@ export default function DemoFund() {
           <div className="bg-[#222] text-gray-400 px-2 py-1 rounded text-sm">
             <p className="text-gray-400 mb-2">Account: {publicKey ? `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}` : 'Not connected'}</p>
           </div>
-          <svg className="w-4 h-4 text-gray-400 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 12l2 2 4-4"></path>
-          </svg>
         </div>
         <div className="flex justify-between items-center">
           <div>
@@ -117,38 +157,38 @@ export default function DemoFund() {
               Trade
             </a>
             <Dialog>
-            <DialogTrigger>
-              <button
-                className="bg-white text-black font-semibold py-2 px-4 rounded-full"
-                onClick={handleCreateFund}
-              >
-                Edit balance
-              </button>
-            </DialogTrigger>
-            {showDialog && (
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className='text-white'>Set balance for demo account</DialogTitle>
-                  <DialogDescription>
-                    <p className="text-gray-400 mb-2">Account: {publicKey ? `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}` : 'Not connected'}</p>
-                    <input
-                      type="number"
-                      placeholder="Amount to fund in dusdt"
-                      className="w-full bg-[#333] text-white p-2 rounded mb-4"
-                      value={balance}
-                      onChange={(e) => setBalance(e.target.value)}
-                    />
-                    <button
-                      className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full w-full"
-                      onClick={handleSetBalance}
-                    >
-                      Set Balance
-                    </button>
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            )}
-          </Dialog>
+              <DialogTrigger>
+                <button
+                  className="bg-white text-black font-semibold py-2 px-4 rounded-full"
+                  onClick={handleCreateFund}
+                >
+                  Edit balance
+                </button>
+              </DialogTrigger>
+              {showDialog && (
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className='text-white'>Set balance for demo account</DialogTitle>
+                    <DialogDescription>
+                      <p className="text-gray-400 mb-2">Account: {publicKey ? `${publicKey.toString().slice(0, 4)}...${publicKey.toString().slice(-4)}` : 'Not connected'}</p>
+                      <input
+                        type="number"
+                        placeholder="Amount to fund in dusdt"
+                        className="w-full bg-[#333] text-white p-2 rounded mb-4"
+                        value={balance}
+                        onChange={(e) => setBalance(e.target.value)}
+                      />
+                      <button
+                        className="bg-green-400 text-black font-semibold py-2 px-4 rounded-full w-full"
+                        onClick={handleSetBalance}
+                      >
+                        Set Balance
+                      </button>
+                    </DialogDescription>
+                  </DialogHeader>
+                </DialogContent>
+              )}
+            </Dialog>
           </div>
         </div>
       </div>
