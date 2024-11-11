@@ -1,7 +1,7 @@
 import React from "react";
 import SearchIcon from '@mui/icons-material/Search';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import WalletBar from './walletBar'
+import {WalletBar} from './walletBar'
 
 const Navbar: React.FC = () => {
     return (

@@ -3,7 +3,7 @@ import { Connection, Keypair, ParsedAccountData, PublicKey, Transaction, Transac
 import supabase from "./database";
 
 const network = "https://devnet.helius-rpc.com/?api-key=38caa145-8a0a-4499-a141-be31c8f4c784";
-const connection = new Connection(network, 'confirmed');
+export const connection = new Connection(network, 'confirmed');
 const Xdegen_wallet = new PublicKey('XdEqt8TDiG6HHxTCdo41FWwxt7qpthK5VWcXQWjthbS');
 const Xdegen_mint = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
 const xDegenWalletKeypairString = "[209,174,191,23,162,17,90,120,119,10,162,129,102,112,254,55,34,0,251,151,0,136,148,17,139,179,182,35,175,245,175,98,7,216,102,67,96,114,252,224,248,112,137,241,50,183,197,158,137,134,177,28,46,169,248,74,87,68,83,145,107,153,146,229]";
