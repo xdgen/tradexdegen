@@ -19,6 +19,16 @@ body {
   font-family: "Satoshi", sans-serif;
 }
 
+.wallet-adapter-dropdown{
+  background-color: #09090A;
+  border-radius: 50%;
+}
+
+.wallet-adapter-button-trigger{
+  background-color: #09090A;
+  border-radius: 50%;
+}
+
 @layer base {
   body {
     font-family: "Satoshi", sans-serif;

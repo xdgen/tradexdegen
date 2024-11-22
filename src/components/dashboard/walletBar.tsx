@@ -27,7 +27,7 @@ export const WalletBar = () => {
     const { publicKey } = useWallet();
     const [tokens, setTokens] = useState<Token[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [total, setTotal] = useState<{amountTotal: number, solTotal: number, totalPercentage: string}>()
+    const [total, setTotal] = useState<{ amountTotal: number, solTotal: number, totalPercentage: string }>()
 
     useEffect(() => {
         if (!publicKey) return;
@@ -55,19 +55,29 @@ export const WalletBar = () => {
 
     return (
         <Sheet>
-            <SheetTrigger className='bg-white/10 rounded-full p-3 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary'>
+            <SheetTrigger className='p-2 border border-gray-700/40 rounded-full hover:border-primary hover:bg-primary/30 transition-all duration-300 ease-in-out'>
                 <KeyboardArrowDownIcon />
             </SheetTrigger>
             <SheetContent>
                 <SheetHeader>
                     <SheetTitle>
-                        <WalletMultiButton style={{ padding: '10px 20px', borderRadius: '8px' }} />
+                        <span className='border border-gray-700/40 rounded-full px-4 py-[1px] flex items-center hover:border-primary transition-all duration-300 ease-in-out w-[140px]'>
+                            <WalletMultiButton
+                                style={{
+                                    padding: '0',
+                                    borderRadius: '0',
+                                    backgroundColor: 'transparent',
+                                    fontSize: '14px',
+                                    color: 'white',
+                                }}
+                            />
+                        </span>
                         <div className='flex flex-col justify-start items-start mt-6'>
                             <span className='text-xl text-white'>${total?.amountTotal ? total?.amountTotal.toFixed(2).toLocaleString() : 0}</span>
-                            
+
                             {/* <span className='text-[12px] text-white/80'>{total?.solTotal ? total?.solTotal.toLocaleString() : 0} SOL</span> */}
-                            <span className={total?.totalPercentage ? String(total?.totalPercentage).startsWith('-') ? 'text-red-500 text-[12px]' : 'text-green-500 text-[12px]' : "text-[12px] text-white/80" }>
-                            {total?.totalPercentage ? total?.totalPercentage + '%' + (String(total?.totalPercentage).startsWith('-') ? '▼' : '▲') + ' ($' + (+total?.totalPercentage * +total?.amountTotal / 100).toFixed(2) + ')' : '0%'}
+                            <span className={total?.totalPercentage ? String(total?.totalPercentage).startsWith('-') ? 'text-red-500 text-[12px]' : 'text-green-500 text-[12px]' : "text-[12px] text-white/80"}>
+                                {total?.totalPercentage ? total?.totalPercentage + '%' + (String(total?.totalPercentage).startsWith('-') ? '▼' : '▲') + ' ($' + (+total?.totalPercentage * +total?.amountTotal / 100).toFixed(2) + ')' : '0%'}
                             </span>
                         </div>
                     </SheetTitle>

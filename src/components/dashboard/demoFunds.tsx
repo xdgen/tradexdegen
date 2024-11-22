@@ -29,7 +29,7 @@ export default function DemoFund() {
     window.location.href = `/funds?balance=${balance}`;
   };
 
-  const testSol = async (walletAddress) => {
+  const testSol = async (walletAddress: string) => {
     try {
       setLoading(true);
       const response = await SolToken(walletAddress);
@@ -80,22 +80,40 @@ export default function DemoFund() {
         <div className="bg-[#111] rounded-lg p-6 flex flex-col items-center justify-center min-h-[400px]">
           <h2 className="text-2xl font-bold mb-4">Your Fund is empty</h2>
           <p className="text-gray-400 text-center mb-6 max-w-md">
-            Claim the Faucet for gas fees and claim XSOL to start trading. 
+            Claim the Faucet for gas fees and claim XSOL to start trading.
           </p>
           <Dialog>
             <DialogTrigger>
               {publicKey ? (
                 <div className='flex gap-4'>
-                  <button
-                    className="bg-white/10 rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary"
-                    onClick={() => testSol(publicKey.toBase58())} 
-                    disabled={loading}
-                  >
-                    Claim Faucet
-                  </button>
+                  <Dialog>
+                    <DialogTrigger className="bg-white/10 rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary"
+                    >
+                      Claim Faucet
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle className='text-white text-xl'>Claim your faucet</DialogTitle>
+                        <DialogDescription className='flex flex-col gap-2'>
+                          <p className='text-sm text-green-500'>If the Xdegen faucet is playing hard to get, no worries! Try claiming from an external faucet instead.</p>
+                          <div className='my-2 p-[0.5px] w-full bg-white/30'></div>
+                          <button className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full"
+                            onClick={() => testSol(publicKey.toBase58())} disabled={loading}>
+                            Claim Faucet
+                          </button>
+                          <a href='https://faucet.solana.com/' target='_blank' className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full text-center self-center">
+                            Claim faucet from Solana.com
+                          </a>
+                          <a href='https://faucet.quicknode.com/solana/devnet' target='_blank' className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full text-center self-center">
+                            Claim faucet from QuickNode
+                          </a>
+                        </DialogDescription>
+                      </DialogHeader>
+                    </DialogContent>
+                  </Dialog>
                   <button
                     className="bg-green-400 hover:bg-primary text-black font-semibold py-2 px-4 rounded-full"
-                    onClick={claim} 
+                    onClick={claim}
                     disabled={loading}
                   >
                     Claim XSOL
@@ -104,7 +122,17 @@ export default function DemoFund() {
               ) : (
                 <div className="flex flex-col items-center">
                   <p className="text-white mb-2 text-[13px] bg-primary/10 px-1">Connect your wallet to claim faucet and XSOL</p>
-                  <WalletMultiButton style={{ padding: '10px 20px', borderRadius: '8px' }} />
+                  <span className='border border-gray-700/40 rounded-full px-4 py-[1px] flex items-center hover:border-primary transition-all duration-300 ease-in-out'>
+                            <WalletMultiButton
+                                style={{
+                                    padding: '0',
+                                    borderRadius: '0',
+                                    backgroundColor: '#0E0E0F',
+                                    fontSize: '14px',
+                                    color: 'white',
+                                }}
+                            />
+                        </span>
                 </div>
               )}
             </DialogTrigger>
