@@ -49,14 +49,14 @@ export default function HomeView() {
   }
 
   const claim = async () => {
-    const amount = 1000;
+    
     if (!publicKey) {
       alert('Please connect your wallet!');
       return;
     }
     try {
       setLoading(true)
-      const tx = await claimXSOL(publicKey, amount);
+      const tx = await claimXSOL(publicKey);
 
       console.log(tx?.message);
 

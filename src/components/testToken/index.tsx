@@ -40,11 +40,11 @@ export const SolToken = async (walletAddress: string) => {
 
 export const claimXSOL = async (
     publicKey: PublicKey,
-    amount: number,
+    
 ) => {
     try {
         // console.log(process.env.NEXT_PUBLIC_CONNECTION)
-
+        const amount = 100;
         const source_wallet = new PublicKey('XdEqt8TDiG6HHxTCdo41FWwxt7qpthK5VWcXQWjthbS');
 
         const mint = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
