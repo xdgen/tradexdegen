@@ -8,7 +8,6 @@ import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import SettingsIcon from '@mui/icons-material/Settings';
 import FolderIcon from '@mui/icons-material/Folder';
-
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();  // To programmatically navigate
   const location = useLocation();  // To get the current pathname
