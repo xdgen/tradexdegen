@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { createChart, ColorType } from 'lightweight-charts';
+import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent } from "../../components/ui/card";
@@ -9,16 +9,44 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 import { buy, getMeme, getSPLTokenBalance, sell } from '../testToken/swapfunction';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { toast } from 'sonner';
+import { priceDataService, PriceData } from '../../utils/priceData';
+import { Tooltip } from "../ui/tooltip";
+import { BarChartIcon, ZoomInIcon, ZoomOutIcon, CrosshairIcon, TrendingUpIcon, TrendingDownIcon, LayersIcon
+} from 'lucide-react';
 
 type StatItem = {
   label: string;
-  oppositeLabel: string;
+  oppositeLabel: string;  
   buyPercentage: number;
   sellPercentage: number;
   buyTag: number;
   sellTag: number;
   timeFrame: string;
 }
+
+type CandlestickData = {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+type ChartData = {
+  time: UTCTimestamp;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+};
+
+const formatPrice = (price: number) => price.toFixed(6);
+const formatTimestamp = (timestamp: number) => {
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString('en-US', { hour12: false });
+};
 
 export default function TradingInterface() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +61,18 @@ export default function TradingInterface() {
   const [XSol, setXSol] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [updateBal, setUpdateBal] = useState<boolean>(false);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [chartData, setChartData] = useState<CandlestickData[]>([]);
+  const [timeframe, setTimeframe] = useState<'1m' | '5m' | '15m' | '1h' | '4h' | '1d'>('5m');
+  const chartRef = useRef<IChartApi | null>(null);
+  const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [priceChange, setPriceChange] = useState<number | null>(null);
+  const [chartType, setChartType] = useState<'candles' | 'line' | 'area'>('candles');
+  const [showVolume, setShowVolume] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [indicators, setIndicators] = useState<string[]>([]);
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -43,36 +83,140 @@ export default function TradingInterface() {
   }, [location.state]);
 
   useEffect(() => {
-    if (pairData) {
-      const chart = createChart(document.getElementById('chart') as HTMLElement, {
-        width: 600,
-        height: 400,
-        layout: {
-          background: { type: ColorType.Solid, color: '#09090A' },
-          textColor: 'white',
-        },
-        grid: {
-          vertLines: { color: 'rgba(197, 203, 206, 0.1)' },
-          horzLines: { color: 'rgba(197, 203, 206, 0.1)' },
-        },
-      });
+    if (!chartContainerRef.current || !pairData) return;
 
-      const candlestickSeries = chart.addCandlestickSeries();
-      const dummyData = [
-        { time: '2023-01-01', open: 10, high: 15, low: 8, close: 12 },
-        { time: '2023-01-02', open: 12, high: 17, low: 10, close: 15 },
-      ];
-      candlestickSeries.setData(dummyData);
-
-      // Set up interval for periodic updates
-      const intervalId = setInterval(fetchData, 5000); // Update every 5 seconds
-
-      return () => {
-        chart.remove();
-        clearInterval(intervalId);
-      };
+    if (chartRef.current) {
+      try {
+        chartRef.current.remove();
+      } catch (e) {
+        console.log('Chart already disposed');
+      }
     }
-  }, [pairData]);
+
+    const chart = createChart(chartContainerRef.current, {
+      width: chartContainerRef.current.clientWidth,
+      height: 400,
+      layout: {
+        background: { type: ColorType.Solid, color: '#0E1217' },
+        textColor: '#D1D4DC',
+      },
+      grid: {
+        vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
+        horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+      },
+      timeScale: {
+        borderVisible: false,
+        timeVisible: true,
+        secondsVisible: false,
+        tickMarkFormatter: (timestamp: number) => formatTimestamp(timestamp),
+      },
+      crosshair: {
+        mode: 1,
+        vertLine: {
+          width: 1,
+          color: 'rgba(255, 255, 255, 0.4)',
+          style: 0,
+        },
+        horzLine: {
+          width: 1,
+          color: 'rgba(255, 255, 255, 0.4)',
+          style: 0,
+        },
+      },
+    });
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderVisible: false,
+      wickUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+      priceFormat: {
+        type: 'price',
+        precision: 6,
+        minMove: 0.000001,
+      },
+    });
+
+    const volumeSeries = chart.addHistogramSeries({
+      color: '#26a69a',
+      priceFormat: {
+        type: 'volume',
+      },
+      priceScaleId: '',
+    });
+
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: {
+        top: 0.8,
+        bottom: 0,
+      },
+    });
+
+    // Add price line
+    candleSeries.createPriceLine({
+      price: currentPrice || 0,
+      color: '#2962FF',
+      lineWidth: 1,
+      lineStyle: 2,
+    });
+
+    chartRef.current = chart;
+    candleSeriesRef.current = candleSeries;
+    volumeSeriesRef.current = volumeSeries;
+
+    const fetchData = async () => {
+      const data = await priceDataService.getPriceData(
+        pairData.baseToken.address,
+        timeframe
+      );
+      
+      if (data.length && candleSeriesRef.current) {
+        const transformedData = data.map(item => ({
+          time: item.time as UTCTimestamp,
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close
+        }));
+        
+        candleSeriesRef.current.setData(transformedData);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 15000);
+
+    const handleResize = () => {
+      if (chartContainerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearInterval(interval);
+      if (chartRef.current) {
+        try {
+          chartRef.current.remove();
+          chartRef.current = null;
+        } catch (e) {
+          console.log('Chart already disposed');
+        }
+      }
+    };
+  }, [pairData, timeframe]);
 
   useEffect(() => {
     const get = async () => {
@@ -212,6 +356,84 @@ export default function TradingInterface() {
     }
   };
 
+  const TimeframeSelector = () => (
+    <div className="flex gap-2 mb-4">
+      {['1m', '5m', '15m', '1h', '4h', '1d'].map((tf) => (
+        <Button
+          key={tf}
+          onClick={() => setTimeframe(tf as any)}
+          className={`px-3 py-1 ${
+            timeframe === tf ? 'bg-blue-500' : 'bg-secondary'
+          }`}
+        >
+          {tf}
+        </Button>
+      ))}
+    </div>
+  );
+
+  useEffect(() => {
+    if (!pairData?.baseToken?.address || !candleSeriesRef.current) return;
+
+    const updateChart = (data: PriceData[]) => {
+      if (!candleSeriesRef.current) return;
+      
+      const lastCandle = data[data.length - 1];
+      
+      // High-frequency update of latest candle only
+      candleSeriesRef.current.update({
+        time: lastCandle.time as UTCTimestamp,
+        open: lastCandle.open,
+        high: lastCandle.high,
+        low: lastCandle.low,
+        close: lastCandle.close
+      });
+      
+      // Full data update at lower frequency to prevent performance issues
+      if (!window.requestAnimationFrame) {
+        candleSeriesRef.current.setData(data.map(item => ({
+          time: item.time as UTCTimestamp,
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close
+        })));
+      }
+    };
+
+    // Initial setup
+    const setup = async () => {
+      const data = await priceDataService.getPriceData(
+        pairData.baseToken.address,
+        timeframe
+      );
+      if (data.length && candleSeriesRef.current) {
+        candleSeriesRef.current.setData(data.map(item => ({
+          time: item.time as UTCTimestamp,
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          close: item.close
+        })));
+      }
+    };
+
+    setup();
+    priceDataService.subscribe(pairData.baseToken.address, updateChart);
+
+    return () => {
+      priceDataService.unsubscribe(pairData.baseToken.address, updateChart);
+    };
+  }, [pairData, timeframe]);
+
+  const toggleIndicator = (indicator: string) => {
+    setIndicators(prev => 
+      prev.includes(indicator) 
+        ? prev.filter(i => i !== indicator)
+        : [...prev, indicator]
+    );
+  };
+
   if (!pairData) {
     return <div className="text-white">Loading...</div>;
   }
@@ -222,7 +444,12 @@ export default function TradingInterface() {
       <div className="flex items-start justify-start gap-10 min-h-screen bg-secondary text-white p-4">
         <div className='flex flex-col gap-4'>
           <div className='bg-background p-4 rounded-xl'>
-            <div id="chart" className="mb-4"></div>
+            <TimeframeSelector />
+            <div 
+              ref={chartContainerRef} 
+              className="w-full h-[400px]"
+              style={{ minWidth: '600px' }}
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4 bg-background p-4 rounded-lg">

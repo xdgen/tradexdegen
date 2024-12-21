@@ -1,0 +1,7 @@
+.chart-controls button {
+  @apply hover:bg-accent hover:text-accent-foreground;
+}
+
+.chart-controls button[data-state='on'] {
+  @apply bg-primary text-primary-foreground;
+} 
