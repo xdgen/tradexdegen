@@ -144,10 +144,10 @@ export default function HomeView() {
                       <DialogDescription className='flex flex-col gap-2'>
                         <p className='text-sm text-green-500'>If the Xdegen faucet is playing hard to get, no worries! Try claiming from an external faucet instead.</p>
                         <div className='my-2 p-[0.5px] w-full bg-white/30'></div>
-                        <button className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full"
-                          onClick={() => testSol(publicKey.toBase58())} disabled={loading}>
+                        {/* <button className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full"
+                          onClick={() => testSol(publicKey.toBase58())} disabled>
                           Claim Faucet
-                        </button>
+                        </button> */}
                         <a href='https://faucet.solana.com/' target='_blank' className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full text-center self-center">
                           Claim faucet from Solana.com
                         </a>
