@@ -5,7 +5,7 @@ import { cn } from "../../lib/utils"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
-const Tooltip = TooltipPrimitive.Root
+const TooltipRoot = TooltipPrimitive.Root
 
 const TooltipTrigger = TooltipPrimitive.Trigger
 
@@ -25,4 +25,18 @@ const TooltipContent = React.forwardRef<
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+interface CustomTooltipProps {
+  content: string;
+  children: React.ReactNode;
+}
+
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ content, children }) => {
+  return (
+    <div className="tooltip-container">
+      {children}
+      <span className="tooltip-text">{content}</span>
+    </div>
+  );
+};
+
+export { TooltipRoot, TooltipTrigger, TooltipContent, TooltipProvider, CustomTooltip }
