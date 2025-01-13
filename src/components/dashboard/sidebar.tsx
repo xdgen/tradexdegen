@@ -7,6 +7,7 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import SettingsIcon from '@mui/icons-material/Settings';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import FolderIcon from '@mui/icons-material/Folder';
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();  // To programmatically navigate
@@ -36,6 +37,12 @@ const Sidebar: React.FC = () => {
       icon: LocalAtmIcon,
       href: "/coming",
       label: "Analysis",
+      pro: true,
+    },
+    {
+      icon: MonetizationOnIcon,
+      href: "/pnl",
+      label: "Pnl",
       pro: true,
     },
 

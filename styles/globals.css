@@ -5,3 +5,8 @@
 .chart-controls button[data-state='on'] {
   @apply bg-primary text-primary-foreground;
 } 
+
+.wui-connect-button{
+  background-color: #DAC222!;
+  border-radius: 50%;
+}

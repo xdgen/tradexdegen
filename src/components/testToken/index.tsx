@@ -39,7 +39,7 @@ export const SolToken = async (walletAddress: string) => {
 }
 
 export const claimXSOL = async (
-    publicKey: PublicKey,
+publicKey: PublicKey, amount: number,
     
 ) => {
     try {
