@@ -503,7 +503,13 @@ export default function TradingInterface() {
         `Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
       );
       toast.success(
-        `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `
+        `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `, 
+        {
+          action: {
+            label: "View Transaction",
+            onClick: () => window.open(`https://solscan.io/tx/${buyNow.signature}?cluster=devnet`, "_blank")
+          }
+        }
       );
     } catch (error) {
       toast.warning("Transaction might have failed");
@@ -542,7 +548,13 @@ export default function TradingInterface() {
         `Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
       );
       toast.success(
-        `Swapped ${orderAmount} ${pairData?.baseToken.symbol} to ${xSolAmount} XSol `
+        `Swapped ${orderAmount} ${pairData?.baseToken.symbol} to ${xSolAmount} XSol `,
+        {
+          action: {
+            label: "View Transaction",
+            onClick: () => window.open(`https://solscan.io/tx/${sellNow.signature}?cluster=devnet`, "_blank")
+          }
+        }
       );
     } catch (error) {
       toast.warning("Transaction might have failed");

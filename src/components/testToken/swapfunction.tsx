@@ -75,12 +75,11 @@ export const claimXSOL = async (
         transaction.feePayer = source_wallet;
         transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
         // Assuming you have the source wallet's keypair
-        const sourceWalletKeypairString = "[209,174,191,23,162,17,90,120,119,10,162,129,102,112,254,55,34,0,251,151,0,136,148,17,139,179,182,35,175,245,175,98,7,216,102,67,96,114,252,224,248,112,137,241,50,183,197,158,137,134,177,28,46,169,248,74,87,68,83,145,107,153,146,229]";
-        if (!sourceWalletKeypairString) {
+        if (!xDegenWalletKeypairString) {
             throw new Error('Source wallet keypair not found');
         }
         const sourceWalletKeypair = Keypair.fromSecretKey(
-            Uint8Array.from(JSON.parse(sourceWalletKeypairString))
+            Uint8Array.from(JSON.parse(xDegenWalletKeypairString))
         );
         transaction.sign(sourceWalletKeypair);
 
@@ -125,7 +124,7 @@ export const buy = async (
         Xdegen_wallet,
         userPubKey,
         Xdegen_mint,
-        userPubKey
+        Xdegen_wallet
     )
 
     const tokenfromXDegen = await SPLTransfer(
@@ -133,14 +132,14 @@ export const buy = async (
         userPubKey,
         Xdegen_wallet,
         Xdegen_tokenMint,
-        userPubKey
+        Xdegen_wallet
     )
 
     const transaction = new Transaction()
     transaction.add(...XSOLFromUser)
     transaction.add(...tokenfromXDegen)
 
-    transaction.feePayer = userPubKey;
+    transaction.feePayer = Xdegen_wallet;
     transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     transaction.partialSign(xDegenWalletKeypair);
 
@@ -181,7 +180,7 @@ export const sell = async (
         userPubKey,
         Xdegen_wallet,
         Xdegen_mint,
-        userPubKey
+        Xdegen_wallet
     )
 
     const tokenToXDegen = await SPLTransfer(
@@ -189,14 +188,14 @@ export const sell = async (
         Xdegen_wallet,
         userPubKey,
         Xdegen_tokenMint,
-        userPubKey
+        Xdegen_wallet
     )
 
     const transaction = new Transaction()
     transaction.add(...XSOLToUser)
     transaction.add(...tokenToXDegen)
 
-    transaction.feePayer = userPubKey;
+    transaction.feePayer = Xdegen_wallet;
     transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     transaction.partialSign(xDegenWalletKeypair);
 

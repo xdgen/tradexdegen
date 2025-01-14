@@ -39,7 +39,7 @@ export const SolToken = async (walletAddress: string) => {
 }
 
 export const claimXSOL = async (
-publicKey: PublicKey, amount: number,
+publicKey: PublicKey,
     
 ) => {
     try {
@@ -111,7 +111,7 @@ publicKey: PublicKey, amount: number,
         transaction.sign(sourceWalletKeypair);
 
         const txid = await connection.sendRawTransaction(transaction.serialize());
-        const msg = `Transaction sent: ${txid}`;
+        const msg = txid;
         return { message: msg };
 
 

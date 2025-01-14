@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/skeleton";
 import AppKit from "./reownwallet";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { Button } from "@mui/material";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -64,20 +65,27 @@ export default function HomeView() {
     try {
       setLoading(true);
       if (!publicKey) return;
-      const tx = await claimXSOL(publicKey, amount); // Changed "xsol" to 0 to match number type
+      const tx = await claimXSOL(publicKey); 
 
+      if (!tx){
+        throw new Error("failed");
+      }
       console.log(tx?.message);
-
-      toast.success("Successful");
+      toast.success("Successful", {
+        action: {
+          label: "View Transaction",
+          onClick: () => window.open(`https://solscan.io/tx/${tx.message}?cluster=devnet`, "_blank")
+        }
+      });
       return { message: tx?.message || "success" };
     } catch (error) {
       toast.warning("Transaction might have failed");
       console.error(error);
-      if (error instanceof Error) {
-        throw new Error(error.message || "failed");
-      } else {
-        throw new Error("failed");
-      }
+      // if (error instanceof Error) {
+      //   throw new Error(error.message || "failed");
+      // } else {
+      //   throw new Error("failed");
+      // }
     } finally {
       setLoading(false);
     }
