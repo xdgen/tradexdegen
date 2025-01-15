@@ -32,6 +32,8 @@ import {
   LayersIcon,
 } from "lucide-react";
 import { Tooltip } from "@mui/material";
+import { PublicKey } from "@solana/web3.js";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 type StatItem = {
   label: string;
@@ -256,6 +258,7 @@ export default function TradingInterface() {
   const [showVolume, setShowVolume] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [indicators, setIndicators] = useState<string[]>([]);
+  const { address } = useAppKitAccount();
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -477,13 +480,23 @@ export default function TradingInterface() {
   };
 
   const handleBuy = async () => {
-    if (!publicKey) {
+    if (!publicKey && !address) {
       alert("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true);
       toast.success("Processing ... ");
+      let walletPublicKey: PublicKey | undefined;
+      if (publicKey){
+        walletPublicKey = publicKey;
+      } else if (address){
+        walletPublicKey = new PublicKey(address);
+      }
+      
+      if (!walletPublicKey) {
+        throw new Error("Please connect your wallet!");
+      }
       console.log(pairData.baseToken);
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const tokenAmount =
@@ -492,7 +505,7 @@ export default function TradingInterface() {
       const tokenMint = pairData.baseToken.address;
       const buyNow = await buy(
         +orderAmount,
-        publicKey,
+        walletPublicKey,
         tokenName,
         tokenMint,
         tokenAmount,
@@ -525,20 +538,30 @@ export default function TradingInterface() {
   };
 
   const handleSell = async () => {
-    if (!publicKey) {
-      toast.warning("Please connect your wallet!");
+    if (!publicKey && !address) {
+      alert("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true);
       toast.success("Processing ... ");
+      let walletPublicKey: PublicKey | undefined;
+      if (publicKey){
+        walletPublicKey = publicKey;
+      } else if (address){
+        walletPublicKey = new PublicKey(address);
+      }
+      
+      if (!walletPublicKey) {
+        throw new Error("Please connect your wallet!");
+      }
       console.log(pairData.baseToken);
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const xSolAmount =
         +orderAmount * parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const sellNow = await sell(
         xSolAmount,
-        publicKey,
+        walletPublicKey,
         pairData.baseToken.address,
         +orderAmount,
         sendTransaction

@@ -14,6 +14,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import AppKit from "./reownwallet";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from "@mui/material";
+import { PublicKey } from "@solana/web3.js";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -23,7 +24,7 @@ export default function HomeView() {
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const { isConnected } = useAppKitAccount();
+  const { isConnected, address } = useAppKitAccount();
   
   if (!isConnected) {
     console.log("Wallet not connected");
@@ -56,16 +57,24 @@ export default function HomeView() {
   };
 
   const claim = async () => {
-    const amount = 500;
 
-    if (!publicKey && !isConnected) {
+    if (!publicKey && !address) {
       toast.warning("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true);
-      if (!publicKey) return;
-      const tx = await claimXSOL(publicKey); 
+      let walletPublicKey: PublicKey | undefined;
+      if (publicKey){
+        walletPublicKey = publicKey;
+      } else if (address){
+        walletPublicKey = new PublicKey(address);
+      }
+      
+      if (!walletPublicKey) {
+        throw new Error("Please connect your wallet!");
+      }
+      const tx = await claimXSOL(walletPublicKey); 
 
       if (!tx){
         throw new Error("failed");
@@ -79,7 +88,7 @@ export default function HomeView() {
       });
       return { message: tx?.message || "success" };
     } catch (error) {
-      toast.warning("Transaction might have failed");
+      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.error(error);
       // if (error instanceof Error) {
       //   throw new Error(error.message || "failed");
