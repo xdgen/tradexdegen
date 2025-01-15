@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { getTokens } from "../testToken/tokenBalance";
 import { useWallet } from "@solana/wallet-adapter-react";
 import AppKit from "./reownwallet";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 interface Token {
   name: string;
@@ -32,15 +33,18 @@ export const WalletBar = () => {
     solTotal: number;
     totalPercentage: string;
   }>();
+  const { address } = useAppKitAccount();
 
   useEffect(() => {
-    if (!publicKey) return;
+    const walletPublicKey = publicKey ? publicKey.toBase58() : address;
+
+    if (!walletPublicKey) return;
 
     const fetchTokenBalances = async () => {
       console.log("Fetching token...");
       setIsLoading(true);
       try {
-        const tokens_fetch = await getTokens(publicKey.toBase58());
+        const tokens_fetch = await getTokens(walletPublicKey);
         if (Array.isArray(tokens_fetch)) {
           setTokens(tokens_fetch || []);
         } else {
@@ -59,7 +63,7 @@ export const WalletBar = () => {
     };
 
     fetchTokenBalances();
-  }, [publicKey]);
+  }, [publicKey, address]);
 
   return (
     <Sheet>
@@ -126,7 +130,7 @@ export const WalletBar = () => {
               </div>
 
               <div className="space-y-4">
-                {!publicKey
+                {!publicKey && !address
                   ? "Connect Wallet"
                   : tokens.map((token, index) => (
                       <div

@@ -100,7 +100,7 @@ export const buy = async (
     tokenName: string,
     tokenMint: string,
     tokenAmount: number,
-    sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
+    // sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
 ) => {
 
     const { data, error } = await supabase
@@ -139,17 +139,18 @@ export const buy = async (
     transaction.add(...XSOLFromUser)
     transaction.add(...tokenfromXDegen)
 
+    const latestBlockHash = await connection.getLatestBlockhash({ commitment: "confirmed" });
+    transaction.recentBlockhash = latestBlockHash.blockhash;
     transaction.feePayer = Xdegen_wallet;
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
     transaction.partialSign(xDegenWalletKeypair);
-
+    console.log("transaction")
     // Send the transaction
-    const signature = await sendTransaction(transaction, connection);
+    // const signature = await sendTransaction(transaction, connection);
 
     // Confirm the transaction
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
 
-    return { signature, confirmation };
+    return transaction;
 }
 
 export const sell = async (
@@ -157,7 +158,7 @@ export const sell = async (
     userPubKey: PublicKey,
     tokenMint: string,
     tokenAmount: number,
-    sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
+    // sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
 ) => {
     const { data, error } = await supabase
         .from('meme')
@@ -200,12 +201,12 @@ export const sell = async (
     transaction.partialSign(xDegenWalletKeypair);
 
     // Send the transaction
-    const signature = await sendTransaction(transaction, connection);
+    // const signature = await sendTransaction(transaction, connection);
 
-    // Confirm the transaction
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    // // Confirm the transaction
+    // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
 
-    return { signature, confirmation };
+    return transaction;
 }
 
 export const SPLTransfer = async (

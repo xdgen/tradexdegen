@@ -33,7 +33,10 @@ import {
 } from "lucide-react";
 import { Tooltip } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
+import type { Provider } from '@reown/appkit-adapter-solana/react';
+
 
 type StatItem = {
   label: string;
@@ -171,9 +174,8 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("candles")}
-          className={`hover:bg-white/10 ${
-            chartType === "candles" ? "bg-white/20" : ""
-          }`}
+          className={`hover:bg-white/10 ${chartType === "candles" ? "bg-white/20" : ""
+            }`}
         >
           <BarChartIcon className="h-4 w-4" />
         </Button>
@@ -184,9 +186,8 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("line")}
-          className={`hover:bg-white/10 ${
-            chartType === "line" ? "bg-white/20" : ""
-          }`}
+          className={`hover:bg-white/10 ${chartType === "line" ? "bg-white/20" : ""
+            }`}
         >
           <TrendingUpIcon className="h-4 w-4" />
         </Button>
@@ -197,9 +198,8 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("area")}
-          className={`hover:bg-white/10 ${
-            chartType === "area" ? "bg-white/20" : ""
-          }`}
+          className={`hover:bg-white/10 ${chartType === "area" ? "bg-white/20" : ""
+            }`}
         >
           <TrendingDownIcon className="h-4 w-4" />
         </Button>
@@ -259,6 +259,8 @@ export default function TradingInterface() {
   const [showGrid, setShowGrid] = useState(true);
   const [indicators, setIndicators] = useState<string[]>([]);
   const { address } = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider<Provider>('solana');
+  const { connection } = useAppKitConnection();
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -407,7 +409,9 @@ export default function TradingInterface() {
   useEffect(() => {
     const get = async () => {
       if (!pairData) return;
-      if (!publicKey) {
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+
+      if (!walletPublicKey) {
         setXSol("0");
         setXTokenMint("0");
         return;
@@ -416,12 +420,12 @@ export default function TradingInterface() {
         console.log("checking balance");
         const Xdegen_mint = "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce";
         const getXdegenTokenMint = await getMeme(pairData.baseToken.address);
-        const xXSol = await getSPLTokenBalance(publicKey, Xdegen_mint);
+        const xXSol = await getSPLTokenBalance(walletPublicKey, Xdegen_mint);
         if (!getXdegenTokenMint) {
           setXTokenMint("0");
         } else {
           const xXToken = await getSPLTokenBalance(
-            publicKey,
+            walletPublicKey,
             getXdegenTokenMint
           );
           setXTokenMint(xXToken);
@@ -436,7 +440,7 @@ export default function TradingInterface() {
       }
     };
     get();
-  }, [pairData, publicKey, updateBal]);
+  }, [pairData, publicKey, updateBal, address]);
 
   const fetchData = async () => {
     if (!pairData) return;
@@ -480,20 +484,11 @@ export default function TradingInterface() {
   };
 
   const handleBuy = async () => {
-    if (!publicKey && !address) {
-      alert("Please connect your wallet!");
-      return;
-    }
     try {
       setLoading(true);
       toast.success("Processing ... ");
-      let walletPublicKey: PublicKey | undefined;
-      if (publicKey){
-        walletPublicKey = publicKey;
-      } else if (address){
-        walletPublicKey = new PublicKey(address);
-      }
-      
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
@@ -509,23 +504,29 @@ export default function TradingInterface() {
         tokenName,
         tokenMint,
         tokenAmount,
-        sendTransaction
       );
+
+      if (!connection) return;
+      // Send the transaction
+      const signature = await walletProvider.sendTransaction(buyNow, connection);
+
+      // Confirm the transaction
+      // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
       console.log(buyNow);
       console.log(
         `Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
       );
       toast.success(
-        `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `, 
+        `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `,
         {
           action: {
             label: "View Transaction",
-            onClick: () => window.open(`https://solscan.io/tx/${buyNow.signature}?cluster=devnet`, "_blank")
+            onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
           }
         }
       );
     } catch (error) {
-      toast.warning("Transaction might have failed");
+      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
     } finally {
       if (updateBal) {
@@ -538,20 +539,11 @@ export default function TradingInterface() {
   };
 
   const handleSell = async () => {
-    if (!publicKey && !address) {
-      alert("Please connect your wallet!");
-      return;
-    }
     try {
       setLoading(true);
       toast.success("Processing ... ");
-      let walletPublicKey: PublicKey | undefined;
-      if (publicKey){
-        walletPublicKey = publicKey;
-      } else if (address){
-        walletPublicKey = new PublicKey(address);
-      }
-      
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
@@ -564,8 +556,15 @@ export default function TradingInterface() {
         walletPublicKey,
         pairData.baseToken.address,
         +orderAmount,
-        sendTransaction
+        // sendTransaction
       );
+      if (!connection) return;
+      // Send the transaction
+      const signature = await walletProvider.sendTransaction(sellNow, connection);
+
+      // Confirm the transaction
+      // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    
       console.log(sellNow);
       console.log(
         `Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
@@ -575,12 +574,12 @@ export default function TradingInterface() {
         {
           action: {
             label: "View Transaction",
-            onClick: () => window.open(`https://solscan.io/tx/${sellNow.signature}?cluster=devnet`, "_blank")
+            onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
           }
         }
       );
     } catch (error) {
-      toast.warning("Transaction might have failed");
+      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
     } finally {
       if (updateBal) {
@@ -617,9 +616,8 @@ export default function TradingInterface() {
         <Button
           key={tf}
           onClick={() => setTimeframe(tf as any)}
-          className={`px-3 py-1 ${
-            timeframe === tf ? "bg-blue-500" : "bg-secondary"
-          }`}
+          className={`px-3 py-1 ${timeframe === tf ? "bg-blue-500" : "bg-secondary"
+            }`}
         >
           {tf}
         </Button>
