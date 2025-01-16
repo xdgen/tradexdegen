@@ -18,7 +18,7 @@ const metadata = {
   name: 'Xdegen',
   description: 'Master crypto trading with confidence',
   url: 'https://xdegen.xyz', // origin must match your domain & subdomain
-  icons: ['https://avatars.githubusercontent.com/u/179229932']
+  icons: ['https://imgur.com/a/oktpbml']
 }
 
 // 3. Create modal
