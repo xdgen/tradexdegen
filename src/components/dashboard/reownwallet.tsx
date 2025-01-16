@@ -2,6 +2,8 @@ import { createAppKit } from '@reown/appkit/react'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
 import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets'
+// import dotenv from 'dotenv';
+// dotenv.config();
 
 // 0. Set up Solana Adapter
 // const solanaWeb3JsAdapter = new SolanaAdapter({
@@ -12,6 +14,10 @@ import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adap
 // })
 
 const projectId = import.meta.env.VITE_PUBLIC_PROJECT_ID;
+
+if (!projectId) {
+  throw new Error("Project Id is not defined.");
+}
 
 // 2. Create a metadata object - optional
 const metadata = {
