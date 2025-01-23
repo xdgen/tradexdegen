@@ -53,7 +53,7 @@ export default function DemoFund() {
   };
 
   const claim = async () => {
-    const amount = 500;
+    const amount = 100;
     if (!publicKey) {
       alert("Please connect your wallet!");
       return;
@@ -114,7 +114,7 @@ export default function DemoFund() {
                           </p>
                           <div className="my-2 p-[0.5px] w-full bg-white/30"></div>
                           <button
-                            className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full"
+                            className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full hidden"
                             onClick={() => publicKey && testSol(publicKey.toBase58())}
                             disabled={loading}
                           >
