@@ -14,6 +14,7 @@ import XIcon from "@mui/icons-material/X";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import {
   buy,
+  connection,
   getMeme,
   getSPLTokenBalance,
   sell,
@@ -260,7 +261,6 @@ export default function TradingInterface() {
   const [indicators, setIndicators] = useState<string[]>([]);
   const { address } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<Provider>('solana');
-  const { connection } = useAppKitConnection();
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -484,9 +484,9 @@ export default function TradingInterface() {
   };
 
   const handleBuy = async () => {
+    setLoading(true);
+    const loadingId = toast.loading("Processing ... ");
     try {
-      setLoading(true);
-      toast.success("Processing ... ");
       const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
@@ -506,7 +506,6 @@ export default function TradingInterface() {
         tokenAmount,
       );
 
-      if (!connection) return;
       // Send the transaction
       const signature = await walletProvider.sendTransaction(buyNow, connection);
 
@@ -535,13 +534,14 @@ export default function TradingInterface() {
         setUpdateBal(true);
       }
       setLoading(false);
+      toast.dismiss(loadingId);
     }
   };
 
   const handleSell = async () => {
+    setLoading(true);
+    const loadingId = toast.loading("Processing ... ");
     try {
-      setLoading(true);
-      toast.success("Processing ... ");
       const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
@@ -564,7 +564,7 @@ export default function TradingInterface() {
 
       // Confirm the transaction
       // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-    
+
       console.log(sellNow);
       console.log(
         `Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
@@ -588,6 +588,7 @@ export default function TradingInterface() {
         setUpdateBal(true);
       }
       setLoading(false);
+      toast.dismiss(loadingId);
     }
   };
 
