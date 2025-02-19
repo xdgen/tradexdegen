@@ -1,12 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import {
-  createChart,
-  ColorType,
-  IChartApi,
-  ISeriesApi,
-  UTCTimestamp,
-} from "lightweight-charts";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent } from "../../components/ui/card";
@@ -21,7 +14,6 @@ import {
 } from "../testToken/swapfunction";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
-import { priceDataService, PriceData } from "../../utils/priceData";
 import { CustomTooltip } from "../ui/tooltip";
 import {
   BarChartIcon,
@@ -38,6 +30,11 @@ import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
 import type { Provider } from '@reown/appkit-adapter-solana/react';
 
+declare global {
+  interface Window {
+    TradingView: any;
+  }
+}
 
 type StatItem = {
   label: string;
@@ -49,189 +46,113 @@ type StatItem = {
   timeFrame: string;
 };
 
-type CandlestickData = {
-  time: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-};
+const BIRDEYE_API_KEY = "";
 
-type ChartData = {
-  time: UTCTimestamp;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume?: number;
-};
-
-const formatPrice = (price: number) => price.toFixed(6);
-const formatTimestamp = (timestamp: number) => {
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString("en-US", { hour12: false });
-};
-
-const ChartControls = () => {
-  const [showGrid, setShowGrid] = useState(true);
-  const chartRef = useRef<IChartApi | null>(null);
-  const [chartType, setChartType] = useState<"candles" | "line" | "area">(
-    "candles"
-  );
-  const [showVolume, setShowVolume] = useState(true);
-
-  const handleZoomIn = () => {
-    if (!chartRef.current) return;
-
-    const timeScale = chartRef.current.timeScale();
-    const visibleRange = timeScale.getVisibleRange();
-    if (visibleRange) {
-      const from = (visibleRange.from as UTCTimestamp) * 1000;
-      const to = (visibleRange.to as UTCTimestamp) * 1000;
-
-      const newRange = {
-        from: (from + (to - from) * 0.1) / 1000,
-        to: (to - (to - from) * 0.1) / 1000,
-      };
-
-      timeScale.setVisibleRange({
-        from: newRange.from as UTCTimestamp,
-        to: newRange.to as UTCTimestamp,
-      });
-    }
+async function fetchBirdEyeOHLCV(address: string, timeframe: string) {
+  const timeMap: { [key: string]: string } = {
+    "1m": "1m",
+    "5m": "5m",
+    "15m": "15m",
+    "1h": "1H",
+    "4h": "4H",
+    "1d": "1D",
   };
 
-  const handleZoomOut = () => {
-    if (!chartRef.current) return;
-
-    const timeScale = chartRef.current.timeScale();
-    const visibleRange = timeScale.getVisibleRange();
-    if (visibleRange) {
-      const from = (visibleRange.from as UTCTimestamp) * 1000;
-      const to = (visibleRange.to as UTCTimestamp) * 1000;
-
-      const newRange = {
-        from: (from - (to - from) * 0.1) / 1000,
-        to: (to + (to - from) * 0.1) / 1000,
-      };
-
-      timeScale.setVisibleRange({
-        from: newRange.from as UTCTimestamp,
-        to: newRange.to as UTCTimestamp,
-      });
-    }
-  };
-
-  const toggleGrid = () => {
-    if (!chartRef.current) return;
-
-    chartRef.current.applyOptions({
-      grid: {
-        vertLines: { visible: !showGrid },
-        horzLines: { visible: !showGrid },
+  const response = await fetch(
+    `https://public-api.birdeye.so/defi/ohlcv?address=${address}&type=${timeMap[timeframe]}`,
+    {
+      headers: {
+        "X-API-KEY": BIRDEYE_API_KEY,
       },
-    });
-    setShowGrid(!showGrid);
-  };
-
-  const toggleChartType = (type: "candles" | "line" | "area") => {
-    setChartType(type);
-  };
-
-  const toggleVolume = () => {
-    setShowVolume((prevShowVolume) => !prevShowVolume);
-    // Add logic to toggle volume visibility on the chart if needed
-  };
-
-  return (
-    <div className="flex items-center gap-2 mb-4 p-2 bg-background/50 rounded-lg">
-      <CustomTooltip content="">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleZoomIn}
-          className="hover:bg-white/10"
-        >
-          <ZoomInIcon className="h-4 w-4" />
-        </Button>
-      </CustomTooltip>
-
-      <CustomTooltip content="">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleZoomOut}
-          className="hover:bg-white/10"
-        >
-          <ZoomOutIcon className="h-4 w-4" />
-        </Button>
-      </CustomTooltip>
-
-      <div className="w-[1px] h-6 bg-white/20 mx-2" />
-
-      <CustomTooltip content="">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => toggleChartType("candles")}
-          className={`hover:bg-white/10 ${chartType === "candles" ? "bg-white/20" : ""
-            }`}
-        >
-          <BarChartIcon className="h-4 w-4" />
-        </Button>
-      </CustomTooltip>
-
-      <CustomTooltip content="">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => toggleChartType("line")}
-          className={`hover:bg-white/10 ${chartType === "line" ? "bg-white/20" : ""
-            }`}
-        >
-          <TrendingUpIcon className="h-4 w-4" />
-        </Button>
-      </CustomTooltip>
-
-      <CustomTooltip content="">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => toggleChartType("area")}
-          className={`hover:bg-white/10 ${chartType === "area" ? "bg-white/20" : ""
-            }`}
-        >
-          <TrendingDownIcon className="h-4 w-4" />
-        </Button>
-      </CustomTooltip>
-
-      <div className="w-[1px] h-6 bg-white/20 mx-2" />
-
-      <Tooltip title="Toggle Volume">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleVolume}
-          className={`hover:bg-white/10 ${showVolume ? "bg-white/20" : ""}`}
-        >
-          <LayersIcon className="h-4 w-4" />
-        </Button>
-      </Tooltip>
-
-      <Tooltip title="Toggle Grid">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleGrid}
-          className={`hover:bg-white/10 ${showGrid ? "bg-white/20" : ""}`}
-        >
-          <CrosshairIcon className="h-4 w-4" />
-        </Button>
-      </Tooltip>
-    </div>
+    }
   );
-};
+  
+  if (!response.ok) throw new Error('Failed to fetch OHLCV data');
+  return response.json();
+}
+
+function TradingViewChart({ symbol, timeframe }: { symbol: string; timeframe: string }) {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const widgetRef = useRef<any>(null);
+
+  useEffect(() => {
+    const loadScript = () => {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/tv.js';
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    };
+
+    const initializeChart = async () => {
+      await loadScript();
+
+      if (!chartContainerRef.current) return;
+
+      widgetRef.current = new window.TradingView.widget({
+        container: chartContainerRef.current,
+        symbol: `RAYDIUM:${symbol}/SOL`,
+        interval: timeframe,
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        toolbar_bg: "#0E1217",
+        enable_publishing: false,
+        hide_side_toolbar: false,
+        allow_symbol_change: false,
+        studies: ["MASimple@tv-basicstudies"],
+        datafeed: {
+          onReady: (callback: any) => callback({ supports_search: true, supports_group_request: false }),
+          searchSymbols: () => {},
+          resolveSymbol: (symbolName: string, onResolve: any) => {
+            onResolve({
+              name: symbolName,
+              type: "crypto",
+              session: "24x7",
+              timezone: "Etc/UTC",
+              ticker: symbolName,
+              minmov: 1,
+              pricescale: 1000000,
+              has_intraday: true,
+              supported_resolutions: ["1", "5", "15", "60", "240", "1D"],
+            });
+          },
+          getBars: async (symbolInfo: any, resolution: string, from: number, to: number, onResult: any) => {
+            try {
+              const data = await fetchBirdEyeOHLCV(symbolInfo.ticker.split('/')[0], resolution);
+              const bars = data.data.items.map((item: any) => ({
+                time: item.unixTime * 1000,
+                open: item.open,
+                high: item.high,
+                low: item.low,
+                close: item.close,
+                volume: item.volume,
+              }));
+              
+              onResult(bars, { noData: !bars.length });
+            } catch (error) {
+              onResult([], { noData: true });
+            }
+          },
+        },
+      });
+    };
+
+    initializeChart();
+
+    return () => {
+      if (widgetRef.current) {
+        widgetRef.current.remove();
+        widgetRef.current = null;
+      }
+    };
+  }, [symbol, timeframe]);
+
+  return <div ref={chartContainerRef} className="w-full h-[600px]" />;
+}
 
 export default function TradingInterface() {
   const { id } = useParams<{ id: string }>();
@@ -246,19 +167,7 @@ export default function TradingInterface() {
   const [XSol, setXSol] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [updateBal, setUpdateBal] = useState<boolean>(false);
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [chartData, setChartData] = useState<CandlestickData[]>([]);
-  const [timeframe, setTimeframe] = useState<
-    "1m" | "5m" | "15m" | "1h" | "4h" | "1d"
-  >("5m");
-  const chartRef = useRef<IChartApi | null>(null);
-  const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [priceChange, setPriceChange] = useState<number | null>(null);
-  const [showVolume, setShowVolume] = useState(true);
-  const [showGrid, setShowGrid] = useState(true);
-  const [indicators, setIndicators] = useState<string[]>([]);
+  const [timeframe, setTimeframe] = useState<"1m" | "5m" | "15m" | "1h" | "4h" | "1d">("5m");
   const { address } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider<Provider>('solana');
 
@@ -271,142 +180,6 @@ export default function TradingInterface() {
   }, [location.state]);
 
   useEffect(() => {
-    if (!chartContainerRef.current || !pairData) return;
-
-    if (chartRef.current) {
-      try {
-        chartRef.current.remove();
-      } catch (e) {
-        console.log("Chart already disposed");
-      }
-    }
-
-    const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
-      layout: {
-        background: { type: ColorType.Solid, color: "#0E1217" },
-        textColor: "#D1D4DC",
-      },
-      grid: {
-        vertLines: { color: "rgba(42, 46, 57, 0.6)" },
-        horzLines: { color: "rgba(42, 46, 57, 0.6)" },
-      },
-      rightPriceScale: {
-        borderVisible: false,
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
-        },
-      },
-      timeScale: {
-        borderVisible: false,
-        timeVisible: true,
-        secondsVisible: false,
-        tickMarkFormatter: (timestamp: number) => formatTimestamp(timestamp),
-      },
-      crosshair: {
-        mode: 1,
-        vertLine: {
-          width: 1,
-          color: "rgba(255, 255, 255, 0.4)",
-          style: 0,
-        },
-        horzLine: {
-          width: 1,
-          color: "rgba(255, 255, 255, 0.4)",
-          style: 0,
-        },
-      },
-    });
-
-    const candleSeries = chart.addCandlestickSeries({
-      upColor: "#26a69a",
-      downColor: "#ef5350",
-      borderVisible: false,
-      wickUpColor: "#26a69a",
-      wickDownColor: "#ef5350",
-      priceFormat: {
-        type: "price",
-        precision: 6,
-        minMove: 0.000001,
-      },
-    });
-
-    const volumeSeries = chart.addHistogramSeries({
-      color: "#26a69a",
-      priceFormat: {
-        type: "volume",
-      },
-      priceScaleId: "",
-    });
-
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0.8,
-        bottom: 0,
-      },
-    });
-
-    // Add price line
-    candleSeries.createPriceLine({
-      price: currentPrice || 0,
-      color: "#2962FF",
-      lineWidth: 1,
-      lineStyle: 2,
-    });
-
-    chartRef.current = chart;
-    candleSeriesRef.current = candleSeries;
-    volumeSeriesRef.current = volumeSeries;
-
-    const fetchData = async () => {
-      const data = await priceDataService.getPriceData(
-        pairData.baseToken.address,
-        timeframe
-      );
-
-      if (data.length && candleSeriesRef.current) {
-        const transformedData = data.map((item) => ({
-          time: item.time as UTCTimestamp,
-          open: item.open,
-          high: item.high,
-          low: item.low,
-          close: item.close,
-        }));
-
-        candleSeriesRef.current.setData(transformedData);
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 15000);
-
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearInterval(interval);
-      if (chartRef.current) {
-        try {
-          chartRef.current.remove();
-          chartRef.current = null;
-        } catch (e) {
-          console.log("Chart already disposed");
-        }
-      }
-    };
-  }, [pairData, timeframe]);
-
-  useEffect(() => {
     const get = async () => {
       if (!pairData) return;
       const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
@@ -417,7 +190,6 @@ export default function TradingInterface() {
         return;
       }
       try {
-        console.log("checking balance");
         const Xdegen_mint = "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce";
         const getXdegenTokenMint = await getMeme(pairData.baseToken.address);
         const xXSol = await getSPLTokenBalance(walletPublicKey, Xdegen_mint);
@@ -442,23 +214,6 @@ export default function TradingInterface() {
     get();
   }, [pairData, publicKey, updateBal, address]);
 
-  const fetchData = async () => {
-    if (!pairData) return;
-
-    try {
-      // Replace with your actual API endpoint
-      const response = await fetch(
-        `https://api.example.com/trading-stats/${pairData.pairAddress}`
-      );
-      const data = await response.json();
-
-      setPrice(data.price);
-      updateStats(data);
-    } catch (error) {
-      console.error("Failed to fetch trading statistics:", error);
-    }
-  };
-
   const updateStats = (data: any) => {
     const timeFrames = ["m5", "h1", "h6", "h24"];
     const newStats = timeFrames.map((tf) => {
@@ -479,6 +234,7 @@ export default function TradingInterface() {
     });
     setStats(newStats);
   };
+
   const setOption = (option: "Buy" | "Sell") => {
     setSwap(option);
   };
@@ -492,7 +248,6 @@ export default function TradingInterface() {
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-      console.log(pairData.baseToken);
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const tokenAmount =
         +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
@@ -506,15 +261,8 @@ export default function TradingInterface() {
         tokenAmount,
       );
 
-      // Send the transaction
       const signature = await walletProvider.sendTransaction(buyNow, connection);
 
-      // Confirm the transaction
-      // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-      console.log(buyNow);
-      console.log(
-        `Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
-      );
       toast.success(
         `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `,
         {
@@ -528,11 +276,7 @@ export default function TradingInterface() {
       toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
     } finally {
-      if (updateBal) {
-        setUpdateBal(false);
-      } else {
-        setUpdateBal(true);
-      }
+      setUpdateBal(prev => !prev);
       setLoading(false);
       toast.dismiss(loadingId);
     }
@@ -547,7 +291,6 @@ export default function TradingInterface() {
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-      console.log(pairData.baseToken);
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const xSolAmount =
         +orderAmount * parseFloat(parseFloat(pairData.priceNative).toFixed(9));
@@ -556,19 +299,10 @@ export default function TradingInterface() {
         walletPublicKey,
         pairData.baseToken.address,
         +orderAmount,
-        // sendTransaction
       );
-      if (!connection) return;
-      // Send the transaction
+      
       const signature = await walletProvider.sendTransaction(sellNow, connection);
 
-      // Confirm the transaction
-      // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-
-      console.log(sellNow);
-      console.log(
-        `Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
-      );
       toast.success(
         `Swapped ${orderAmount} ${pairData?.baseToken.symbol} to ${xSolAmount} XSol `,
         {
@@ -582,11 +316,7 @@ export default function TradingInterface() {
       toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
     } finally {
-      if (updateBal) {
-        setUpdateBal(false);
-      } else {
-        setUpdateBal(true);
-      }
+      setUpdateBal(prev => !prev);
       setLoading(false);
       toast.dismiss(loadingId);
     }
@@ -617,80 +347,13 @@ export default function TradingInterface() {
         <Button
           key={tf}
           onClick={() => setTimeframe(tf as any)}
-          className={`px-3 py-1 ${timeframe === tf ? "bg-blue-500" : "bg-secondary"
-            }`}
+          className={`px-3 py-1 ${timeframe === tf ? "bg-blue-500" : "bg-secondary"}`}
         >
           {tf}
         </Button>
       ))}
     </div>
   );
-
-  useEffect(() => {
-    if (!pairData?.baseToken?.address || !candleSeriesRef.current) return;
-
-    const updateChart = (data: PriceData[]) => {
-      if (!candleSeriesRef.current) return;
-
-      const lastCandle = data[data.length - 1];
-
-      // High-frequency update of latest candle only
-      candleSeriesRef.current.update({
-        time: lastCandle.time as UTCTimestamp,
-        open: lastCandle.open,
-        high: lastCandle.high,
-        low: lastCandle.low,
-        close: lastCandle.close,
-      });
-
-      // Full data update at lower frequency to prevent performance issues
-      if (!window.requestAnimationFrame) {
-        candleSeriesRef.current.setData(
-          data.map((item) => ({
-            time: item.time as UTCTimestamp,
-            open: item.open,
-            high: item.high,
-            low: item.low,
-            close: item.close,
-          }))
-        );
-      }
-    };
-
-    // Initial setup
-    const setup = async () => {
-      const data = await priceDataService.getPriceData(
-        pairData.baseToken.address,
-        timeframe
-      );
-      if (data.length && candleSeriesRef.current) {
-        candleSeriesRef.current.setData(
-          data.map((item) => ({
-            time: item.time as UTCTimestamp,
-            open: item.open,
-            high: item.high,
-            low: item.low,
-            close: item.close,
-          }))
-        );
-      }
-    };
-
-    setup();
-    priceDataService.subscribe(pairData.baseToken.address, updateChart);
-
-    return () => {
-      priceDataService.unsubscribe(pairData.baseToken.address, updateChart);
-    };
-  }, [pairData, timeframe]);
-
-  const toggleIndicator = (indicator: string) => {
-    setIndicators((prev) =>
-      prev.includes(indicator)
-        ? prev.filter((i) => i !== indicator)
-        : [...prev, indicator]
-    );
-  };
 
   if (!pairData) {
     return <div className="text-white">Loading...</div>;
@@ -702,18 +365,17 @@ export default function TradingInterface() {
         {pairData.baseToken.symbol}/{pairData.quoteToken.symbol}
       </h1>
       <div className="flex items-start justify-start gap-10 min-h-screen bg-secondary text-white p-4">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 flex-1">
           <div className="bg-background p-4 rounded-xl">
             <div className="flex flex-col justify-start items-start">
               <TimeframeSelector />
-              <ChartControls />
             </div>
-            <div
-              ref={chartContainerRef}
-              className="w-full h-[400px]"
-              style={{ minWidth: "600px" }}
+            <TradingViewChart 
+              symbol={pairData.baseToken.address} 
+              timeframe={timeframe} 
             />
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4 bg-background p-4 rounded-lg">
               <span className="flex space-x-2 mb-4">
@@ -817,6 +479,7 @@ export default function TradingInterface() {
             </Card>
           </div>
         </div>
+
         <div className="p-4 rounded-xl bg-background w-full">
           <div className="py-6">
             <div className="flex space-x-4 mb-4 w-full">
@@ -842,7 +505,7 @@ export default function TradingInterface() {
                     (amount, index) => (
                       <Button
                         key={index}
-                        className="flex text-[12px] justify-center w-auto  items-center gap-2 bg-secondary rounded-full hover:bg-white/10 cursor-pointer"
+                        className="flex text-[12px] justify-center w-auto items-center gap-2 bg-secondary rounded-full hover:bg-white/10 cursor-pointer"
                         onClick={() => setOrderAmount(amount.toString())}
                         disabled={loading}
                       >
@@ -853,9 +516,7 @@ export default function TradingInterface() {
                   )}
                 </div>
               </div>
-            ) : (
-              ""
-            )}
+            ) : ""}
             <Input
               type="number"
               placeholder={
@@ -889,7 +550,6 @@ export default function TradingInterface() {
                   ? `XDEGEN SOL: ${XSol}`
                   : `XDEGEN ${pairData.baseToken.symbol}: ${XTokenMint}`}
               </p>
-              {/* <p className='text-white/70 text-[12px]'>Once you click on Quick buy, your transaction is sent immediately.</p> */}
             </div>
           </div>
           <div className="border-t border-secondary py-4 flex gap-4">
@@ -914,16 +574,4 @@ export default function TradingInterface() {
       </div>
     </div>
   );
-}
-
-function setChartType(type: string) {
-  throw new Error("Function not implemented.");
-}
-
-function setShowVolume(arg0: boolean) {
-  throw new Error("Function not implemented.");
-}
-
-function setShowGrid(arg0: boolean) {
-  throw new Error("Function not implemented.");
 }
