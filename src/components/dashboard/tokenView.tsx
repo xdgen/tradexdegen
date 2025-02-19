@@ -46,7 +46,7 @@ type StatItem = {
   timeFrame: string;
 };
 
-const BIRDEYE_API_KEY = "";
+const BIRDEYE_API_KEY = "ebee0e3e547f46b0ac60b9e0c73ecc45";
 
 async function fetchBirdEyeOHLCV(address: string, timeframe: string) {
   const timeMap: { [key: string]: string } = {
