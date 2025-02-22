@@ -15,6 +15,8 @@ import AppKit from "./reownwallet";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
+import { useNavigate } from "react-router-dom";
+
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -23,8 +25,14 @@ export default function HomeView() {
   const { publicKey } = useWallet();
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { isConnected, address } = useAppKitAccount();
+
+
+    const handleRowClick = (pair: any) => {
+      navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
+    };
   
   if (!isConnected) {
     console.log("Wallet not connected");
@@ -289,7 +297,7 @@ export default function HomeView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {pairs.map((pair, index) => (
-          <div key={index} className="bg-[#111] rounded-lg p-4 flex flex-col">
+          <div onClick={() => handleRowClick(pair)} key={index} className="bg-[#111] cursor-pointer rounded-lg p-4 flex flex-col">
             <div className="flex items-center mb-2">
               <div className="flex items-center">
                 <img
