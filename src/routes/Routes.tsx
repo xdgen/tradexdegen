@@ -10,13 +10,10 @@ import SettingPage from "../Pages/setting/settings";
 import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
 
-
 const appRoutes = [
   {
     path: "/",
-    element: (
-      <Landing />
-    ),
+    element: <Landing />,
   },
   {
     path: "/home",
@@ -37,7 +34,9 @@ const appRoutes = [
   {
     path: "/swap",
     element: (
-      <SwapPage />
+      <Layout>
+        <SwapPage />
+      </Layout>
     ),
   },
   {
@@ -88,7 +87,6 @@ const appRoutes = [
       </Layout>
     ),
   },
-
 ];
 
 export default appRoutes;

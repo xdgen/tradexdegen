@@ -11,6 +11,7 @@ import {
   getMeme,
   getSPLTokenBalance,
   sell,
+  Xdegen_mint,
 } from "../testToken/swapfunction";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
@@ -27,7 +28,7 @@ import {
 import { Tooltip } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
-import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
+// import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
 import type { Provider } from '@reown/appkit-adapter-solana/react';
 
 declare global {
@@ -254,6 +255,7 @@ export default function TradingInterface() {
       const tokenName = pairData.baseToken.symbol;
       const tokenMint = pairData.baseToken.address;
       const buyNow = await buy(
+        Xdegen_mint,
         +orderAmount,
         walletPublicKey,
         tokenName,
@@ -574,4 +576,16 @@ export default function TradingInterface() {
       </div>
     </div>
   );
+}
+
+function setChartType(type: string) {
+  throw new Error("Function not implemented.");
+}
+
+function setShowVolume(arg0: boolean) {
+  throw new Error("Function not implemented.");
+}
+
+function setShowGrid(arg0: boolean) {
+  throw new Error("Function not implemented.");
 }

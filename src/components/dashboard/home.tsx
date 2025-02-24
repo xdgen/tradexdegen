@@ -15,6 +15,8 @@ import AppKit from "./reownwallet";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
+import { useNavigate } from "react-router-dom";
+import Failed from "../../../public/images/fail.svg";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -23,9 +25,14 @@ export default function HomeView() {
   const { publicKey } = useWallet();
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const { isConnected, address } = useAppKitAccount();
-  
+
+  const handleRowClick = (pair: any) => {
+    navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
+  };
+
   if (!isConnected) {
     console.log("Wallet not connected");
   } else {
@@ -35,7 +42,7 @@ export default function HomeView() {
   // const handleCreateFund = () => {
   //   setShowDialog(true)
   // }
-  
+
   const handleSetBalance = () => {
     window.location.href = `/funds?balance=${balance}`;
   };
@@ -57,7 +64,6 @@ export default function HomeView() {
   };
 
   const claim = async () => {
-
     if (!publicKey && !address) {
       toast.warning("Please connect your wallet!");
       return;
@@ -65,30 +71,36 @@ export default function HomeView() {
     try {
       setLoading(true);
       let walletPublicKey: PublicKey | undefined;
-      if (publicKey){
+      if (publicKey) {
         walletPublicKey = publicKey;
-      } else if (address){
+      } else if (address) {
         walletPublicKey = new PublicKey(address);
       }
-      
+
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-      const tx = await claimXSOL(walletPublicKey); 
+      const tx = await claimXSOL(walletPublicKey);
 
-      if (!tx){
+      if (!tx) {
         throw new Error("failed");
       }
       console.log(tx?.message);
       toast.success("Successful", {
         action: {
           label: "View Transaction",
-          onClick: () => window.open(`https://solscan.io/tx/${tx.message}?cluster=devnet`, "_blank")
-        }
+          onClick: () =>
+            window.open(
+              `https://solscan.io/tx/${tx.message}?cluster=devnet`,
+              "_blank"
+            ),
+        },
       });
       return { message: tx?.message || "success" };
     } catch (error) {
-      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
+      toast.warning(
+        error instanceof Error ? error.message : "Transaction might have failed"
+      );
       console.error(error);
       // if (error instanceof Error) {
       //   throw new Error(error.message || "failed");
@@ -112,7 +124,7 @@ export default function HomeView() {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to load pairs");
+        setError("Failed to load pairs, check your internet!");
         setLoading(false);
       }
     };
@@ -124,7 +136,7 @@ export default function HomeView() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full bg-background" />
+          <Skeleton key={i} className="h-32 w-full bg-gray-200/20" />
         ))}
       </div>
     );
@@ -139,7 +151,12 @@ export default function HomeView() {
     return `${days}d`;
   };
 
-  if (error) return <div className="text-white p-4">{error}</div>;
+  if (error) return (
+    <div className="w-full h-full flex flex-col items-center justify-center text-white">
+      <img src={Failed} alt="Failed" className="md:h-[300px] md:w-[300px] mb-4" />
+      <p>{error}</p>
+    </div>
+  );
 
   return (
     <div className="bg-black text-white min-h-screen p-6">
@@ -289,7 +306,11 @@ export default function HomeView() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {pairs.map((pair, index) => (
-          <div key={index} className="bg-[#111] rounded-lg p-4 flex flex-col">
+          <div
+            onClick={() => handleRowClick(pair)}
+            key={index}
+            className="bg-[#111] cursor-pointer rounded-lg p-4 flex flex-col"
+          >
             <div className="flex items-center mb-2">
               <div className="flex items-center">
                 <img

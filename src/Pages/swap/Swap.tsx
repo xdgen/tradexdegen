@@ -1,14 +1,14 @@
-import React from 'react'
-import SwapBar from '../../components/swapping/swapbar'
-import Swap from '../../components/swapping/swap'
+import React from "react";
+import { SwapInterface } from "../../components/swaps/swapInterface";
+import Navbar from "../../components/dashboard/navbar";
 
 const SwapPage: React.FC = () => {
   return (
     <div>
-        <SwapBar />
-        <Swap />
+      <Navbar />
+        <SwapInterface />
     </div>
-  )
-}
+  );
+};
 
-export default SwapPage
+export default SwapPage;

@@ -2,41 +2,103 @@ import { cn } from "../../lib/utils";
 import React from "react";
 import { useNavigate, useLocation } from 'react-router-dom'; // For routing
 
-import CompassCalibrationIcon from '@mui/icons-material/CompassCalibration';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import LocalAtmIcon from '@mui/icons-material/LocalAtm';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import FolderIcon from '@mui/icons-material/Folder';
+import WalletIcon from '@mui/icons-material/Wallet';
 const Sidebar: React.FC = () => {
-  const navigate = useNavigate();  // To programmatically navigate
-  const location = useLocation();  // To get the current pathname
+  const navigate = useNavigate(); // To programmatically navigate
+  const location = useLocation(); // To get the current pathname
 
   // Define routes
-  const routes = [
+  // const routes = [
+  //   {
+  //     icon: CompassCalibrationIcon,
+  //     href: "/home",
+  //     label: "Home",
+  //     pro: false,
+  //   },
+  //   {
+  //     icon: AnalyticsIcon,
+  //     href: "/funds",
+  //     label: "Set balance",
+  //     pro: true,
+  //   },
+  //   {
+  //     icon: ManageAccountsIcon,
+  //     href: "/trade",
+  //     label: "Trade",
+  //     pro: true,
+  //   },
+  //   {
+  //     icon: LocalAtmIcon,
+  //     href: "/coming",
+  //     label: "Analysis",
+  //     pro: true,
+  //   },
+  //   {
+  //     icon: MonetizationOnIcon,
+  //     href: "/pnl",
+  //     label: "Pnl",
+  //     pro: true,
+  //   },
+
+  //   {
+  //     icon: SettingsIcon,
+  //     href: "/settings",
+  //     label: "Settings ",
+  //     pro: false,
+  //   },
+  //   {
+  //     icon: FolderIcon,
+  //     href: "https://xdegen.gitbook.io/docs",
+  //     label: "Docs",
+  //     pro: true,
+  //   },
+  // ];
+
+  // Function to handle navigation
+  // const onNavigate = (url: string, pro: boolean) => {
+  //   // Optional: Handle 'pro' check or authentication logic
+  //   navigate(url);  // Navigate to the new URL
+  // };
+
+  // Define the route type
+  type Route = {
+    icon: React.ComponentType;
+    href: string;
+    label: string;
+    pro: boolean;
+    external?: boolean; // Optional external flag
+  };
+
+  // Define routes using the new type
+  const routes: Route[] = [
     {
-      icon: CompassCalibrationIcon,
+      icon: DashboardIcon,
       href: "/home",
-      label: "Home",
+      label: "Dashboard",
       pro: false,
     },
     {
-      icon: AnalyticsIcon,
+      icon: WalletIcon,
       href: "/funds",
-      label: "Set balance",
+      label: "Set Faucet",
       pro: true,
     },
     {
-      icon: ManageAccountsIcon,
+      icon: CandlestickChartIcon,
       href: "/trade",
       label: "Trade",
       pro: true,
     },
     {
-      icon: LocalAtmIcon,
-      href: "/coming",
-      label: "Analysis",
+      icon: SwapVertIcon,
+      href: "/swap",
+      label: "Swap",
       pro: true,
     },
     {
@@ -45,48 +107,54 @@ const Sidebar: React.FC = () => {
       label: "Pnl",
       pro: true,
     },
-
     {
       icon: SettingsIcon,
       href: "/settings",
-      label: "Settings ",
+      label: "Settings",
       pro: false,
     },
     {
       icon: FolderIcon,
-      href: "/docs",
+      href: "https://xdegen.gitbook.io/docs", // External link
       label: "Docs",
       pro: true,
+      external: true, // This is now recognized as valid
     },
   ];
 
   // Function to handle navigation
-  const onNavigate = (url: string, pro: boolean) => {
-    // Optional: Handle 'pro' check or authentication logic
-    navigate(url);  // Navigate to the new URL
+  const onNavigate = (url: string, pro: boolean, external?: boolean) => {
+    if (external) {
+      window.open(url, "_blank", "noopener noreferrer"); // Open external links in a new tab
+    } else {
+      navigate(url); // Navigate internally
+    }
   };
 
+  
   return (
     <div className="bg-background">
       <div className="w-60 py-10">
         <div className="space-y-2">
           <div className="w-28 pl-4 mb-10">
-            <a href='/' className=''>
-              <img src='/images/gen.svg' alt="logo" className="w-full h-full" />
+            <a href="/" className="">
+              <img src="/images/gen.svg" alt="logo" className="w-full h-full" />
             </a>
           </div>
           {routes.map((route) => (
             <div
-              key={route.href} // Ensure each item has a unique key
-              onClick={() => onNavigate(route.href, route.pro)}
+              key={route.href}
+              onClick={() => onNavigate(route.href, route.pro, route.external)}
               className={cn(
                 "text-white/60 text-sm group p-3 w-full cursor-pointer hover:text-white hover:bg-secondary transition font-medium",
-                location.pathname === route.href && "bg-secondary text-white border-r-4 border-primary" // Apply active class based on current route
+                location.pathname === route.href &&
+                  !route.external &&
+                  "bg-secondary text-white border-r-4 border-primary"
               )}
             >
               <div className="flex flex-row gap-y-2 justify-start items-center flex-1 w-full gap-2">
-                <route.icon className="h-5 w-5" /> {/* Render the icon */}
-                {route.label} {/* Render the label */}
+                <route.icon />
+                {route.label}
               </div>
             </div>
           ))}
