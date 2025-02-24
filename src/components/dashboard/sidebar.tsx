@@ -2,13 +2,13 @@ import { cn } from "../../lib/utils";
 import React from "react";
 import { useNavigate, useLocation } from 'react-router-dom'; // For routing
 
-import CompassCalibrationIcon from '@mui/icons-material/CompassCalibration';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import LocalAtmIcon from '@mui/icons-material/LocalAtm';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import FolderIcon from '@mui/icons-material/Folder';
+import WalletIcon from '@mui/icons-material/Wallet';
 const Sidebar: React.FC = () => {
   const navigate = useNavigate(); // To programmatically navigate
   const location = useLocation(); // To get the current pathname
@@ -68,7 +68,7 @@ const Sidebar: React.FC = () => {
 
   // Define the route type
   type Route = {
-    icon: React.ElementType;
+    icon: React.ComponentType;
     href: string;
     label: string;
     pro: boolean;
@@ -78,27 +78,27 @@ const Sidebar: React.FC = () => {
   // Define routes using the new type
   const routes: Route[] = [
     {
-      icon: CompassCalibrationIcon,
+      icon: DashboardIcon,
       href: "/home",
-      label: "Home",
+      label: "Dashboard",
       pro: false,
     },
     {
-      icon: AnalyticsIcon,
+      icon: WalletIcon,
       href: "/funds",
-      label: "Set balance",
+      label: "Set Faucet",
       pro: true,
     },
     {
-      icon: ManageAccountsIcon,
+      icon: CandlestickChartIcon,
       href: "/trade",
       label: "Trade",
       pro: true,
     },
     {
-      icon: LocalAtmIcon,
-      href: "/coming",
-      label: "Analysis",
+      icon: SwapVertIcon,
+      href: "/swap",
+      label: "Swap",
       pro: true,
     },
     {
@@ -153,7 +153,7 @@ const Sidebar: React.FC = () => {
               )}
             >
               <div className="flex flex-row gap-y-2 justify-start items-center flex-1 w-full gap-2">
-                <route.icon className="h-5 w-5" />
+                <route.icon />
                 {route.label}
               </div>
             </div>

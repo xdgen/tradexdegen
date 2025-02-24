@@ -63,7 +63,7 @@ export const WalletBar = () => {
     };
 
     fetchTokenBalances();
-  }, [publicKey, address]);
+  }, [publicKey, address, setTokens, setTotal]);
 
   return (
     <Sheet>

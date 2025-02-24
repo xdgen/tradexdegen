@@ -18,6 +18,7 @@ import {
   getMeme,
   getSPLTokenBalance,
   sell,
+  Xdegen_mint,
 } from "../testToken/swapfunction";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
@@ -31,12 +32,13 @@ import {
   TrendingUpIcon,
   TrendingDownIcon,
   LayersIcon,
-  AlignHorizontalDistributeCenter,
 } from "lucide-react";
 import { Tooltip } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
-import type { Provider } from "@reown/appkit-adapter-solana/react";
+// import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
+import type { Provider } from '@reown/appkit-adapter-solana/react';
+
 
 type StatItem = {
   label: string;
@@ -174,9 +176,8 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("candles")}
-          className={`hover:bg-white/10 ${
-            chartType === "candles" ? "bg-white/20" : ""
-          }`}
+          className={`hover:bg-white/10 ${chartType === "candles" ? "bg-white/20" : ""
+            }`}
         >
           <BarChartIcon className="h-4 w-4" />
         </Button>
@@ -187,9 +188,8 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("line")}
-          className={`hover:bg-white/10 ${
-            chartType === "line" ? "bg-white/20" : ""
-          }`}
+          className={`hover:bg-white/10 ${chartType === "line" ? "bg-white/20" : ""
+            }`}
         >
           <TrendingUpIcon className="h-4 w-4" />
         </Button>
@@ -199,10 +199,9 @@ const ChartControls = () => {
         <Button
           variant="ghost"
           size="icon"
-          // onClick={() => toggleChartType("area")}
-          className={`hover:bg-white/10 ${
-            chartType === "area" ? "bg-white/20" : ""
-          }`}
+          onClick={() => toggleChartType("area")}
+          className={`hover:bg-white/10 ${chartType === "area" ? "bg-white/20" : ""
+            }`}
         >
           <TrendingDownIcon className="h-4 w-4" />
         </Button>
@@ -229,16 +228,6 @@ const ChartControls = () => {
           className={`hover:bg-white/10 ${showGrid ? "bg-white/20" : ""}`}
         >
           <CrosshairIcon className="h-4 w-4" />
-        </Button>
-      </Tooltip>
-      <Tooltip title="Change Chart Type">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleGrid}
-          className={`hover:bg-white/10 ${showGrid ? "bg-white/20" : ""}`}
-        >
-          <AlignHorizontalDistributeCenter className="h-4 w-4" />
         </Button>
       </Tooltip>
     </div>
@@ -272,9 +261,8 @@ export default function TradingInterface() {
   const [showGrid, setShowGrid] = useState(true);
   const [indicators, setIndicators] = useState<string[]>([]);
   const { address } = useAppKitAccount();
-  const { walletProvider } = useAppKitProvider<Provider>("solana");
+  const { walletProvider } = useAppKitProvider<Provider>('solana');
 
-  console.log(pairData, "date");
   useEffect(() => {
     if (location.state && location.state.pairData) {
       setPairData(location.state.pairData);
@@ -297,7 +285,6 @@ export default function TradingInterface() {
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
       height: 400,
-
       layout: {
         background: { type: ColorType.Solid, color: "#0E1217" },
         textColor: "#D1D4DC",
@@ -369,6 +356,7 @@ export default function TradingInterface() {
       lineWidth: 1,
       lineStyle: 2,
     });
+
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
@@ -422,11 +410,7 @@ export default function TradingInterface() {
   useEffect(() => {
     const get = async () => {
       if (!pairData) return;
-      const walletPublicKey = publicKey
-        ? publicKey
-        : address
-        ? new PublicKey(address)
-        : undefined;
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
         setXSol("0");
@@ -504,11 +488,7 @@ export default function TradingInterface() {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
     try {
-      const walletPublicKey = publicKey
-        ? publicKey
-        : address
-        ? new PublicKey(address)
-        : undefined;
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
@@ -520,18 +500,16 @@ export default function TradingInterface() {
       const tokenName = pairData.baseToken.symbol;
       const tokenMint = pairData.baseToken.address;
       const buyNow = await buy(
+        Xdegen_mint,
         +orderAmount,
         walletPublicKey,
         tokenName,
         tokenMint,
-        tokenAmount
+        tokenAmount,
       );
 
       // Send the transaction
-      const signature = await walletProvider.sendTransaction(
-        buyNow,
-        connection
-      );
+      const signature = await walletProvider.sendTransaction(buyNow, connection);
 
       // Confirm the transaction
       // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
@@ -544,18 +522,12 @@ export default function TradingInterface() {
         {
           action: {
             label: "View Transaction",
-            onClick: () =>
-              window.open(
-                `https://solscan.io/tx/${signature}?cluster=devnet`,
-                "_blank"
-              ),
-          },
+            onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
+          }
         }
       );
     } catch (error) {
-      toast.warning(
-        error instanceof Error ? error.message : "Transaction might have failed"
-      );
+      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
     } finally {
       if (updateBal) {
@@ -572,11 +544,7 @@ export default function TradingInterface() {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
     try {
-      const walletPublicKey = publicKey
-        ? publicKey
-        : address
-        ? new PublicKey(address)
-        : undefined;
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
@@ -589,15 +557,12 @@ export default function TradingInterface() {
         xSolAmount,
         walletPublicKey,
         pairData.baseToken.address,
-        +orderAmount
+        +orderAmount,
         // sendTransaction
       );
       if (!connection) return;
       // Send the transaction
-      const signature = await walletProvider.sendTransaction(
-        sellNow,
-        connection
-      );
+      const signature = await walletProvider.sendTransaction(sellNow, connection);
 
       // Confirm the transaction
       // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
@@ -611,18 +576,12 @@ export default function TradingInterface() {
         {
           action: {
             label: "View Transaction",
-            onClick: () =>
-              window.open(
-                `https://solscan.io/tx/${signature}?cluster=devnet`,
-                "_blank"
-              ),
-          },
+            onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
+          }
         }
       );
     } catch (error) {
-      toast.warning(
-        error instanceof Error ? error.message : "Transaction might have failed"
-      );
+      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
     } finally {
       if (updateBal) {
@@ -660,9 +619,8 @@ export default function TradingInterface() {
         <Button
           key={tf}
           onClick={() => setTimeframe(tf as any)}
-          className={`px-3 py-1 ${
-            timeframe === tf ? "bg-blue-500" : "bg-secondary"
-          }`}
+          className={`px-3 py-1 ${timeframe === tf ? "bg-blue-500" : "bg-secondary"
+            }`}
         >
           {tf}
         </Button>
@@ -745,7 +703,6 @@ export default function TradingInterface() {
       <h1 className="text-2xl font-bold mb-4 text-white p-4">
         {pairData.baseToken.symbol}/{pairData.quoteToken.symbol}
       </h1>
-      {/* <TradingViewWidget /> */}
       <div className="flex items-start justify-start gap-10 min-h-screen bg-secondary text-white p-4">
         <div className="flex flex-col gap-4">
           <div className="bg-background p-4 rounded-xl">
