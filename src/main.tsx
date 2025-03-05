@@ -56,17 +56,17 @@ const App = () => {
               left: 0,
               width: "100%",
               height: "100%",
-              backgroundColor: "grey",
-              opacity: "0.9",
+              backgroundColor: "rgba(10, 30, 10, 0.8)",
+              opacity: "0.7",
               color: "white",
               textAlign: "center",
               padding: "10px",
-              fontWeight: "bold",
+              fontWeight: "900",
               zIndex: 1000,
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              fontSize: "24px",
+              fontSize: "30px",
             }}
           >
             Screen size too small. Please use a larger screen for the best
