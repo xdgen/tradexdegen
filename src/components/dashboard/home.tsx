@@ -114,6 +114,28 @@ export default function HomeView() {
   };
 
   useEffect(() => {
+    const walletAddress = publicKey?.toString() || address
+    
+    const handleWalletConnect = async () => {
+      if (!walletAddress) return
+      
+      const { error } = await supabase
+        .from('wallets')
+        .insert({ address: walletAddress })
+        .onConflict('address')
+        .ignore()
+
+      if (error) {
+        console.error('Wallet save error:', error)
+      } else {
+        console.log('New wallet stored:', walletAddress)
+      }
+    }
+
+    handleWalletConnect()
+  }, [publicKey, address])
+
+  useEffect(() => {
     const fetchPairs = async () => {
       try {
         const response = await fetch(
@@ -121,7 +143,7 @@ export default function HomeView() {
         );
         if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
-        setPairs(data.pairs.slice(0, 4)); // Limit to the first 4 pairs
+        setPairs(data.pairs.slice(0, 4));
         setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
