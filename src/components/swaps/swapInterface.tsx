@@ -17,7 +17,6 @@ import {
   buy,
   getMeme,
   getSPLTokenBalance,
-  sell,
 } from "../testToken/swapfunction";
 import { Tokenn } from "./tokenSelectorModal";
 

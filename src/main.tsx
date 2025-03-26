@@ -27,12 +27,23 @@ import "./index.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import appRoutes from "./routes/Routes";
 import { Toaster } from "../src/components/ui/sonner";
-import SolanaWalletProvider from "./provider/WalletProvider ";;
+// import SolanaWalletProvider from "./provider/WalletProvider ";
+import '@rainbow-me/rainbowkit/styles.css';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
+import {
+  QueryClientProvider,
+  QueryClient,
+} from "@tanstack/react-query";
+import config from "./lib/wagmi";
+// import { createClient } from '@supabase/supabase-js'
 
 const router = createBrowserRouter(appRoutes);
+const queryClient = new QueryClient();
 
 const App = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1023);
+  
 
   useEffect(() => {
     const handleResize = () => {
@@ -44,11 +55,12 @@ const App = () => {
   }, []);
 
   return (
-    <React.StrictMode>
-      <SolanaWalletProvider>
-        <RouterProvider router={router} />
-        <Toaster position="top-right" />
-        {isSmallScreen && (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          <RouterProvider router={router} />
+          <Toaster position="top-right" />
+          {isSmallScreen && (
           <div
             style={{
               position: "fixed",
@@ -73,9 +85,15 @@ const App = () => {
             experience.
           </div>
         )}
-      </SolanaWalletProvider>
-    </React.StrictMode>
+        </RainbowKitProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+// Move StrictMode to wrap the entire app render
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

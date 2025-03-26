@@ -1,7 +1,6 @@
 import React from "react";
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { WalletBar } from './walletBar'
-import AppKit from "./reownwallet";
 
 const Navbar: React.FC = () => {
 
@@ -17,19 +16,7 @@ const Navbar: React.FC = () => {
 
             {/* Right section with settings and notification */}
             <div className="flex gap-4 items-center">
-                <div className='border border-gray-700/40 rounded-full px-4 flex items-center hover:border-primary transition-all duration-300 ease-in-out'>
-                    {/* <WalletMultiButton
-                        style={{
-                            margin: '1px 0',
-                            padding: '0',
-                            borderRadius: '0',
-                            backgroundColor: '#0E0E0F',
-                            fontSize: '14px',
-                            color: 'white',
-                        }}
-                    /> */}
-                </div>
-                    <AppKit />
+                <ConnectButton />
                 <WalletBar />
             </div>
         </nav>

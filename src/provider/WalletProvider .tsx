@@ -1,40 +1,25 @@
-import React, { FC, useMemo } from 'react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import {
-    SolflareWalletAdapter,
-} from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
+import React, { FC } from 'react';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import config from '../lib/wagmi';
 
-import '@solana/wallet-adapter-react-ui/styles.css';
-
-interface SolanaWalletProps {
+interface WalletProviderProps {
     children: React.ReactNode;
 }
 
-const SolanaWalletProvider: FC<SolanaWalletProps> = ({ children }) => {
-    // Network configuration
-    const network = WalletAdapterNetwork.Devnet; // Use Devnet for testing, switch to Mainnet when needed.
+const queryClient = new QueryClient();
 
-    // Solana endpoint to connect
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-
-    // Available wallets for Solana
-    const wallets = useMemo(
-        () => [
-            new SolflareWalletAdapter(),  // Include Solflare Wallet
-        ],
-        []
-    );
-
+const WalletProvider: FC<WalletProviderProps> = ({ children }) => {
     return (
-        <ConnectionProvider endpoint={endpoint}>
-            <WalletProvider wallets={wallets} autoConnect>
-                <WalletModalProvider>{children}</WalletModalProvider>
-            </WalletProvider>
-        </ConnectionProvider>
+        <WagmiProvider config={config}>
+            <QueryClientProvider client={queryClient}>
+                <RainbowKitProvider>
+                    {children}
+                </RainbowKitProvider>
+            </QueryClientProvider>
+        </WagmiProvider>
     );
 };
 
-export default SolanaWalletProvider;
+export default WalletProvider;
