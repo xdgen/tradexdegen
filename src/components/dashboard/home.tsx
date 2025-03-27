@@ -121,9 +121,7 @@ export default function HomeView() {
       
       const { error } = await supabase
         .from('wallets')
-        .insert({ address: walletAddress })
-        .onConflict('address')
-        .ignore()
+        .upsert({ address: walletAddress }, { onConflict: 'address' })
 
       if (error) {
         console.error('Wallet save error:', error)

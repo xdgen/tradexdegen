@@ -36,7 +36,7 @@ import {
 import { Tooltip } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
-// import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
+import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
 import type { Provider } from '@reown/appkit-adapter-solana/react';
 
 
