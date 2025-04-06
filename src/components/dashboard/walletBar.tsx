@@ -7,12 +7,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/sheet";
-// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getTokens } from "../testToken/tokenBalance";
 import { useWallet } from "@solana/wallet-adapter-react";
-import AppKit from "./reownwallet";
-import { useAppKitAccount } from "@reown/appkit/react";
 
 interface Token {
   name: string;
@@ -25,7 +22,7 @@ interface Token {
 }
 
 export const WalletBar = () => {
-  const { publicKey } = useWallet();
+  const { publicKey, connected } = useWallet();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [total, setTotal] = useState<{
@@ -33,37 +30,52 @@ export const WalletBar = () => {
     solTotal: number;
     totalPercentage: string;
   }>();
-  const { address } = useAppKitAccount();
 
-  useEffect(() => {
-    const walletPublicKey = publicKey ? publicKey.toBase58() : address;
+  const fetchTokenBalances = async () => {
+    if (!publicKey) return;
 
-    if (!walletPublicKey) return;
+    const walletPublicKey = publicKey.toBase58();
+    console.log("Fetching token balances...");
+    setIsLoading(true);
 
-    const fetchTokenBalances = async () => {
-      console.log("Fetching token...");
-      setIsLoading(true);
-      try {
-        const tokens_fetch = await getTokens(walletPublicKey);
-        if (Array.isArray(tokens_fetch)) {
-          setTokens(tokens_fetch || []);
-        } else {
-          setTokens(tokens_fetch.tokens || []);
-          setTotal({
-            amountTotal: tokens_fetch.totalValue,
-            solTotal: tokens_fetch.totalValueInSol,
-            totalPercentage: tokens_fetch.totalPercentage.toString(),
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch token balances:", error);
-      } finally {
-        setIsLoading(false);
+    try {
+      const tokens_fetch = await getTokens(walletPublicKey);
+      if (Array.isArray(tokens_fetch)) {
+        setTokens(tokens_fetch || []);
+      } else {
+        setTokens(tokens_fetch.tokens || []);
+        setTotal({
+          amountTotal: tokens_fetch.totalValue,
+          solTotal: tokens_fetch.totalValueInSol,
+          totalPercentage: tokens_fetch.totalPercentage.toString(),
+        });
       }
+    } catch (error) {
+      console.error("Failed to fetch token balances:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch balances when the wallet connects or after a transaction
+  useEffect(() => {
+    if (connected) {
+      fetchTokenBalances();
+    }
+  }, [publicKey, connected]);
+
+  // Auto-reload wallet data after a transaction
+  useEffect(() => {
+    const reloadBalances = async () => {
+      await fetchTokenBalances();
     };
 
-    fetchTokenBalances();
-  }, [publicKey, address, setTokens, setTotal]);
+    const interval = setInterval(() => {
+      reloadBalances();
+    }, 5000); // Reload every 5 seconds (adjust as needed)
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Sheet>
@@ -73,19 +85,6 @@ export const WalletBar = () => {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            {/* <span className='border border-gray-700/40 rounded-full px-4 py-[1px] flex items-center hover:border-primary transition-all duration-300 ease-in-out w-[140px]'>
-                            <WalletMultiButton
-                                style={{
-                                    padding: '0',
-                                    borderRadius: '0',
-                                    backgroundColor: 'transparent',
-                                    fontSize: '14px',
-                                    color: 'white',
-                                }}
-                            />
-                        </span> */}
-            <AppKit />
-
             <div className="flex flex-col justify-start items-start mt-6">
               <span className="text-xl text-white">
                 $
@@ -93,8 +92,6 @@ export const WalletBar = () => {
                   ? total?.amountTotal.toFixed(2).toLocaleString()
                   : 0}
               </span>
-
-              {/* <span className='text-[12px] text-white/80'>{total?.solTotal ? total?.solTotal.toLocaleString() : 0} SOL</span> */}
               <span
                 className={
                   total?.totalPercentage
@@ -130,7 +127,7 @@ export const WalletBar = () => {
               </div>
 
               <div className="space-y-4">
-                {!publicKey && !address
+                {!publicKey
                   ? "Connect Wallet"
                   : tokens.map((token, index) => (
                       <div

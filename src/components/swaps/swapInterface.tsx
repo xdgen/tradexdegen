@@ -6,20 +6,12 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { TokenSelector } from "./tokenSelectorModal";
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useAppKitProvider } from "@reown/appkit/react";
-import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
-import type { Provider } from "@reown/appkit-adapter-solana/react";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
-import AppKit from "../dashboard/reownwallet";
-import {
-  buy,
-  getMeme,
-  getSPLTokenBalance,
-  sell,
-} from "../testToken/swapfunction";
+import { buy, getMeme, getSPLTokenBalance } from "../testToken/swapfunction";
 import { Tokenn } from "./tokenSelectorModal";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export interface Token {
   [x: string]: any;
@@ -69,19 +61,24 @@ export function SwapInterface() {
     sellingToken: "0",
   });
 
-  const { address } = useAppKitAccount();
-  const { walletProvider } = useAppKitProvider<Provider>("solana");
-  const { connection } = useAppKitConnection();
+  const { publicKey, connected } = useWallet();
 
   useEffect(() => {
     const fetchBalances = async () => {
-      if (!address || !tokenPair.buying) return;
+      if (!publicKey || !tokenPair.buying) return;
 
       try {
-        const walletPublicKey = new PublicKey(address);
+        const walletPublicKey = new PublicKey(publicKey.toString());
         const xdegenMint = "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce";
-        const buyingTokenMint = tokenPair.buying.baseToken.address == xdegenMint ? xdegenMint : await getMeme(tokenPair.buying.baseToken.address);
-        const sellingTokenMint = tokenPair.selling ? tokenPair.selling.baseToken.address == xdegenMint ? xdegenMint : await getMeme(tokenPair.selling.baseToken.address) : null;
+        const buyingTokenMint =
+          tokenPair.buying.baseToken.address == xdegenMint
+            ? xdegenMint
+            : await getMeme(tokenPair.buying.baseToken.address);
+        const sellingTokenMint = tokenPair.selling
+          ? tokenPair.selling.baseToken.address == xdegenMint
+            ? xdegenMint
+            : await getMeme(tokenPair.selling.baseToken.address)
+          : null;
 
         const buyingTokenBalance = buyingTokenMint
           ? await getSPLTokenBalance(walletPublicKey, buyingTokenMint)
@@ -100,7 +97,7 @@ export function SwapInterface() {
     };
 
     fetchBalances();
-  }, [address, tokenPair.buying]);
+  }, [publicKey, tokenPair.buying]);
 
   const handleSwitch = () => {
     setTokenPair({
@@ -129,7 +126,7 @@ export function SwapInterface() {
       }));
       return;
     }
-    console.log(tokenPair)
+    console.log(tokenPair);
     const sellingPrice = Number.parseFloat(tokenPair.selling.priceNative);
     const buyingPrice = Number.parseFloat(tokenPair.buying.priceNative);
     const inputAmount = Number.parseFloat(amount);
@@ -152,18 +149,17 @@ export function SwapInterface() {
   };
 
   const handleSwap = async () => {
-    if (!address || !connection || !tokenPair.buying || !tokenPair.selling)
-      return;
+    if (!publicKey || !tokenPair.buying || !tokenPair.selling) return;
 
     try {
       setLoading(true);
       toast.success("Processing...");
 
-      const walletPublicKey = new PublicKey(address);
+      const walletPublicKey = new PublicKey(publicKey.toString());
       const sellingAmount = Number.parseFloat(amounts.selling);
       const buyingAmount = Number.parseFloat(amounts.buying);
 
-      console.log(tokenPair)
+      console.log(tokenPair);
 
       const transaction = await buy(
         tokenPair.selling.baseToken.address,
@@ -172,12 +168,9 @@ export function SwapInterface() {
         tokenPair.buying.baseToken.symbol,
         tokenPair.buying.baseToken.address,
         buyingAmount
-      )
-
-      const signature = await walletProvider.sendTransaction(
-        transaction,
-        connection
       );
+
+      const signature = await transaction.sign();
 
       toast.success(
         `Swapped ${amounts.selling} ${tokenPair.selling.baseToken.symbol} to ${amounts.buying} ${tokenPair.buying.baseToken.symbol}`,
@@ -202,7 +195,7 @@ export function SwapInterface() {
   };
 
   const getButtonText = () => {
-    if (!address) return "Connect Wallet";
+    if (!publicKey) return "Connect Wallet";
     if (!tokenPair.selling || !tokenPair.buying) return "Select tokens";
     if (!amounts.selling || !amounts.buying) return "Enter an amount";
     return "Swap";
@@ -309,7 +302,6 @@ export function SwapInterface() {
               />
             </div>
           </div>
-
         </div>
 
         <TokenSelector
@@ -320,7 +312,7 @@ export function SwapInterface() {
           onSelect={handleTokenSelect}
         />
       </Card>
-      {address ? (
+      {connected ? (
         <Button
           className="w-40 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600"
           onClick={handleSwap}
@@ -329,7 +321,17 @@ export function SwapInterface() {
           {loading ? "Processing..." : getButtonText()}
         </Button>
       ) : (
-        <AppKit />
+        <WalletMultiButton
+          style={{
+            margin: "1px 0",
+            padding: "2px 15px",
+            borderRadius: "20px",
+            backgroundColor: "#0E0E0F",
+            fontSize: "14px",
+            color: "white",
+            border: "1px solid rgba(42, 96, 58, 0.57)",
+          }}
+        />
       )}
     </div>
   );

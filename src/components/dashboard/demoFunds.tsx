@@ -11,8 +11,9 @@ import {
 import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
 import AppKit from "./reownwallet";
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useAppKitAccount } from "@reown/appkit/react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function DemoFund() {
   const location = useLocation();
@@ -23,7 +24,7 @@ export default function DemoFund() {
   const { publicKey } = useWallet();
 
   const { isConnected } = useAppKitAccount();
-  
+
   if (!isConnected) {
     console.log("Wallet not connected");
   } else {
@@ -53,7 +54,7 @@ export default function DemoFund() {
   };
 
   const claim = async () => {
-    const amount = 100;
+    const amount = 10;
     if (!publicKey) {
       alert("Please connect your wallet!");
       return;
@@ -115,7 +116,9 @@ export default function DemoFund() {
                           <div className="my-2 p-[0.5px] w-full bg-white/30"></div>
                           <button
                             className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full hidden"
-                            onClick={() => publicKey && testSol(publicKey.toBase58())}
+                            onClick={() =>
+                              publicKey && testSol(publicKey.toBase58())
+                            }
                             disabled={loading}
                           >
                             Claim Faucet
@@ -148,7 +151,17 @@ export default function DemoFund() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <AppKit />
+                  <WalletMultiButton
+                    style={{
+                      margin: "1px 0",
+                      padding: "2px 15px",
+                      borderRadius: "20px",
+                      backgroundColor: "#0E0E0F",
+                      fontSize: "14px",
+                      color: "white",
+                      border: "1px solid rgba(42, 96, 58, 0.57)",
+                    }}
+                  />
                 </div>
               )}
             </DialogTrigger>
