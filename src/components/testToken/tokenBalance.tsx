@@ -1,8 +1,9 @@
 import { PublicKey } from '@solana/web3.js';
-import { connection, Xdegen_mint } from './swapfunction';
+import { Xdegen_mint } from './swapfunction';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import supabase from './database';
 import { Tokenn } from '../swaps/tokenSelectorModal';
+import { getNextConnection } from '../../utils/connection';
 
 interface Token {
     name: string;
@@ -17,6 +18,7 @@ interface Token {
 // Function to fetch token balance and mint address
 const getTokenBalanceAndMintAddress = async (walletAddress: string, mintAddress: string) => {
     try {
+        const connection = getNextConnection()
         const walletPublicKey = new PublicKey(walletAddress);
         const mintPublicKey = new PublicKey(mintAddress);
 
@@ -43,7 +45,7 @@ const getTokenBalanceAndMintAddress = async (walletAddress: string, mintAddress:
         return balance;
     } catch (error) {
         console.error('Error fetching token balance and mint address:', error);
-        return null;
+        return 0;
     }
 };
 

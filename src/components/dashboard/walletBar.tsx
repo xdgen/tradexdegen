@@ -7,12 +7,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/sheet";
-// import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useEffect, useState } from "react";
 import { getTokens } from "../testToken/tokenBalance";
 import { useWallet } from "@solana/wallet-adapter-react";
-import AppKit from "./reownwallet";
-import { useAppKitAccount } from "@reown/appkit/react";
+// import AppKit from "./reownwallet";
+// import { useAppKitAccount } from "@reown/appkit/react";
 
 interface Token {
   name: string;
@@ -33,10 +33,10 @@ export const WalletBar = () => {
     solTotal: number;
     totalPercentage: string;
   }>();
-  const { address } = useAppKitAccount();
+  // const { address } = useAppKitAccount();
 
   useEffect(() => {
-    const walletPublicKey = publicKey ? publicKey.toBase58() : address;
+    const walletPublicKey = publicKey?.toBase58();
 
     if (!walletPublicKey) return;
 
@@ -63,7 +63,7 @@ export const WalletBar = () => {
     };
 
     fetchTokenBalances();
-  }, [publicKey, address, setTokens, setTotal]);
+  }, [publicKey, setTokens, setTotal]);
 
   return (
     <Sheet>
@@ -73,7 +73,7 @@ export const WalletBar = () => {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            {/* <span className='border border-gray-700/40 rounded-full px-4 py-[1px] flex items-center hover:border-primary transition-all duration-300 ease-in-out w-[140px]'>
+            <span className='border border-gray-700/40 rounded-full px-4 py-[1px] flex items-center hover:border-primary transition-all duration-300 ease-in-out w-[140px]'>
                             <WalletMultiButton
                                 style={{
                                     padding: '0',
@@ -83,8 +83,8 @@ export const WalletBar = () => {
                                     color: 'white',
                                 }}
                             />
-                        </span> */}
-            <AppKit />
+                        </span>
+            {/* <AppKit /> */}
 
             <div className="flex flex-col justify-start items-start mt-6">
               <span className="text-xl text-white">
@@ -104,7 +104,7 @@ export const WalletBar = () => {
                     : "text-[12px] text-white/80"
                 }
               >
-                {total?.totalPercentage
+                {!publicKey ? "--" : total?.totalPercentage
                   ? total?.totalPercentage +
                     "%" +
                     (String(total?.totalPercentage).startsWith("-")
@@ -125,12 +125,12 @@ export const WalletBar = () => {
               <div className="mb-6 pb-6 border-white/10 border-b">
                 <h2 className="text-xl font-semibold">Holdings</h2>
                 <p className="text-sm text-gray-400">
-                  {isLoading ? "Loading..." : `${tokens.length} tokens`}
+                  {!publicKey ? 0 : isLoading ? "Loading..." : `${tokens.length} tokens`}
                 </p>
               </div>
 
               <div className="space-y-4">
-                {!publicKey && !address
+                {!publicKey
                   ? "Connect Wallet"
                   : tokens.map((token, index) => (
                       <div

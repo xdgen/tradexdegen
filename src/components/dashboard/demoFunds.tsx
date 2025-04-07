@@ -10,9 +10,10 @@ import {
 } from "../../components/ui/dialog";
 import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
-import AppKit from "./reownwallet";
+// import AppKit from "./reownwallet";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAppKitAccount } from "@reown/appkit/react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function DemoFund() {
   const location = useLocation();
@@ -23,7 +24,7 @@ export default function DemoFund() {
   const { publicKey } = useWallet();
 
   const { isConnected } = useAppKitAccount();
-  
+
   if (!isConnected) {
     console.log("Wallet not connected");
   } else {
@@ -53,14 +54,13 @@ export default function DemoFund() {
   };
 
   const claim = async () => {
-    const amount = 100;
     if (!publicKey) {
       alert("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true);
-      const tx = await claimXSOL(publicKey, amount);
+      const tx = await claimXSOL(publicKey);
       console.log(tx?.message);
       toast.success("XSOL claimed successfully");
     } catch (error) {
@@ -148,7 +148,17 @@ export default function DemoFund() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <AppKit />
+                  {/* <AppKit /> */}
+                  <WalletMultiButton
+                    style={{
+                      margin: '1px 0',
+                      padding: '0',
+                      borderRadius: '0',
+                      backgroundColor: '#0E0E0F',
+                      fontSize: '14px',
+                      color: 'white',
+                    }}
+                  />
                 </div>
               )}
             </DialogTrigger>
@@ -163,8 +173,8 @@ export default function DemoFund() {
                       Account:{" "}
                       {publicKey
                         ? `${publicKey.toString().slice(0, 4)}...${publicKey
-                            .toString()
-                            .slice(-4)}`
+                          .toString()
+                          .slice(-4)}`
                         : "Not connected"}
                     </p>
                     <input
@@ -203,8 +213,8 @@ export default function DemoFund() {
               Account:{" "}
               {publicKey
                 ? `${publicKey.toString().slice(0, 4)}...${publicKey
-                    .toString()
-                    .slice(-4)}`
+                  .toString()
+                  .slice(-4)}`
                 : "Not connected"}
             </p>
           </div>
@@ -241,8 +251,8 @@ export default function DemoFund() {
                         Account:{" "}
                         {publicKey
                           ? `${publicKey.toString().slice(0, 4)}...${publicKey
-                              .toString()
-                              .slice(-4)}`
+                            .toString()
+                            .slice(-4)}`
                           : "Not connected"}
                       </p>
                       <input

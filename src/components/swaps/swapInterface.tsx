@@ -6,13 +6,13 @@ import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { TokenSelector } from "./tokenSelectorModal";
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useAppKitProvider } from "@reown/appkit/react";
-import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
-import type { Provider } from "@reown/appkit-adapter-solana/react";
-import { PublicKey } from "@solana/web3.js";
+// import { useAppKitAccount } from "@reown/appkit/react";
+// import { useAppKitProvider } from "@reown/appkit/react";
+// import { useAppKitConnection } from "@reown/appkit-adapter-solana/react";
+// import type { Provider } from "@reown/appkit-adapter-solana/react";
+// import { PublicKey } from "@solana/web3.js";
 import { toast } from "sonner";
-import AppKit from "../dashboard/reownwallet";
+// import AppKit from "../dashboard/reownwallet";
 import {
   buy,
   getMeme,
@@ -20,6 +20,8 @@ import {
   sell,
 } from "../testToken/swapfunction";
 import { Tokenn } from "./tokenSelectorModal";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export interface Token {
   [x: string]: any;
@@ -68,17 +70,18 @@ export function SwapInterface() {
     buyingToken: "0",
     sellingToken: "0",
   });
+  const { publicKey, sendTransaction } = useWallet();
 
-  const { address } = useAppKitAccount();
-  const { walletProvider } = useAppKitProvider<Provider>("solana");
-  const { connection } = useAppKitConnection();
+  // const { address } = useAppKitAccount();
+  // const { walletProvider } = useAppKitProvider<Provider>("solana");
+  // const { connection } = useAppKitConnection();
 
   useEffect(() => {
     const fetchBalances = async () => {
-      if (!address || !tokenPair.buying) return;
+      if (!publicKey || !tokenPair.buying) return;
 
       try {
-        const walletPublicKey = new PublicKey(address);
+        const walletPublicKey = publicKey;
         const xdegenMint = "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce";
         const buyingTokenMint = tokenPair.buying.baseToken.address == xdegenMint ? xdegenMint : await getMeme(tokenPair.buying.baseToken.address);
         const sellingTokenMint = tokenPair.selling ? tokenPair.selling.baseToken.address == xdegenMint ? xdegenMint : await getMeme(tokenPair.selling.baseToken.address) : null;
@@ -100,7 +103,7 @@ export function SwapInterface() {
     };
 
     fetchBalances();
-  }, [address, tokenPair.buying]);
+  }, [publicKey, tokenPair.buying]);
 
   const handleSwitch = () => {
     setTokenPair({
@@ -152,14 +155,14 @@ export function SwapInterface() {
   };
 
   const handleSwap = async () => {
-    if (!address || !connection || !tokenPair.buying || !tokenPair.selling)
+    if (!publicKey || !tokenPair.buying || !tokenPair.selling)
       return;
-
+    setLoading(true);
+    const loadingId = toast.loading("Processing...");
     try {
-      setLoading(true);
-      toast.success("Processing...");
 
-      const walletPublicKey = new PublicKey(address);
+
+      const walletPublicKey = publicKey;
       const sellingAmount = Number.parseFloat(amounts.selling);
       const buyingAmount = Number.parseFloat(amounts.buying);
 
@@ -171,38 +174,54 @@ export function SwapInterface() {
         walletPublicKey,
         tokenPair.buying.baseToken.symbol,
         tokenPair.buying.baseToken.address,
-        buyingAmount
+        buyingAmount,
+        sendTransaction
       )
 
-      const signature = await walletProvider.sendTransaction(
-        transaction,
-        connection
-      );
+      const { signature, confirmation } = transaction;
 
-      toast.success(
-        `Swapped ${amounts.selling} ${tokenPair.selling.baseToken.symbol} to ${amounts.buying} ${tokenPair.buying.baseToken.symbol}`,
-        {
-          action: {
-            label: "View Transaction",
-            onClick: () =>
-              window.open(
-                `https://solscan.io/tx/${signature}?cluster=devnet`,
-                "_blank"
-              ),
-          },
-        }
-      );
+      if (!confirmation.value.err) {
+
+        toast.success(
+          `Swapped ${amounts.selling} ${tokenPair.selling.baseToken.symbol} to ${amounts.buying} ${tokenPair.buying.baseToken.symbol}`,
+          {
+            action: {
+              label: "View Transaction",
+              onClick: () =>
+                window.open(
+                  `https://solscan.io/tx/${signature}?cluster=devnet`,
+                  "_blank"
+                ),
+            },
+          }
+        );
+      } else {
+        toast.success(
+          `Tranasaction not confirmed`,
+          {
+            action: {
+              label: "View Transaction",
+              onClick: () =>
+                window.open(
+                  `https://solscan.io/tx/${signature}?cluster=devnet`,
+                  "_blank"
+                ),
+            },
+          }
+        );
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Transaction failed"
       );
     } finally {
       setLoading(false);
+      toast.dismiss(loadingId)
     }
   };
 
   const getButtonText = () => {
-    if (!address) return "Connect Wallet";
+    if (!publicKey) return "Connect Wallet";
     if (!tokenPair.selling || !tokenPair.buying) return "Select tokens";
     if (!amounts.selling || !amounts.buying) return "Enter an amount";
     return "Swap";
@@ -320,7 +339,7 @@ export function SwapInterface() {
           onSelect={handleTokenSelect}
         />
       </Card>
-      {address ? (
+      {publicKey ? (
         <Button
           className="w-40 bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600"
           onClick={handleSwap}
@@ -329,7 +348,16 @@ export function SwapInterface() {
           {loading ? "Processing..." : getButtonText()}
         </Button>
       ) : (
-        <AppKit />
+        <WalletMultiButton
+          style={{
+            margin: '1px 0',
+            padding: '0',
+            borderRadius: '0',
+            backgroundColor: '#0E0E0F',
+            fontSize: '14px',
+            color: 'white',
+          }}
+        />
       )}
     </div>
   );

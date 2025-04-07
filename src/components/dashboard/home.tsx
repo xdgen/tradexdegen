@@ -11,12 +11,13 @@ import {
 import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/skeleton";
-import AppKit from "./reownwallet";
+// import AppKit from "./reownwallet";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -223,7 +224,17 @@ export default function HomeView() {
                               <p className="text-sm text-gray-400 mb-4">
                                 Please connect your wallet to claim SOL
                               </p>
-                              <AppKit />
+                              {/* <AppKit /> */}
+                              <WalletMultiButton
+                                style={{
+                                  margin: '1px 0',
+                                  padding: '0',
+                                  borderRadius: '0',
+                                  backgroundColor: '#0E0E0F',
+                                  fontSize: '14px',
+                                  color: 'white',
+                                }}
+                              />
                             </div>
                           )}
                         </DialogDescription>
@@ -240,7 +251,17 @@ export default function HomeView() {
                 </div>
               ) : (
                 <div className="flex flex-col items-start justify-start">
-                  <AppKit />
+                  {/* <AppKit /> */}
+                  <WalletMultiButton
+                    style={{
+                      margin: '1px 0',
+                      padding: '0',
+                      borderRadius: '0',
+                      backgroundColor: '#0E0E0F',
+                      fontSize: '14px',
+                      color: 'white',
+                    }}
+                  />
                 </div>
               )}
             </DialogTrigger>
@@ -255,8 +276,8 @@ export default function HomeView() {
                       Account:{" "}
                       {publicKey
                         ? `${publicKey.toString().slice(0, 4)}...${publicKey
-                            .toString()
-                            .slice(-4)}`
+                          .toString()
+                          .slice(-4)}`
                         : "Not connected"}
                     </p>
                     <input
@@ -330,9 +351,8 @@ export default function HomeView() {
               ${parseFloat(pair.priceUsd).toFixed(6)}
             </div>
             <div
-              className={`text-sm ${
-                pair.priceChange?.h24 >= 0 ? "text-green-400" : "text-red-400"
-              }`}
+              className={`text-sm ${pair.priceChange?.h24 >= 0 ? "text-green-400" : "text-red-400"
+                }`}
             >
               {pair.priceChange?.h24 >= 0 ? "↑" : "↓"}{" "}
               {Math.abs(pair.priceChange?.h24 || 0).toFixed(2)}%

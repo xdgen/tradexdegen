@@ -1,9 +1,9 @@
 import { createAssociatedTokenAccountInstruction, createMint, createTransferInstruction, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
 import { Connection, Keypair, ParsedAccountData, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import supabase from "./database";
+import { getNextConnection } from "../../utils/connection";
 
-const network = "https://devnet.helius-rpc.com/?api-key=38caa145-8a0a-4499-a141-be31c8f4c784";
-export const connection = new Connection(network, 'confirmed');
+
 const Xdegen_wallet = new PublicKey('XdEqt8TDiG6HHxTCdo41FWwxt7qpthK5VWcXQWjthbS');
 export const Xdegen_mint = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
 const xDegenWalletKeypairString = "[209,174,191,23,162,17,90,120,119,10,162,129,102,112,254,55,34,0,251,151,0,136,148,17,139,179,182,35,175,245,175,98,7,216,102,67,96,114,252,224,248,112,137,241,50,183,197,158,137,134,177,28,46,169,248,74,87,68,83,145,107,153,146,229]";
@@ -18,7 +18,7 @@ export const claimXSOL = async (
 ) => {
     try {
         // console.log(process.env.NEXT_PUBLIC_CONNECTION)
-
+        const connection = getNextConnection()
         const source_wallet = new PublicKey('XdEqt8TDiG6HHxTCdo41FWwxt7qpthK5VWcXQWjthbS');
 
         const mint = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
@@ -101,9 +101,9 @@ export const buy = async (
     buyingName: string,
     buyingMint: string,
     buyingAmount: number,
-    // sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
+    sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
 ) => {
-
+    const connection = getNextConnection()
     let findsellingMint: string;
     if (sellingMint === Xdegen_mint) {
         findsellingMint = Xdegen_mint;
@@ -152,12 +152,12 @@ export const buy = async (
     transaction.partialSign(xDegenWalletKeypair);
     console.log("transaction")
     // Send the transaction
-    // const signature = await sendTransaction(transaction, connection);
+    const signature = await sendTransaction(transaction, connection);
 
     // Confirm the transaction
-    // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
 
-    return transaction;
+    return {signature, confirmation};
 }
 
 export const sell = async (
@@ -165,8 +165,9 @@ export const sell = async (
     userPubKey: PublicKey,
     tokenMint: string,
     tokenAmount: number,
-    // sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
+    sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
 ) => {
+    const connection = getNextConnection()
     const { data, error } = await supabase
         .from('meme')
         .select()
@@ -208,12 +209,12 @@ export const sell = async (
     transaction.partialSign(xDegenWalletKeypair);
 
     // Send the transaction
-    // const signature = await sendTransaction(transaction, connection);
+    const signature = await sendTransaction(transaction, connection);
 
     // // Confirm the transaction
-    // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
 
-    return transaction;
+    return {signature, confirmation};
 }
 
 export const SPLTransfer = async (
@@ -223,6 +224,7 @@ export const SPLTransfer = async (
     mint: string,
     payer: PublicKey,
 ) => {
+    const connection = getNextConnection()
     const mint_address = new PublicKey(mint);
 
     const sourceAccountAta = await getAssociatedTokenAddress(mint_address, source_wallet);
@@ -275,6 +277,7 @@ export const createTokenIfNotExists = async (
     mintAddress: string
 ) => {
     console.log("start")
+    const connection = getNextConnection()
     // Check if the token has already been minted
 
     // const existingToken = mintedTokens.find(token => token.name === tokenName);
@@ -391,7 +394,7 @@ export const getMeme = async (tokenMint: string, tokenName?: string) => {
 
 export const getSPLTokenBalance = async (walletPublicKey: PublicKey, tokenMintAddress: string) => {
     try {
-
+        const connection = getNextConnection()
         // Define the token mint public key (SPL token you want to check)
         const mintPublicKey = new PublicKey(tokenMintAddress);
 

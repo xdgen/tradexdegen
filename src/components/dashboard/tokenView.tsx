@@ -14,7 +14,6 @@ import XIcon from "@mui/icons-material/X";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import {
   buy,
-  connection,
   getMeme,
   getSPLTokenBalance,
   sell,
@@ -35,9 +34,10 @@ import {
 } from "lucide-react";
 import { Tooltip } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
-import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+// import { useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
 // import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
 import type { Provider } from '@reown/appkit-adapter-solana/react';
+import { getNextConnection } from "../../utils/connection";
 
 
 type StatItem = {
@@ -260,8 +260,8 @@ export default function TradingInterface() {
   const [showVolume, setShowVolume] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
   const [indicators, setIndicators] = useState<string[]>([]);
-  const { address } = useAppKitAccount();
-  const { walletProvider } = useAppKitProvider<Provider>('solana');
+  // const { address } = useAppKitAccount();
+  // const { walletProvider } = useAppKitProvider<Provider>('solana');
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -410,7 +410,7 @@ export default function TradingInterface() {
   useEffect(() => {
     const get = async () => {
       if (!pairData) return;
-      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+      const walletPublicKey = publicKey;
 
       if (!walletPublicKey) {
         setXSol("0");
@@ -441,7 +441,7 @@ export default function TradingInterface() {
       }
     };
     get();
-  }, [pairData, publicKey, updateBal, address]);
+  }, [pairData, publicKey, updateBal]);
 
   const fetchData = async () => {
     if (!pairData) return;
@@ -488,7 +488,7 @@ export default function TradingInterface() {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
     try {
-      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+      const walletPublicKey = publicKey;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
@@ -506,14 +506,12 @@ export default function TradingInterface() {
         tokenName,
         tokenMint,
         tokenAmount,
+        sendTransaction
       );
 
-      // Send the transaction
-      const signature = await walletProvider.sendTransaction(buyNow, connection);
+      const {signature, confirmation} = buyNow;
 
-      // Confirm the transaction
-      // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-      console.log(buyNow);
+      if (confirmation){
       console.log(
         `Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
       );
@@ -526,6 +524,17 @@ export default function TradingInterface() {
           }
         }
       );
+    } else {
+      toast.success(
+        `Transaction not confirmed`,
+        {
+          action: {
+            label: "View Transaction",
+            onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
+          }
+        }
+      );
+    }
     } catch (error) {
       toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
@@ -544,7 +553,7 @@ export default function TradingInterface() {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
     try {
-      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+      const walletPublicKey = publicKey;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
@@ -558,16 +567,12 @@ export default function TradingInterface() {
         walletPublicKey,
         pairData.baseToken.address,
         +orderAmount,
-        // sendTransaction
+        sendTransaction
       );
-      if (!connection) return;
-      // Send the transaction
-      const signature = await walletProvider.sendTransaction(sellNow, connection);
+    
+      const {signature, confirmation} = sellNow;
 
-      // Confirm the transaction
-      // const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-
-      console.log(sellNow);
+  if(!confirmation.value.err){
       console.log(
         `Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
       );
@@ -580,6 +585,17 @@ export default function TradingInterface() {
           }
         }
       );
+    } else {
+      toast.success(
+        `Transaction not confirmed`,
+        {
+          action: {
+            label: "View Transaction",
+            onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
+          }
+        }
+      );
+    }
     } catch (error) {
       toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
       console.log(error);
