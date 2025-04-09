@@ -11,34 +11,33 @@ import {
 import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/skeleton";
+<<<<<<< HEAD
 // import AppKit from "./reownwallet";
 import { useAppKitAccount } from "@reown/appkit/react";
+=======
+>>>>>>> origin/beta
 import { Button } from "@mui/material";
 import { PublicKey } from "@solana/web3.js";
 import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
+<<<<<<< HEAD
+=======
+import { supabase } from "../../lib/supabase";
+>>>>>>> origin/beta
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
   const [balance, setBalance] = useState("");
   const [loading, setLoading] = useState(false);
-  const { publicKey } = useWallet();
+  const { publicKey, connected } = useWallet();
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { isConnected, address } = useAppKitAccount();
-
   const handleRowClick = (pair: any) => {
     navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
   };
-
-  if (!isConnected) {
-    console.log("Wallet not connected");
-  } else {
-    console.log("Wallet connected");
-  }
 
   // const handleCreateFund = () => {
   //   setShowDialog(true)
@@ -65,23 +64,13 @@ export default function HomeView() {
   };
 
   const claim = async () => {
-    if (!publicKey && !address) {
+    if (!publicKey) {
       toast.warning("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true);
-      let walletPublicKey: PublicKey | undefined;
-      if (publicKey) {
-        walletPublicKey = publicKey;
-      } else if (address) {
-        walletPublicKey = new PublicKey(address);
-      }
-
-      if (!walletPublicKey) {
-        throw new Error("Please connect your wallet!");
-      }
-      const tx = await claimXSOL(walletPublicKey);
+      const tx = await claimXSOL(publicKey);
 
       if (!tx) {
         throw new Error("failed");
@@ -103,17 +92,35 @@ export default function HomeView() {
         error instanceof Error ? error.message : "Transaction might have failed"
       );
       console.error(error);
-      // if (error instanceof Error) {
-      //   throw new Error(error.message || "failed");
-      // } else {
-      //   throw new Error("failed");
-      // }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+<<<<<<< HEAD
+=======
+    const walletAddress = publicKey?.toString();
+
+    const handleWalletConnect = async () => {
+      if (!walletAddress) return;
+
+      const { error } = await supabase
+        .from("wallets")
+        .upsert({ address: walletAddress }, { onConflict: "address" });
+
+      if (error) {
+        console.error("Wallet save error:", error);
+      } else {
+        console.log("New wallet stored:", walletAddress);
+      }
+    };
+
+    handleWalletConnect();
+  }, [publicKey]);
+
+  useEffect(() => {
+>>>>>>> origin/beta
     const fetchPairs = async () => {
       try {
         const response = await fetch(
@@ -152,12 +159,17 @@ export default function HomeView() {
     return `${days}d`;
   };
 
-  if (error) return (
-    <div className="w-full h-full flex flex-col items-center justify-center text-white">
-      <img src={Failed} alt="Failed" className="md:h-[300px] md:w-[300px] mb-4" />
-      <p>{error}</p>
-    </div>
-  );
+  if (error)
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-white">
+        <img
+          src={Failed}
+          alt="Failed"
+          className="md:h-[300px] md:w-[300px] mb-4"
+        />
+        <p>{error}</p>
+      </div>
+    );
 
   return (
     <div className="bg-black text-white min-h-screen p-6">
@@ -179,7 +191,7 @@ export default function HomeView() {
           </h3>
           <Dialog>
             <DialogTrigger>
-              {publicKey || isConnected ? (
+              {publicKey || connected ? (
                 <div className="flex gap-4">
                   <Dialog>
                     <DialogTrigger className="bg-white/10 rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary">
@@ -191,7 +203,7 @@ export default function HomeView() {
                           Claim your faucet
                         </DialogTitle>
                         <DialogDescription className="flex flex-col gap-2">
-                          {publicKey || isConnected ? (
+                          {publicKey || connected ? (
                             <>
                               <p className="text-sm text-green-500">
                                 Claim SOL from our faucet or try external
@@ -224,6 +236,7 @@ export default function HomeView() {
                               <p className="text-sm text-gray-400 mb-4">
                                 Please connect your wallet to claim SOL
                               </p>
+<<<<<<< HEAD
                               {/* <AppKit /> */}
                               <WalletMultiButton
                                 style={{
@@ -233,6 +246,17 @@ export default function HomeView() {
                                   backgroundColor: '#0E0E0F',
                                   fontSize: '14px',
                                   color: 'white',
+=======
+                              <WalletMultiButton
+                                style={{
+                                  margin: "1px 0",
+                                  padding: "2px 15px",
+                                  borderRadius: "20px",
+                                  backgroundColor: "#0E0E0F",
+                                  fontSize: "14px",
+                                  color: "white",
+                                  border: "1px solid rgba(42, 96, 58, 0.57)",
+>>>>>>> origin/beta
                                 }}
                               />
                             </div>
@@ -251,6 +275,7 @@ export default function HomeView() {
                 </div>
               ) : (
                 <div className="flex flex-col items-start justify-start">
+<<<<<<< HEAD
                   {/* <AppKit /> */}
                   <WalletMultiButton
                     style={{
@@ -260,6 +285,17 @@ export default function HomeView() {
                       backgroundColor: '#0E0E0F',
                       fontSize: '14px',
                       color: 'white',
+=======
+                  <WalletMultiButton
+                    style={{
+                      margin: "1px 0",
+                      padding: "2px 15px",
+                      borderRadius: "20px",
+                      backgroundColor: "#0E0E0F",
+                      fontSize: "14px",
+                      color: "white",
+                      border: "1px solid rgba(42, 96, 58, 0.57)",
+>>>>>>> origin/beta
                     }}
                   />
                 </div>

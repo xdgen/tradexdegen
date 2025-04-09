@@ -41,6 +41,7 @@
 //   themeMode: 'dark',
 // })
 
+<<<<<<< HEAD
 // const AppKit = () => {
 //   return (
 //     <div>
@@ -49,3 +50,42 @@
 //   );
 // };
 // export default AppKit;
+=======
+const projectId = import.meta.env.VITE_PUBLIC_PROJECT_ID;
+
+if (!projectId) {
+  throw new Error("Project Id is not defined.");
+}
+
+// metadata for the app
+const metadata = {
+  name: 'Xdegen',
+  description: 'Master crypto trading with confidence',
+  url: 'https://xdegen.xyz', // origin must match your domain & subdomain
+  icons: ['https://imgur.com/a/oktpbml']
+}
+
+// 3. Create modal
+createAppKit({
+  adapters: [new PhantomWalletAdapter(), new SolflareWalletAdapter(), new SolanaAdapter()],
+  networks: [solana, solanaTestnet, solanaDevnet],
+  metadata: metadata,
+  projectId: projectId as string,
+  features: {
+    analytics: true,
+    email: false,
+    socials: []
+  },
+  themeMode: 'dark',
+})
+
+const AppKit = () => {
+  return (
+    <div>
+      <appkit-button />
+    </div>
+  );
+};
+
+export default AppKit;
+>>>>>>> origin/beta

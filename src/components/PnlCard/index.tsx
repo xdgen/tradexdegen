@@ -11,7 +11,6 @@ interface PnlCardProps {
   tokenSymbol: string;
   amount: number;
   duration: string;
-  price: number;
 }
 
 const PnlCard: React.FC<PnlCardProps> = ({
@@ -20,7 +19,6 @@ const PnlCard: React.FC<PnlCardProps> = ({
   tokenSymbol,
   amount,
   duration,
-  price,
 }) => {
   return (
     <div className="w-full h- max-w-md rounded-sm overflow-hidden bg-[#0a0a0a] p-6 relative">

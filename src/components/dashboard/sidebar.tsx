@@ -98,7 +98,7 @@ const Sidebar: React.FC = () => {
     {
       icon: SwapVertIcon,
       href: "/swap",
-      label: "Swap",
+      label: "Swap / Long",
       pro: true,
     },
     {
