@@ -61,6 +61,7 @@
     "@walletconnect/core": "^2.19.2",
     "@walletconnect/utils": "^2.19.2",
     "aos": "^2.3.4",
+    "bcrypt": "^5.1.1",
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.0",
