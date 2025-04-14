@@ -11,8 +11,6 @@ import {
 import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/skeleton";
-import { Button } from "@mui/material";
-import { PublicKey } from "@solana/web3.js";
 import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
 import { supabase } from "../../lib/supabase";

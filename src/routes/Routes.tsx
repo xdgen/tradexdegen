@@ -1,4 +1,5 @@
 import Layout from "../components/dashboard/layout";
+import AdminDashboard from "../Pages/admin/admin";
 import SetBalancePage from "../Pages/balance/funds";
 import ComingSoon from "../Pages/comingSoon/coming";
 import DocsPage from "../Pages/docs/docs";
@@ -85,6 +86,12 @@ const appRoutes = [
       <Layout>
         <DocsPage />
       </Layout>
+    ),
+  },
+  {
+    path: "/admin",
+    element: (
+      <AdminDashboard />
     ),
   },
 ];
