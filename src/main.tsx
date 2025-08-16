@@ -6,6 +6,8 @@ import appRoutes from "./routes/Routes";
 import { Toaster } from "../src/components/ui/sonner";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import SolanaWalletProvider from "./provider/WalletProvider ";
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 const router = createBrowserRouter(appRoutes);
 
@@ -13,6 +15,12 @@ const App = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1023);
 
   useEffect(() => {
+    // Initialize AOS
+    AOS.init({
+      duration: 1000,
+      once: true,
+    });
+
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth < 1023);
     };
