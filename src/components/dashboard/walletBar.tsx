@@ -41,7 +41,6 @@ export const WalletBar = () => {
     if (!walletPublicKey) return;
 
     const fetchTokenBalances = async () => {
-      console.log("Fetching token...");
       setIsLoading(true);
       try {
         const tokens_fetch = await getTokens(walletPublicKey);
