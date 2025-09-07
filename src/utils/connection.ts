@@ -37,10 +37,10 @@ const connectionPool: { rpcUrl: string; connection: Connection }[] =
   
     // Get the current connection from the pool
     const connection = connectionPool[currentIndex].connection
-  
-    // Update the index to the next connection (circular rotation)
+
+      // Update the index to the next connection (circular rotation)
     currentIndex = (currentIndex + 1) % connectionPool.length
-  
+
     console.log(
       `Returning connection for RPC URL: ${connectionPool[currentIndex].rpcUrl}`
     )

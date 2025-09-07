@@ -493,7 +493,7 @@ export default function TradingInterface() {
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-      console.log(pairData.baseToken);
+
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const tokenAmount =
         +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));

@@ -112,7 +112,7 @@ export const buy = async (
     }
 
     if (!findsellingMint) {
-        throw new Error('Insuffient Balance7');
+        throw new Error('Insuffient Balance');
     }
 
     let findbuyingMint: string;
@@ -395,6 +395,7 @@ export const getMeme = async (tokenMint: string, tokenName?: string) => {
 export const getSPLTokenBalance = async (walletPublicKey: PublicKey, tokenMintAddress: string) => {
     try {
         const connection = getNextConnection()
+
         // Define the token mint public key (SPL token you want to check)
         const mintPublicKey = new PublicKey(tokenMintAddress);
 
