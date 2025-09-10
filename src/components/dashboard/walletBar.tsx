@@ -8,9 +8,11 @@ import {
   SheetTrigger,
 } from "../ui/sheet";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getTokens } from "../testToken/tokenBalance";
 import { useWallet } from "@solana/wallet-adapter-react";
+import {getNextConnection} from "../../utils/connection.ts";
+import {TOKEN_PROGRAM_ID} from "@solana/spl-token";
 // import AppKit from "./reownwallet";
 // import { useAppKitAccount } from "@reown/appkit/react";
 
@@ -34,6 +36,20 @@ export const WalletBar = () => {
     totalPercentage: string;
   }>();
   // const { address } = useAppKitAccount();
+  const connection = getNextConnection();
+
+  useEffect(() => {
+      (async () => {
+          if (!publicKey) return
+          const tokenAccounts = await connection.getTokenAccountsByOwner(
+              publicKey,
+              { programId: TOKEN_PROGRAM_ID }
+          );
+
+          console.log('tokenAccounts', tokenAccounts)
+      })()
+
+  }, [publicKey, connection])
 
   useEffect(() => {
     const walletPublicKey = publicKey?.toBase58();
@@ -82,7 +98,7 @@ export const WalletBar = () => {
     };
 
     fetchTokenBalances();
-  }, [publicKey, setTokens, setTotal]);
+  }, [publicKey]);
 
   return (
     <Sheet>
