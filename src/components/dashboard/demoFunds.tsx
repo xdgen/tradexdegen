@@ -12,6 +12,7 @@ import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
 // import AppKit from "./reownwallet";
 import { useWallet } from '@solana/wallet-adapter-react';
+
 import { useAppKitAccount } from "@reown/appkit/react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
@@ -115,7 +116,9 @@ export default function DemoFund() {
                           <div className="my-2 p-[0.5px] w-full bg-white/30"></div>
                           <button
                             className="bg-white/10 text-white rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary w-full hidden"
-                            onClick={() => publicKey && testSol(publicKey.toBase58())}
+                            onClick={() =>
+                              publicKey && testSol(publicKey.toBase58())
+                            }
                             disabled={loading}
                           >
                             Claim Faucet

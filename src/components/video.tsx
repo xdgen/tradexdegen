@@ -5,7 +5,7 @@ const Video = () => {
         <div className="w-full min-h-screen p-6 flex flex-col justify-center items-center text-center bg-gradient-to-b from-background to-secondary">
             <div className="w-full md:w-2/3 lg:w-1/2 flex flex-col justify-center items-center text-center gap-8">
                 <h1 className="text-primary text-4xl font-bold text-center pb-6" data-aos="fade-up">
-                    Don&apos;t gamble your hard-earned funds on guesswork
+                    Don&apos;t gamble your hard-earned funds on guesswork.
                 </h1>
                 <div className="w-full aspect-video bg-secondary rounded-lg border border-gray-50/10 shadow-lg relative overflow-hidden" data-aos="fade-up">
                     <video 

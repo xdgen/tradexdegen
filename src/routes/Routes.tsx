@@ -87,6 +87,7 @@ const appRoutes = [
       </Layout>
     ),
   },
+
 ];
 
 export default appRoutes;

@@ -25,7 +25,7 @@ interface Token {
 }
 
 export const WalletBar = () => {
-  const { publicKey } = useWallet();
+  const { publicKey, connected } = useWallet();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [total, setTotal] = useState<{
@@ -38,7 +38,9 @@ export const WalletBar = () => {
   useEffect(() => {
     const walletPublicKey = publicKey?.toBase58();
 
-    if (!walletPublicKey) return;
+    const walletPublicKey = publicKey.toBase58();
+    console.log("Fetching token balances...");
+    setIsLoading(true);
 
     const fetchTokenBalances = async () => {
       setIsLoading(true);
@@ -59,6 +61,24 @@ export const WalletBar = () => {
       } finally {
         setIsLoading(false);
       }
+    } catch (error) {
+      console.error("Failed to fetch token balances:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch balances when the wallet connects or after a transaction
+  useEffect(() => {
+    if (connected) {
+      fetchTokenBalances();
+    }
+  }, [publicKey, connected]);
+
+  // Auto-reload wallet data after a transaction
+  useEffect(() => {
+    const reloadBalances = async () => {
+      await fetchTokenBalances();
     };
 
     fetchTokenBalances();
@@ -92,8 +112,6 @@ export const WalletBar = () => {
                   ? total?.amountTotal.toFixed(2).toLocaleString()
                   : 0}
               </span>
-
-              {/* <span className='text-[12px] text-white/80'>{total?.solTotal ? total?.solTotal.toLocaleString() : 0} SOL</span> */}
               <span
                 className={
                   total?.totalPercentage

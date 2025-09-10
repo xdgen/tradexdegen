@@ -83,8 +83,15 @@ export function SwapInterface() {
       try {
         const walletPublicKey = publicKey;
         const xdegenMint = "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce";
-        const buyingTokenMint = tokenPair.buying.baseToken.address == xdegenMint ? xdegenMint : await getMeme(tokenPair.buying.baseToken.address);
-        const sellingTokenMint = tokenPair.selling ? tokenPair.selling.baseToken.address == xdegenMint ? xdegenMint : await getMeme(tokenPair.selling.baseToken.address) : null;
+        const buyingTokenMint =
+          tokenPair.buying.baseToken.address == xdegenMint
+            ? xdegenMint
+            : await getMeme(tokenPair.buying.baseToken.address);
+        const sellingTokenMint = tokenPair.selling
+          ? tokenPair.selling.baseToken.address == xdegenMint
+            ? xdegenMint
+            : await getMeme(tokenPair.selling.baseToken.address)
+          : null;
 
         const buyingTokenBalance = buyingTokenMint
           ? await getSPLTokenBalance(walletPublicKey, buyingTokenMint)
@@ -132,7 +139,7 @@ export function SwapInterface() {
       }));
       return;
     }
-    console.log(tokenPair)
+    console.log(tokenPair);
     const sellingPrice = Number.parseFloat(tokenPair.selling.priceNative);
     const buyingPrice = Number.parseFloat(tokenPair.buying.priceNative);
     const inputAmount = Number.parseFloat(amount);
@@ -166,7 +173,7 @@ export function SwapInterface() {
       const sellingAmount = Number.parseFloat(amounts.selling);
       const buyingAmount = Number.parseFloat(amounts.buying);
 
-      console.log(tokenPair)
+      console.log(tokenPair);
 
       const transaction = await buy(
         tokenPair.selling.baseToken.address,
@@ -328,7 +335,6 @@ export function SwapInterface() {
               />
             </div>
           </div>
-
         </div>
 
         <TokenSelector
@@ -355,7 +361,7 @@ export function SwapInterface() {
             borderRadius: '0',
             backgroundColor: '#0E0E0F',
             fontSize: '14px',
-            color: 'white',
+            color: 'white',er: "1px solid rgba(42, 96, 58, 0.57)",
           }}
         />
       )}

@@ -23,22 +23,14 @@ export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
   const [balance, setBalance] = useState("");
   const [loading, setLoading] = useState(false);
-  const { publicKey } = useWallet();
+  const { publicKey, connected } = useWallet();
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { isConnected, address } = useAppKitAccount();
-
   const handleRowClick = (pair: any) => {
     navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
   };
-
-  if (!isConnected) {
-    console.log("Wallet not connected");
-  } else {
-    console.log("Wallet connected");
-  }
 
   // const handleCreateFund = () => {
   //   setShowDialog(true)
@@ -65,23 +57,13 @@ export default function HomeView() {
   };
 
   const claim = async () => {
-    if (!publicKey && !address) {
+    if (!publicKey) {
       toast.warning("Please connect your wallet!");
       return;
     }
     try {
       setLoading(true);
-      let walletPublicKey: PublicKey | undefined;
-      if (publicKey) {
-        walletPublicKey = publicKey;
-      } else if (address) {
-        walletPublicKey = new PublicKey(address);
-      }
-
-      if (!walletPublicKey) {
-        throw new Error("Please connect your wallet!");
-      }
-      const tx = await claimXSOL(walletPublicKey);
+      const tx = await claimXSOL(publicKey);
 
       if (!tx) {
         throw new Error("failed");
@@ -103,11 +85,6 @@ export default function HomeView() {
         error instanceof Error ? error.message : "Transaction might have failed"
       );
       console.error(error);
-      // if (error instanceof Error) {
-      //   throw new Error(error.message || "failed");
-      // } else {
-      //   throw new Error("failed");
-      // }
     } finally {
       setLoading(false);
     }
@@ -152,12 +129,17 @@ export default function HomeView() {
     return `${days}d`;
   };
 
-  if (error) return (
-    <div className="w-full h-full flex flex-col items-center justify-center text-white">
-      <img src={Failed} alt="Failed" className="md:h-[300px] md:w-[300px] mb-4" />
-      <p>{error}</p>
-    </div>
-  );
+  if (error)
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-white">
+        <img
+          src={Failed}
+          alt="Failed"
+          className="md:h-[300px] md:w-[300px] mb-4"
+        />
+        <p>{error}</p>
+      </div>
+    );
 
   return (
     <div className="bg-black text-white min-h-screen p-6">
@@ -179,7 +161,7 @@ export default function HomeView() {
           </h3>
           <Dialog>
             <DialogTrigger>
-              {publicKey || isConnected ? (
+              {publicKey || connected ? (
                 <div className="flex gap-4">
                   <Dialog>
                     <DialogTrigger className="bg-white/10 rounded-full p-2 hover:bg-primary/20 border-white/10 border hover:border hover:border-primary">
@@ -191,7 +173,7 @@ export default function HomeView() {
                           Claim your faucet
                         </DialogTitle>
                         <DialogDescription className="flex flex-col gap-2">
-                          {publicKey || isConnected ? (
+                          {publicKey || connected ? (
                             <>
                               <p className="text-sm text-green-500">
                                 Claim SOL from our faucet or try external
