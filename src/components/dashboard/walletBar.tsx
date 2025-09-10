@@ -8,11 +8,9 @@ import {
   SheetTrigger,
 } from "../ui/sheet";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getTokens } from "../testToken/tokenBalance";
 import { useWallet } from "@solana/wallet-adapter-react";
-import {getNextConnection} from "../../utils/connection.ts";
-import {TOKEN_PROGRAM_ID} from "@solana/spl-token";
 // import AppKit from "./reownwallet";
 // import { useAppKitAccount } from "@reown/appkit/react";
 
@@ -27,7 +25,7 @@ interface Token {
 }
 
 export const WalletBar = () => {
-  const { publicKey, connected } = useWallet();
+  const { publicKey } = useWallet();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [total, setTotal] = useState<{
@@ -36,27 +34,11 @@ export const WalletBar = () => {
     totalPercentage: string;
   }>();
   // const { address } = useAppKitAccount();
-  const connection = getNextConnection();
-
-  useEffect(() => {
-      (async () => {
-          if (!publicKey) return
-          const tokenAccounts = await connection.getTokenAccountsByOwner(
-              publicKey,
-              { programId: TOKEN_PROGRAM_ID }
-          );
-
-          console.log('tokenAccounts', tokenAccounts)
-      })()
-
-  }, [publicKey, connection])
 
   useEffect(() => {
     const walletPublicKey = publicKey?.toBase58();
 
-    const walletPublicKey = publicKey.toBase58();
-    console.log("Fetching token balances...");
-    setIsLoading(true);
+    if (!walletPublicKey) return;
 
     const fetchTokenBalances = async () => {
       setIsLoading(true);
@@ -77,28 +59,10 @@ export const WalletBar = () => {
       } finally {
         setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch token balances:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch balances when the wallet connects or after a transaction
-  useEffect(() => {
-    if (connected) {
-      fetchTokenBalances();
-    }
-  }, [publicKey, connected]);
-
-  // Auto-reload wallet data after a transaction
-  useEffect(() => {
-    const reloadBalances = async () => {
-      await fetchTokenBalances();
     };
 
     fetchTokenBalances();
-  }, [publicKey]);
+  }, [publicKey, setTokens, setTotal]);
 
   return (
     <Sheet>
@@ -128,6 +92,8 @@ export const WalletBar = () => {
                   ? total?.amountTotal.toFixed(2).toLocaleString()
                   : 0}
               </span>
+
+              {/* <span className='text-[12px] text-white/80'>{total?.solTotal ? total?.solTotal.toLocaleString() : 0} SOL</span> */}
               <span
                 className={
                   total?.totalPercentage
