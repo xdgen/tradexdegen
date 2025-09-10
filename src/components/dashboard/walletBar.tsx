@@ -73,16 +73,16 @@ export const WalletBar = () => {
         <SheetHeader>
           <SheetTitle>
             <span className='border border-gray-700/40 rounded-full px-4 py-[1px] flex items-center hover:border-primary transition-all duration-300 ease-in-out w-[140px]'>
-                            <WalletMultiButton
-                                style={{
-                                    padding: '0',
-                                    borderRadius: '0',
-                                    backgroundColor: 'transparent',
-                                    fontSize: '14px',
-                                    color: 'white',
-                                }}
-                            />
-                        </span>
+              <WalletMultiButton
+                  style={{
+                      padding: '0',
+                      borderRadius: '0',
+                      backgroundColor: 'transparent',
+                      fontSize: '14px',
+                      color: 'white',
+                  }}
+              />
+          </span>
             {/* <AppKit /> */}
 
             <div className="flex flex-col justify-start items-start mt-6">
@@ -128,7 +128,7 @@ export const WalletBar = () => {
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-3">
                 {!publicKey
                   ? "Connect Wallet"
                   : tokens.map((token, index) => (
