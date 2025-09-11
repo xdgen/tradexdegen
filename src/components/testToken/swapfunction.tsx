@@ -167,6 +167,7 @@ export const sell = async (
     tokenAmount: number,
     sendTransaction: (transaction: Transaction, connection: Connection) => Promise<string>
 ) => {
+    console.log(`selling ${tokenMint}`)
     const connection = getNextConnection()
     const { data, error } = await supabase
         .from('meme')
