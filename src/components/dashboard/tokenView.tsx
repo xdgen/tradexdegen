@@ -277,7 +277,6 @@ export default function TokenView() {
 
   const { publicKey, sendTransaction } = useWallet();
   const { address } = useAppKitAccount();
-  const { connection } = useAppKitConnection();
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -915,20 +914,15 @@ export default function TokenView() {
           )}
 
           <div className="flex-1 bg-gray-900/30">
+            {/* <div className="flex flex-col justify-start items-start">
+              <TimeframeSelector />
+              <ChartControls />
+            </div> */}
             <div
               ref={chartContainerRef}
               className="w-full h-[500px]"
               style={{ minHeight: '400px' }}
-            >
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">
-                    {pairData ? 'Loading chart...' : 'Select a token to view chart'}
-                  </p>
-                </div>
-              </div>
-            </div>
+            />
           </div>
         </div>
 

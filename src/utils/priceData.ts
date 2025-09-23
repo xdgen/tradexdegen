@@ -59,10 +59,10 @@ class PriceDataService {
   private async getCurrentPrice(tokenAddress: string): Promise<number> {
     try {
       const response = await fetch(
-        `https://price.jup.ag/v4/price?ids=${tokenAddress}`
+        `https://lite-api.jup.ag/price/v3?ids=${tokenAddress}`
       );
       const data = await response.json();
-      return data.data[tokenAddress]?.price || 0;
+      return data[tokenAddress]?.usdPrice || 0;
     } catch (error) {
       console.error('Error fetching current price:', error);
       return 0;
