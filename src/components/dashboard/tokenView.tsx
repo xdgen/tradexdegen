@@ -535,7 +535,7 @@ export default function TokenView() {
   }, [pairData, timeframe]);
 
   useEffect(() => {
-    const get = async () => {
+    (async () => {
       if (!pairData) return;
       const walletPublicKey = publicKey;
 
@@ -566,8 +566,7 @@ export default function TokenView() {
       } catch (error) {
         console.error("Failed to fetch trading :", error);
       }
-    };
-    get();
+    })()
   }, [pairData, publicKey, updateBal]);
 
   const fetchData = async () => {
