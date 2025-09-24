@@ -45,7 +45,6 @@ import {
 
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
 import { Button } from '../ui/button';
 
 type StatItem = {
@@ -425,44 +424,115 @@ export default function TokenView() {
   // const currentPrice = price || (pairData ? parseFloat(pairData.priceUsd) : 0);
 
   // Initialize TradingView chart
-  useEffect(() => {
-    if (pairData && chartContainerRef.current) {
-      // Remove existing script
-      const existingScript = chartContainerRef.current.querySelector('script');
-      if (existingScript) {
-        existingScript.remove();
-      }
+  // useEffect(() => {
+  //   if (pairData && chartContainerRef.current) {
+  //     // Remove existing script
+  //     const existingScript = chartContainerRef.current.querySelector('script');
+  //     if (existingScript) {
+  //       existingScript.remove();
+  //     }
 
-      // Clear container
-      chartContainerRef.current.innerHTML = '';
+  //     // Clear container
+  //     chartContainerRef.current.innerHTML = '';
 
-      // Create new script
-      const script = document.createElement('script');
-      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-      script.type = 'text/javascript';
-      script.async = true;
+  //     // Create new script
+  //     const script = document.createElement('script');
+  //     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  //     script.type = 'text/javascript';
+  //     script.async = true;
+
+  //     const possibleSymbols = [
+  //       `${pairData.baseToken.symbol.toUpperCase()}/${pairData.quoteToken.symbol.toUpperCase()}`, // CANCERSOL
+  //       `${pairData.baseToken.symbol.toUpperCase()}/SOL`, // CANCER/SOL
+  //       `RAYDIUM:${pairData.baseToken.symbol.toUpperCase()}_SOL`, // RAYDIUM:CANCER_SOL
+  //       `${pairData.baseToken.symbol.toUpperCase()}USD` // Fallback to USD
+  //     ];
+
+  //     console.log('pairData', pairData)
       
-      script.innerHTML = JSON.stringify({
-        autosize: true,
-        symbol: `${pairData.baseToken.symbol.toUpperCase()}USD`,
-        interval: '1',
-        timezone: 'Etc/UTC',
-        theme: 'dark',
-        style: '1',
-        locale: 'en',
-        toolbar_bg: '#000000',
-        enable_publishing: false,
-        backgroundColor: '#000000',
-        gridColor: '#1a1a1a',
-        hide_top_toolbar: false,
-        hide_legend: false,
-        save_image: false,
-        container_id: 'tradingview_chart'
+  //     script.innerHTML = JSON.stringify({
+  //       autosize: true,
+  //       symbol: possibleSymbols[0],
+  //       interval: '1',
+  //       timezone: 'Etc/UTC',
+  //       theme: 'dark',
+  //       style: '1',
+  //       locale: 'en',
+  //       toolbar_bg: '#000000',
+  //       enable_publishing: false,
+  //       backgroundColor: '#000000',
+  //       gridColor: '#1a1a1a',
+  //       hide_top_toolbar: false,
+  //       hide_legend: false,
+  //       save_image: false,
+  //       container_id: 'tradingview_chart',
+  //       onChartReady: function() {
+  //         console.log('TradingView chart loaded successfully');
+  //       },
+  //       studies: []
+  //     });
+
+  //     chartContainerRef.current.appendChild(script);
+  //   }
+  // }, [pairData]);
+
+  useEffect(() => {
+    if (!pairData?.baseToken?.address || !candleSeriesRef.current) return;
+
+    const updateChart = (data: PriceData[]) => {
+      if (!candleSeriesRef.current) return;
+
+      const lastCandle = data[data.length - 1];
+
+      // High-frequency update of latest candle only
+      candleSeriesRef.current.update({
+        time: lastCandle.time as UTCTimestamp,
+        open: lastCandle.open,
+        high: lastCandle.high,
+        low: lastCandle.low,
+        close: lastCandle.close,
       });
 
-      chartContainerRef.current.appendChild(script);
-    }
-  }, [pairData]);
+      // Full data update at lower frequency to prevent performance issues
+      if (!window.requestAnimationFrame) {
+        candleSeriesRef.current.setData(
+          data.map((item) => ({
+            time: item.time as UTCTimestamp,
+            open: item.open,
+            high: item.high,
+            low: item.low,
+            close: item.close,
+          }))
+        );
+      }
+    };
+
+    // Initial setup
+    const setup = async () => {
+      const data = await priceDataService.getPriceData(
+        pairData.baseToken.address,
+        timeframe
+      );
+      if (data.length && candleSeriesRef.current) {
+        candleSeriesRef.current.setData(
+          data.map((item) => ({
+            time: item.time as UTCTimestamp,
+            open: item.open,
+            high: item.high,
+            low: item.low,
+            close: item.close,
+          }))
+        );
+      }
+    };
+
+    setup();
+    priceDataService.subscribe(pairData.baseToken.address, updateChart);
+
+    return () => {
+      priceDataService.unsubscribe(pairData.baseToken.address, updateChart);
+    };
+  }, [pairData, timeframe]);
 
   useEffect(() => {
     const get = async () => {
