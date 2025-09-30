@@ -9,6 +9,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import FolderIcon from '@mui/icons-material/Folder';
 import WalletIcon from '@mui/icons-material/Wallet';
+import InsightsIcon from '@mui/icons-material/Insights';
 const Sidebar: React.FC = () => {
   const navigate = useNavigate(); // To programmatically navigate
   const location = useLocation(); // To get the current pathname
@@ -94,6 +95,12 @@ const Sidebar: React.FC = () => {
       href: "/trade",
       label: "Trade",
       pro: true,
+    },
+    {
+      icon: InsightsIcon,
+      href: "/explorer",
+      label: "Community Chart",
+      pro: false,
     },
     {
       icon: SwapVertIcon,

@@ -8,17 +8,25 @@ export default defineConfig({
     NodeGlobalsPolyfillPlugin({
         process: true,
         buffer: true,
-    }),react()],
-    optimizeDeps: {
-      esbuildOptions: {
-          define: {
-              global: 'globalThis',
-          },
-          plugins: [
-              NodeGlobalsPolyfillPlugin({
-                  buffer: true,
-              }),
-          ],
-      },
+    }),
+    react()
+  ],
+  optimizeDeps: {
+    esbuildOptions: {
+        define: {
+            global: 'globalThis',
+        },
+        plugins: [
+            NodeGlobalsPolyfillPlugin({
+                buffer: true,
+            }),
+        ],
+    },
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.ts',
+    css: true,
+  }
 })
