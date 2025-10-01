@@ -17,15 +17,16 @@
 
 body {
   font-family: "Satoshi", sans-serif;
+  color: white;
 }
 
-.wallet-adapter-dropdown{
-  background-color: #09090A;
+.wallet-adapter-dropdown {
+  background-color: #09090a;
   border-radius: 50%;
 }
 
-.wallet-adapter-button-trigger{
-  background-color: #09090A;
+.wallet-adapter-button-trigger {
+  background-color: #09090a;
   border-radius: 50%;
 }
 

@@ -1,6 +1,7 @@
 import Layout from "../components/dashboard/layout";
 import SetBalancePage from "../Pages/balance/funds";
 import ComingSoon from "../Pages/comingSoon/coming";
+import Communities from "../Pages/community/Communities";
 import DocsPage from "../Pages/docs/docs";
 import HomePage from "../Pages/home/home";
 import Landing from "../Pages/landing/Landing";
@@ -22,6 +23,19 @@ const appRoutes = [
         <HomePage />
       </Layout>
     ),
+  },
+  {
+    path: "/community",
+    children: [
+      {
+        index: true,
+        element: (
+          <Layout>
+            <Communities />
+          </Layout>
+        ),
+      },
+    ],
   },
   {
     path: "/funds",
@@ -87,7 +101,6 @@ const appRoutes = [
       </Layout>
     ),
   },
-
 ];
 
 export default appRoutes;

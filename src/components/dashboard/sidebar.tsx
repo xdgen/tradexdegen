@@ -1,14 +1,15 @@
 import { cn } from "../../lib/utils";
 import React from "react";
-import { useNavigate, useLocation } from 'react-router-dom'; // For routing
+import { useNavigate, useLocation } from "react-router-dom"; // For routing
 
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
-import SwapVertIcon from '@mui/icons-material/SwapVert';
-import SettingsIcon from '@mui/icons-material/Settings';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import FolderIcon from '@mui/icons-material/Folder';
-import WalletIcon from '@mui/icons-material/Wallet';
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import CandlestickChartIcon from "@mui/icons-material/CandlestickChart";
+import SwapVertIcon from "@mui/icons-material/SwapVert";
+import GroupIcon from "@mui/icons-material/Group";
+import SettingsIcon from "@mui/icons-material/Settings";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import FolderIcon from "@mui/icons-material/Folder";
+import WalletIcon from "@mui/icons-material/Wallet";
 const Sidebar: React.FC = () => {
   const navigate = useNavigate(); // To programmatically navigate
   const location = useLocation(); // To get the current pathname
@@ -120,6 +121,12 @@ const Sidebar: React.FC = () => {
       pro: true,
       external: true, // This is now recognized as valid
     },
+    {
+      icon: GroupIcon,
+      href: "/community",
+      label: "Community",
+      pro: true,
+    },
   ];
 
   // Function to handle navigation
@@ -131,7 +138,6 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  
   return (
     <div className="bg-background">
       <div className="w-60 py-10">
