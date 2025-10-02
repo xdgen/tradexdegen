@@ -1,7 +1,6 @@
 import Layout from "../components/dashboard/layout";
 import SetBalancePage from "../Pages/balance/funds";
 import ComingSoon from "../Pages/comingSoon/coming";
-import Communities from "../Pages/community/Communities";
 import DocsPage from "../Pages/docs/docs";
 import HomePage from "../Pages/home/home";
 import Landing from "../Pages/landing/Landing";
@@ -10,11 +9,29 @@ import PnlPage from "../Pages/pnl/page";
 import SettingPage from "../Pages/setting/settings";
 import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
+import ExplorerGrid from "../Pages/explorer/ExplorerGrid";
+import DetailsPage from "../Pages/explorer/DetailsPage";
 
 const appRoutes = [
   {
     path: "/",
     element: <Landing />,
+  },
+  {
+    path: "/explorer",
+    element: (
+      <Layout>
+        <ExplorerGrid />
+      </Layout>
+    ),
+  },
+  {
+    path: "/class/:id",
+    element: (
+      <Layout>
+        <DetailsPage />
+      </Layout>
+    ),
   },
   {
     path: "/home",
@@ -23,19 +40,6 @@ const appRoutes = [
         <HomePage />
       </Layout>
     ),
-  },
-  {
-    path: "/community",
-    children: [
-      {
-        index: true,
-        element: (
-          <Layout>
-            <Communities />
-          </Layout>
-        ),
-      },
-    ],
   },
   {
     path: "/funds",

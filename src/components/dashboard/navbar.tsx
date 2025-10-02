@@ -1,9 +1,17 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletBar } from "./walletBar";
+import { useLocation } from "react-router-dom";
+import CommunityRegisterDialog from "../communityRegisterDialog";
 
 const Navbar: React.FC = () => {
+  const { pathname } = useLocation();
+  const isCommunityActive = useMemo(
+    () => pathname.includes("explorer"),
+    [pathname]
+  );
+
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">
       {/* Left section with profile and language */}
@@ -15,6 +23,7 @@ const Navbar: React.FC = () => {
 
       {/* Right section with settings and notification */}
       <div className="flex gap-4 items-center">
+        {isCommunityActive && <CommunityRegisterDialog />}
         <WalletMultiButton
           style={{
             margin: "1px 0",
