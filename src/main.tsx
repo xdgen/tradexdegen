@@ -6,8 +6,8 @@ import appRoutes from "./routes/Routes";
 import { Toaster } from "../src/components/ui/sonner";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import SolanaWalletProvider from "./provider/WalletProvider ";
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const router = createBrowserRouter(appRoutes);
 

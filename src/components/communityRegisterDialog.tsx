@@ -1,0 +1,198 @@
+import CancelIcon from "@mui/icons-material/Cancel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "./ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Button } from "./ui/button";
+import { useCreateAcademyForm } from "../hooks/forms/useCreateAcademyForm";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Label } from "./ui/label";
+import DatePicker from "./DatePicker";
+import { cn } from "../lib/utils";
+import { Controller } from "react-hook-form";
+import FilepondUploader from "./FilepondUploader";
+
+const CommunityRegisterDialog = () => {
+  const {
+    form: {
+      handleSubmit,
+      register,
+      setValue,
+      formState: { errors, isValid, isSubmitting },
+      control,
+    },
+    fields,
+    append,
+    remove,
+    onSubmit,
+  } = useCreateAcademyForm();
+
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <Button className="!font-bold rounded-[20px]">Create an academy</Button>
+      </DialogTrigger>
+
+      <DialogContent className="w-[43%] max-w-full h-[40rem] grid grid-rows-[max-content_1fr] gap-y-5">
+        <DialogHeader>
+          <DialogTitle>Create XDegen Academy</DialogTitle>
+          <DialogDescription>
+            Start teaching students by setting up your academy
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="h-full grid grid-rows-[1fr_max-content] gap-y-3 overflow-hidden"
+        >
+          <div className="space-y-3 overflow-y-auto no-scrollbar">
+            <Input
+              type="text"
+              label="Title"
+              {...register("title")}
+              error={errors.title?.message}
+            />
+
+            <Textarea
+              label="Description"
+              {...register("desc")}
+              error={errors.desc?.message}
+              className="resize-none"
+            />
+
+            {/* Durations */}
+            <div className="grid grid-cols-2 gap-3.5">
+              <Controller
+                control={control}
+                name="startDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    label="Start Date"
+                    onChange={field.onChange}
+                    placeholder="Select start date"
+                    error={errors.startDate?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                control={control}
+                name="endDate"
+                render={({ field }) => (
+                  <DatePicker
+                    value={field.value}
+                    label="End Date"
+                    onChange={field.onChange}
+                    placeholder="Select end date"
+                    error={errors.endDate?.message}
+                  />
+                )}
+              />
+            </div>
+
+            {/* Tutors */}
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label>Tutors</Label>
+                <button
+                  type="button"
+                  onClick={() => append({ value: "" })}
+                  className="text-blue-500 mt-2 text-sm"
+                >
+                  + Add Tutor
+                </button>
+              </div>
+
+              <div
+                className={cn(
+                  "grid gap-2 items-start",
+                  fields.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                )}
+              >
+                {fields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className="grid grid-cols-[1fr_max-content] items-center gap-1 mb-2 w-full"
+                  >
+                    <Input
+                      {...register(`tutors.${index}.value` as const, {
+                        required: true,
+                      })}
+                      placeholder={`Tutor ${index + 1}`}
+                      className="border p-2 rounded flex-1 w-full"
+                      error={errors.tutors && errors.tutors[0]?.value?.message}
+                    />
+                    {fields.length !== 1 && (
+                      <button
+                        type="button"
+                        onClick={() => remove(index)}
+                        className="text-[#545454] w-max"
+                      >
+                        <CancelIcon />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label>Plan</Label>
+                <Select>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Select plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["Free", "Paid"].map((plan) => (
+                      <SelectItem key={plan} value={plan.toLowerCase()}>
+                        {plan}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Input
+                type="text"
+                label="Payout Wallet Address"
+                placeholder="HDSDSD***************"
+                {...register("payoutWallet")}
+                error={errors.payoutWallet?.message}
+              />
+            </div>
+
+            <FilepondUploader
+              label="Banner"
+              setImage={(imageUrl: string) => setValue("banner", imageUrl)}
+            />
+          </div>
+
+          <Button
+            isLoading={isSubmitting}
+            disabled={!isValid || isSubmitting}
+            className="w-full rounded-full"
+            size="lg"
+          >
+            Submit
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default CommunityRegisterDialog;
