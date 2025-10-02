@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../lib/services/supabase";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function HomeView() {

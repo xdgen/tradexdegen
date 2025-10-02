@@ -4,12 +4,13 @@ import { nanoid } from "nanoid";
 import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation";
 import FilePondPluginImagePreview from "filepond-plugin-image-preview";
 
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/services/supabase";
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 import "filepond/dist/filepond.min.css";
 import { toast } from "sonner";
 import { FilePondFile, FilePondInitialFile } from "filepond";
 import { Label } from "./ui/label";
+import { pinata } from "../lib/services/pinata";
 
 // Register the plugins
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
@@ -54,45 +55,37 @@ const FilepondUploader = ({ label, setImage }: FilepondUploaderProps) => {
     options
   ) => {
     if (file) {
-      console.log(fieldName, metadata, transfer, options);
       const filename = nanoid();
       const fileExt = file?.name.split(".").pop();
       const newFileName = `${filename}.${fileExt}`;
-      const bucketName = process.env
+      const bucketName = import.meta.env
         .VITE_SUPABASE_PROJECT_STORAGE_BUCKET_NAME as string;
+      console.log(bucketName, newFileName);
 
       try {
         progress(false, 0, file.size);
 
-        const { data: supabaseResponseData, error: uploadError } =
-          await supabase.storage.from(bucketName).upload(newFileName, file);
+        const upload = await pinata.upload.public.file(file, {
+          metadata: { name: "academy-banner" },
+        });
+        console.log(upload);
 
-        if (uploadError) {
-          error(uploadError.message);
+        if (upload) {
+          const publicUrlData = `https://${
+            import.meta.env.VITE_PINATA_GATEWAY_URL
+          }/ipfs/${upload.cid}`;
 
-          return {
-            abort: () => {
-              console.log("Aborting upload");
-              abort();
-            },
-          };
+          // Report progress as complete
+          progress(true, file.size, file.size);
+          progress(true, 1, 1);
+          load(publicUrlData);
+
+          // Set images
+          setImage(publicUrlData);
+          toast("Image successfully uploaded");
         }
-
-        // Report progress as complete
-        progress(true, file.size, file.size);
-
-        const { data: publicUrlData } = await supabase.storage
-          .from(bucketName)
-          .getPublicUrl(supabaseResponseData?.path);
-
-        progress(true, 1, 1);
-        load(publicUrlData.publicUrl);
-
-        // Set images
-        setImage(publicUrlData.publicUrl);
-        toast("Image successfully uploaded");
-      } catch (err) {
-        console.log(err);
+      } catch (err: any) {
+        console.log(err?.response);
         return {
           abort: () => {
             abort();
