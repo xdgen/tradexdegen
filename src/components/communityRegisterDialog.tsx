@@ -23,6 +23,7 @@ import DatePicker from "./DatePicker";
 import { cn } from "../lib/utils";
 import { Controller } from "react-hook-form";
 import FilepondUploader from "./FilepondUploader";
+import { FormItem } from "./ui/form";
 
 const CommunityRegisterDialog = () => {
   const {
@@ -81,7 +82,7 @@ const CommunityRegisterDialog = () => {
                   <DatePicker
                     value={field.value}
                     label="Start Date"
-                    onChange={field.onChange}
+                    onChange={(value) => field.onChange(value)}
                     placeholder="Select start date"
                     error={errors.startDate?.message}
                   />
@@ -95,7 +96,7 @@ const CommunityRegisterDialog = () => {
                   <DatePicker
                     value={field.value}
                     label="End Date"
-                    onChange={field.onChange}
+                    onChange={(value) => field.onChange(value)}
                     placeholder="Select end date"
                     error={errors.endDate?.message}
                   />
@@ -150,10 +151,10 @@ const CommunityRegisterDialog = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label>Plan</Label>
+              <FormItem>
+                <Label data-slot="form-label">Plan</Label>
                 <Select>
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="!h-12">
                     <SelectValue placeholder="Select plan" />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,7 +165,12 @@ const CommunityRegisterDialog = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+                {errors.plan?.message && (
+                  <span className="text-destructive text-sm">
+                    {errors.plan?.message}
+                  </span>
+                )}
+              </FormItem>
 
               <Input
                 type="text"
@@ -172,6 +178,7 @@ const CommunityRegisterDialog = () => {
                 placeholder="HDSDSD***************"
                 {...register("payoutWallet")}
                 error={errors.payoutWallet?.message}
+                className="mt-0"
               />
             </div>
 

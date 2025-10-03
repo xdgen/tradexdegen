@@ -1,3 +1,4 @@
+import React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 
@@ -7,8 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Label } from "./ui/label";
 
 interface DatePickerProps {
-  value?: Date;
-  onChange?: (date?: Date) => void;
+  value: Date;
+  onChange: (date: Date | undefined) => void;
   placeholder?: string;
   error?: string;
   label?: string;
@@ -21,10 +22,13 @@ function DatePicker({
   label,
   placeholder = "Pick a date",
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false);
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="flex flex-col gap-y-2">
+        <div className="flex flex-col gap-2 w-full">
           {label && <Label data-slot="form-label">{label}</Label>}
           <Button
             type="button"
@@ -39,7 +43,14 @@ function DatePicker({
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" selected={value} onSelect={onChange} />
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(date) => {
+            setDate(date);
+            onChange(date);
+          }}
+        />
       </PopoverContent>
     </Popover>
   );
