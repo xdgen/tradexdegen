@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletBar } from "./walletBar";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import CommunityRegisterDialog from "../communityRegisterDialog";
 
 const Navbar: React.FC = () => {
@@ -35,6 +35,12 @@ const Navbar: React.FC = () => {
             border: "1px solid rgba(42, 96, 58, 0.57)",
           }}
         />
+        <Link
+          to="/call"
+          className="py-2 px-6 rounded-md text-white flex items-center gap-2 font-thin cursor-pointer border border-primary/10 bg-primary/10 hover:bg-primary/20 hover:text-white/100 transition-all duration-300 shadow-md hover:shadow-primary/30"
+        >
+          Live Call
+        </Link>
         <WalletBar />
       </div>
     </nav>

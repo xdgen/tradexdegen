@@ -25,21 +25,36 @@ function DatePicker({
     <Popover>
       <PopoverTrigger asChild>
         <div className="flex flex-col gap-y-2">
-          {label && <Label data-slot="form-label">{label}</Label>}
+          {label && (
+            <Label 
+              data-slot="form-label" 
+              className="text-white/90 text-sm font-medium"
+            >
+              {label}
+            </Label>
+          )}
           <Button
             type="button"
             variant="outline"
             data-empty={!value}
-            className="h-12 data-[empty=true]:text-muted-foreground justify-start text-left font-normal"
+            className="h-12 data-[empty=true]:text-muted-foreground justify-start text-left font-normal bg-secondary/50 border-white/10 text-white hover:bg-secondary/70 hover:border-white/20"
           >
             <CalendarIcon className="size-4 mr-1.5" />
             {value ? format(value, "PPP") : <span>{placeholder}</span>}
           </Button>
-          {error && <span className="text-destructive text-sm">{error}</span>}
+          {error && <span className="text-red-400 text-sm">{error}</span>}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" selected={value} onSelect={onChange} />
+      <PopoverContent 
+        className="w-auto p-0 bg-secondary border-white/10 shadow-xl"
+        align="center"
+        side="bottom"
+      >
+        <Calendar 
+          mode="single" 
+          selected={value} 
+          onSelect={onChange}
+        />
       </PopoverContent>
     </Popover>
   );

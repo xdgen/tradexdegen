@@ -20,7 +20,6 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import DatePicker from "./DatePicker";
-import { cn } from "../lib/utils";
 import { Controller } from "react-hook-form";
 import FilepondUploader from "./FilepondUploader";
 
@@ -45,7 +44,7 @@ const CommunityRegisterDialog = () => {
         <Button className="!font-bold rounded-[20px]">Create an academy</Button>
       </DialogTrigger>
 
-      <DialogContent className="w-[43%] max-w-full h-[40rem] grid grid-rows-[max-content_1fr] gap-y-5">
+      <DialogContent className="w-[95%] sm:w-[90%] md:w-[80%] lg:w-[60%] xl:w-[50%] max-w-4xl h-[90vh] max-h-[40rem] grid grid-rows-[max-content_1fr] gap-y-5">
         <DialogHeader>
           <DialogTitle>Create XDegen Academy</DialogTitle>
           <DialogDescription>
@@ -73,7 +72,7 @@ const CommunityRegisterDialog = () => {
             />
 
             {/* Durations */}
-            <div className="grid grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <Controller
                 control={control}
                 name="startDate"
@@ -116,32 +115,29 @@ const CommunityRegisterDialog = () => {
                 </button>
               </div>
 
-              <div
-                className={cn(
-                  "grid gap-2 items-start",
-                  fields.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                )}
-              >
+              <div className="space-y-3">
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className="grid grid-cols-[1fr_max-content] items-center gap-1 mb-2 w-full"
+                    className="flex items-center gap-3 w-full"
                   >
-                    <Input
-                      {...register(`tutors.${index}.value` as const, {
-                        required: true,
-                      })}
-                      placeholder={`Tutor ${index + 1}`}
-                      className="border p-2 rounded flex-1 w-full"
-                      error={errors.tutors && errors.tutors[0]?.value?.message}
-                    />
+                    <div className="flex-1">
+                      <Input
+                        {...register(`tutors.${index}.value` as const, {
+                          required: true,
+                        })}
+                        placeholder={`Tutor ${index + 1}`}
+                        error={errors.tutors && errors.tutors[0]?.value?.message}
+                      />
+                    </div>
                     {fields.length !== 1 && (
                       <button
                         type="button"
                         onClick={() => remove(index)}
-                        className="text-[#545454] w-max"
+                        className="text-red-400 hover:text-red-300 p-2 rounded-md hover:bg-red-400/10 transition-colors flex-shrink-0"
+                        aria-label="Remove tutor"
                       >
-                        <CancelIcon />
+                        <CancelIcon className="w-5 h-5" />
                       </button>
                     )}
                   </div>
@@ -149,7 +145,7 @@ const CommunityRegisterDialog = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="space-y-2">
                 <Label>Plan</Label>
                 <Select>

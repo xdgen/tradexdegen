@@ -14,7 +14,7 @@ const Navbar = () => {
           Launch app
         </Link>
       </div>
-    </div>
+    </div>  
   );
 };
 

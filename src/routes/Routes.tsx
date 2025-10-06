@@ -11,6 +11,7 @@ import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
 import ExplorerGrid from "../Pages/explorer/ExplorerGrid";
 import DetailsPage from "../Pages/explorer/DetailsPage";
+import VideoCall from "../Pages/call/VideoCall";
 
 const appRoutes = [
   {
@@ -30,6 +31,22 @@ const appRoutes = [
     element: (
       <Layout>
         <DetailsPage />
+      </Layout>
+    ),
+  },
+  {
+    path: "/call",
+    element: (
+      <Layout>
+        <VideoCall />
+      </Layout>
+    ),
+  },
+  {
+    path: "/call/:callId",
+    element: (
+      <Layout>
+        <VideoCall />
       </Layout>
     ),
   },
