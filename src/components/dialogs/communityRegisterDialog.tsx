@@ -6,24 +6,24 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-} from "./ui/dialog";
+} from "../ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
-import { Button } from "./ui/button";
-import { useCreateAcademyForm } from "../hooks/forms/useCreateAcademyForm";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Label } from "./ui/label";
-import DatePicker from "./DatePicker";
-import { cn } from "../lib/utils";
+} from "../ui/select";
+import { Button } from "../ui/button";
+import { useCreateAcademyForm } from "../../hooks/forms/useCreateAcademyForm";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Label } from "../ui/label";
+import DatePicker from "../DatePicker";
+import { cn } from "../../lib/utils";
 import { Controller } from "react-hook-form";
-import FilepondUploader from "./FilepondUploader";
-import { FormItem } from "./ui/form";
+import FilepondUploader from "../FilepondUploader";
+import { FormItem } from "../ui/form";
 
 const CommunityRegisterDialog = () => {
   const {

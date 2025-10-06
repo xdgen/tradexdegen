@@ -48,4 +48,11 @@ export const createAcademySchema = z
     }
   );
 
+export const userRoleSchema = z.object({
+  role: z.enum(["academy", "student"], {
+    errorMap: () => ({ message: "Select a valid role" }),
+  }),
+});
+
 export type CreateAcademyInput = z.infer<typeof createAcademySchema>;
+export type UserRoleSchemaType = z.infer<typeof userRoleSchema>;

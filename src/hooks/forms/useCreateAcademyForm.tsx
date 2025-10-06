@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createAcademySchema,
   CreateAcademyInput,
-} from "../../lib/schemas/academy.schema.ts";
+} from "../../lib/schemas/community.schema.ts";
 
 export function useCreateAcademyForm() {
   const form = useForm<CreateAcademyInput>({
