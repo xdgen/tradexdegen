@@ -89,5 +89,17 @@ export const userRoleSchema = z.object({
   }),
 });
 
+export const academyApplicationSchema = z.object({
+  xHandle: z
+    .string({ required_error: "Please input your X handle" })
+    .trim()
+    .min(4, "Invalid X handle")
+    .refine((value) => /^@[A-Za-z0-9_]{1,15}$/.test(value), {
+      message: "Enter a valid X handle (e.g. @trader123 or trader_123)",
+      path: ["xHandle"],
+    }),
+});
+
 export type CreateAcademyInput = z.infer<typeof createAcademySchema>;
 export type UserRoleSchemaType = z.infer<typeof userRoleSchema>;
+export type AcademyApplicationType = z.infer<typeof academyApplicationSchema>;

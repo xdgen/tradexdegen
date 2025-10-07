@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "../ui/button";
-import { useCreateAcademyForm } from "../../hooks/forms/useCreateAcademyForm";
+import { useCreateAcademyForm } from "../../hooks/forms/useAcademyForm";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
@@ -193,7 +193,7 @@ const CommunityRegisterDialog = () => {
             {plan && plan.toLowerCase() === "paid" && (
               <Input
                 type="number"
-                label="Fee (USDT)"
+                label="Fee (SOL)"
                 {...register("fee")}
                 error={errors.fee?.message}
               />

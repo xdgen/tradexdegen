@@ -59,7 +59,7 @@ export const useCheckUserRole = () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Here you would typically check if the wallet exists in your backend
-      const response = "academy";
+      const response = "student";
 
       if (response) {
         // Set role from API Response and
