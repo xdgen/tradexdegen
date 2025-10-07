@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { UserRoleSchemaType } from "@/lib/schemas/community.schema";
 import { Button } from "../ui/button";
 
-const roles: Role[] = [
+const roles: RoleData[] = [
   {
     title: "academy",
     description: "Create lessons, share insights, and guide students.",
@@ -31,8 +31,6 @@ const SetUserRoleDialog = ({
 }) => {
   const { form, onSubmit } = useUserRole();
   const role = form.watch("role");
-
-  console.log("Role:", role, form.formState.isValid, form.getValues(), role);
 
   return (
     <Dialog open={isOpen}>
