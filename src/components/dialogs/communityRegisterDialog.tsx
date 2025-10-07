@@ -24,6 +24,7 @@ import { cn } from "../../lib/utils";
 import { Controller } from "react-hook-form";
 import FilepondUploader from "../FilepondUploader";
 import { FormItem } from "../ui/form";
+import { CreateAcademyInput } from "../../lib/schemas/community.schema";
 
 const CommunityRegisterDialog = () => {
   const {
@@ -33,12 +34,14 @@ const CommunityRegisterDialog = () => {
       setValue,
       formState: { errors, isValid, isSubmitting },
       control,
+      watch,
     },
     fields,
     append,
     remove,
     onSubmit,
   } = useCreateAcademyForm();
+  const plan = watch("plan");
 
   return (
     <Dialog>
@@ -126,7 +129,7 @@ const CommunityRegisterDialog = () => {
                 {fields.map((field, index) => (
                   <div
                     key={field.id}
-                    className="grid grid-cols-[1fr_max-content] items-center gap-1 mb-2 w-full"
+                    className="grid grid-cols-[1fr_max-content] items-center gap-1 w-full"
                   >
                     <Input
                       {...register(`tutors.${index}.value` as const, {
@@ -153,7 +156,12 @@ const CommunityRegisterDialog = () => {
             <div className="grid grid-cols-2 gap-2">
               <FormItem>
                 <Label data-slot="form-label">Plan</Label>
-                <Select>
+                <Select
+                  onValueChange={(value) =>
+                    setValue("plan", value as CreateAcademyInput["plan"])
+                  }
+                  value={plan}
+                >
                   <SelectTrigger className="!h-12">
                     <SelectValue placeholder="Select plan" />
                   </SelectTrigger>
@@ -181,6 +189,15 @@ const CommunityRegisterDialog = () => {
                 className="mt-0"
               />
             </div>
+
+            {plan && plan.toLowerCase() === "paid" && (
+              <Input
+                type="number"
+                label="Fee (USDT)"
+                {...register("fee")}
+                error={errors.fee?.message}
+              />
+            )}
 
             <FilepondUploader
               label="Banner"

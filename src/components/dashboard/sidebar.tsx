@@ -10,124 +10,72 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import FolderIcon from "@mui/icons-material/Folder";
 import WalletIcon from "@mui/icons-material/Wallet";
 import InsightsIcon from "@mui/icons-material/Insights";
+
+// Define the route type
+type Route = {
+  icon: React.ComponentType;
+  href: string;
+  label: string;
+  pro: boolean;
+  external?: boolean; // Optional external flag
+};
+
+// Define routes using the new type
+const routes: Route[] = [
+  {
+    icon: DashboardIcon,
+    href: "/home",
+    label: "Dashboard",
+    pro: false,
+  },
+  {
+    icon: WalletIcon,
+    href: "/funds",
+    label: "Set Faucet",
+    pro: true,
+  },
+  {
+    icon: CandlestickChartIcon,
+    href: "/trade",
+    label: "Trade",
+    pro: true,
+  },
+  {
+    icon: InsightsIcon,
+    href: "/explorer",
+    label: "Community Chart",
+    pro: false,
+  },
+  {
+    icon: SwapVertIcon,
+    href: "/swap",
+    label: "Swap / Long",
+    pro: true,
+  },
+  {
+    icon: MonetizationOnIcon,
+    href: "/pnl",
+    label: "Pnl",
+    pro: true,
+  },
+  {
+    icon: SettingsIcon,
+    href: "/settings",
+    label: "Settings",
+    pro: false,
+  },
+  {
+    icon: FolderIcon,
+    href: "https://xdegen.gitbook.io/docs", // External link
+    label: "Docs",
+    pro: true,
+    external: true, // This is now recognized as valid
+  },
+];
+
 const Sidebar: React.FC = () => {
-  const navigate = useNavigate(); // To programmatically navigate
-  const location = useLocation(); // To get the current pathname
-
-  // Define routes
-  // const routes = [
-  //   {
-  //     icon: CompassCalibrationIcon,
-  //     href: "/home",
-  //     label: "Home",
-  //     pro: false,
-  //   },
-  //   {
-  //     icon: AnalyticsIcon,
-  //     href: "/funds",
-  //     label: "Set balance",
-  //     pro: true,
-  //   },
-  //   {
-  //     icon: ManageAccountsIcon,
-  //     href: "/trade",
-  //     label: "Trade",
-  //     pro: true,
-  //   },
-  //   {
-  //     icon: LocalAtmIcon,
-  //     href: "/coming",
-  //     label: "Analysis",
-  //     pro: true,
-  //   },
-  //   {
-  //     icon: MonetizationOnIcon,
-  //     href: "/pnl",
-  //     label: "Pnl",
-  //     pro: true,
-  //   },
-
-  //   {
-  //     icon: SettingsIcon,
-  //     href: "/settings",
-  //     label: "Settings ",
-  //     pro: false,
-  //   },
-  //   {
-  //     icon: FolderIcon,
-  //     href: "https://xdegen.gitbook.io/docs",
-  //     label: "Docs",
-  //     pro: true,
-  //   },
-  // ];
-
-  // Function to handle navigation
-  // const onNavigate = (url: string, pro: boolean) => {
-  //   // Optional: Handle 'pro' check or authentication logic
-  //   navigate(url);  // Navigate to the new URL
-  // };
-
-  // Define the route type
-  type Route = {
-    icon: React.ComponentType;
-    href: string;
-    label: string;
-    pro: boolean;
-    external?: boolean; // Optional external flag
-  };
-
-  // Define routes using the new type
-  const routes: Route[] = [
-    {
-      icon: DashboardIcon,
-      href: "/home",
-      label: "Dashboard",
-      pro: false,
-    },
-    {
-      icon: WalletIcon,
-      href: "/funds",
-      label: "Set Faucet",
-      pro: true,
-    },
-    {
-      icon: CandlestickChartIcon,
-      href: "/trade",
-      label: "Trade",
-      pro: true,
-    },
-    {
-      icon: InsightsIcon,
-      href: "/explorer",
-      label: "Community Chart",
-      pro: false,
-    },
-    {
-      icon: SwapVertIcon,
-      href: "/swap",
-      label: "Swap / Long",
-      pro: true,
-    },
-    {
-      icon: MonetizationOnIcon,
-      href: "/pnl",
-      label: "Pnl",
-      pro: true,
-    },
-    {
-      icon: SettingsIcon,
-      href: "/settings",
-      label: "Settings",
-      pro: false,
-    },
-    {
-      icon: FolderIcon,
-      href: "https://xdegen.gitbook.io/docs", // External link
-      label: "Docs",
-      pro: true,
-      external: true, // This is now recognized as valid
-    },
-  ];
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Function to handle navigation
   const onNavigate = (url: string, pro: boolean, external?: boolean) => {

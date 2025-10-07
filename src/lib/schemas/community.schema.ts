@@ -23,6 +23,17 @@ export const createAcademySchema = z
     plan: z.enum(["free", "paid"], {
       errorMap: () => ({ message: "Choose Free or Paid" }),
     }),
+    fee: z
+      .string({
+        required_error: "Fee amount is required for paid academies",
+        invalid_type_error: "Fee must be a valid number",
+      })
+      .trim()
+      .optional()
+      .refine(
+        (val) => !val || /^[0-9]+(\.[0-9]+)?$/.test(val),
+        "Fee must be a valid positive number"
+      ),
     tutors: z.array(
       z.object({
         value: z.string().min(1, "Item cannot be empty"),
@@ -45,6 +56,30 @@ export const createAcademySchema = z
     {
       message: "Academy duration must be at least 1 week",
       path: ["endDate"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.plan === "paid") {
+        return data.fee && parseFloat(data.fee) > 0;
+      }
+      return true;
+    },
+    {
+      message: "Fee is required and must be greater than 0 for paid academies",
+      path: ["fee"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.plan === "free") {
+        return !data.fee || parseFloat(data.fee) === 0;
+      }
+      return true;
+    },
+    {
+      message: "Free academies cannot have a fee",
+      path: ["fee"],
     }
   );
 

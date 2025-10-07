@@ -32,20 +32,25 @@ export const useCheckUserRole = () => {
   const { publicKey, connected } = useWallet();
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [role, setRole] = useState<Role | null>(null);
+  const roleRef = useRef<Role | null>(null);
+
+  const loadUserRole = useCallback(() => {
+    if (!connected || !publicKey) {
+      setRole(null);
+      return;
+    }
+
+    const saved = localStorage.getItem(`userRole:${publicKey.toString()}`);
+    if (saved) {
+      roleRef.current = saved as Role;
+      setRole(saved as Role);
+    }
+  }, [connected, publicKey]);
 
   const checkIfWalletExist = useCallback(async () => {
     if (!connected || !publicKey) return;
 
-    const walletAddress = publicKey.toString();
-
-    // Check if we’ve already verified this wallet before
-    const savedData = localStorage.getItem(`userRole:${walletAddress}`);
-
-    if (savedData) {
-      const parsedRole = JSON.parse(savedData);
-      setRole(parsedRole);
-      return;
-    }
+    if (roleRef.current) return;
 
     try {
       setIsCheckingUserRole(true);
@@ -59,7 +64,7 @@ export const useCheckUserRole = () => {
       if (response) {
         // Set role from API Response and
         setRole(response);
-        localStorage.setItem(`userRole:${walletAddress}`, response);
+        localStorage.setItem(`userRole:${publicKey.toString()}`, response);
       } else {
         setIsRoleDialogOpen(true);
       }
@@ -69,10 +74,16 @@ export const useCheckUserRole = () => {
     } finally {
       setIsCheckingUserRole(false);
     }
-  }, [publicKey, connected, role]);
+  }, [publicKey, connected]);
 
   useEffect(() => {
-    checkIfWalletExist();
+    loadUserRole();
+  }, [loadUserRole]);
+
+  useEffect(() => {
+    if (connected && publicKey && !role) {
+      checkIfWalletExist();
+    }
   }, [checkIfWalletExist]);
 
   const closeDialog = () => {
