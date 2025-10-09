@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+
 import {
   Dialog,
   DialogContent,
@@ -13,8 +15,10 @@ import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
-import { supabase } from "../../lib/supabase";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { supabase } from "../../lib/services/supabase";
+import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
+import { useCheckUserRole } from "../../hooks/forms/useUserRole";
+import { Loader2 } from "lucide-react";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -24,6 +28,8 @@ export default function HomeView() {
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isCheckingUserRole, isRoleDialogOpen, closeDialog } =
+    useCheckUserRole();
 
   const handleRowClick = (pair: any) => {
     navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
@@ -60,7 +66,7 @@ export default function HomeView() {
     }
     try {
       setLoading(true);
-      const tx = await claimXSOL(publicKey);
+      const tx = await claimXSOL(publicKey, 20);
 
       if (!tx) {
         throw new Error("failed");
@@ -129,10 +135,18 @@ export default function HomeView() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
         {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full bg-gray-200/20" />
+          <Skeleton key={i} className="h-44 w-full bg-gray-200/20" />
         ))}
+      </div>
+    );
+  }
+
+  if (isCheckingUserRole) {
+    return (
+      <div className="z-[60] bg-black/10 backdrop-blur-md fixed top-0 left-0 size-full flex items-center justify-center">
+        <Loader2 className="size-12 animate-spin duration-500" />
       </div>
     );
   }
@@ -274,9 +288,9 @@ export default function HomeView() {
                     <p className="text-gray-400 mb-2">
                       Account:{" "}
                       {publicKey
-                        ? `${publicKey.toString().slice(0, 4)}...${publicKey
-                            .toString()
-                            .slice(-4)}`
+                        ? `${publicKey?.toString().slice(0, 4)}...${publicKey
+                            ?.toString()
+                            ?.slice(-4)}`
                         : "Not connected"}
                     </p>
                     <input
@@ -360,6 +374,9 @@ export default function HomeView() {
           </div>
         ))}
       </div>
+
+      {/* User Role Form */}
+      <SetUserRoleDialog isOpen={isRoleDialogOpen} closeDialog={closeDialog} />
     </div>
   );
 }

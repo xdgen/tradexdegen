@@ -9,11 +9,29 @@ import PnlPage from "../Pages/pnl/page";
 import SettingPage from "../Pages/setting/settings";
 import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
+import ExplorerGrid from "../Pages/explorer/ExplorerGrid";
+import DetailsPage from "../Pages/explorer/DetailsPage";
 
 const appRoutes = [
   {
     path: "/",
     element: <Landing />,
+  },
+  {
+    path: "/explorer",
+    element: (
+      <Layout>
+        <ExplorerGrid />
+      </Layout>
+    ),
+  },
+  {
+    path: "/class/:id",
+    element: (
+      <Layout>
+        <DetailsPage />
+      </Layout>
+    ),
   },
   {
     path: "/home",
@@ -87,7 +105,6 @@ const appRoutes = [
       </Layout>
     ),
   },
-
 ];
 
 export default appRoutes;

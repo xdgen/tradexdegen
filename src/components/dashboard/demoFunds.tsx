@@ -10,7 +10,6 @@ import {
 } from "../../components/ui/dialog";
 import { claimXSOL, SolToken } from "../testToken";
 import { toast } from "sonner";
-import AppKit from "./reownwallet";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";

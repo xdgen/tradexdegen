@@ -1,9 +1,18 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletBar } from "./walletBar";
+import CommunityRegisterDialog from "../dialogs/communityRegisterDialog";
+import { useCheckUserRole } from "../../hooks/forms/useUserRole";
 
 const Navbar: React.FC = () => {
+  const { role } = useCheckUserRole();
+  const isAcademy = useMemo(() => {
+    if (!role) null;
+
+    return role === "academy";
+  }, [role]);
+
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">
       {/* Left section with profile and language */}
@@ -15,6 +24,7 @@ const Navbar: React.FC = () => {
 
       {/* Right section with settings and notification */}
       <div className="flex gap-4 items-center">
+        {isAcademy && <CommunityRegisterDialog />}
         <WalletMultiButton
           style={{
             margin: "1px 0",
