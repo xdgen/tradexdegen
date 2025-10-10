@@ -3,7 +3,8 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletBar } from "./walletBar";
 import CommunityRegisterDialog from "../dialogs/communityRegisterDialog";
-import { useCheckUserRole } from "../../hooks/forms/useUserRole";
+import { DialectSolanaNotificationsButton } from "../Dialect";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
 
 const Navbar: React.FC = () => {
   const { role } = useCheckUserRole();
@@ -12,6 +13,8 @@ const Navbar: React.FC = () => {
 
     return role === "academy";
   }, [role]);
+
+  console.log(role, "Role in Navbar");
 
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">
@@ -37,6 +40,7 @@ const Navbar: React.FC = () => {
           }}
         />
         <WalletBar />
+        <DialectSolanaNotificationsButton />
       </div>
     </nav>
   );

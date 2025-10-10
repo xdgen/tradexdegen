@@ -1,5 +1,6 @@
 import { cn } from "../../lib/utils";
 import { useUserRole } from "../../hooks/forms/useUserRole";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
 import {
   Dialog,
   DialogContent,
@@ -29,8 +30,14 @@ const SetUserRoleDialog = ({
   isOpen: boolean;
   closeDialog: () => void;
 }) => {
+  const { updateUserRole } = useCheckUserRole();
   const { form, onSubmit } = useUserRole();
   const role = form.watch("role");
+
+  const handleSumbit = () => {
+    updateUserRole(role!);
+    closeDialog();
+  };
 
   return (
     <Dialog open={isOpen}>
@@ -47,7 +54,7 @@ const SetUserRoleDialog = ({
         </DialogHeader>
 
         <form
-          onSubmit={form.handleSubmit((data) => onSubmit(data, closeDialog))}
+          onSubmit={form.handleSubmit((data) => onSubmit(data, handleSumbit))}
           className="grid gap-4 py-3"
         >
           <RadioGroup
