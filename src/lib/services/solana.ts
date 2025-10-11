@@ -6,6 +6,8 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
+import bs58 from "bs58";
 
 export const sendSol = async (
   wallet: WalletContextState,
@@ -39,4 +41,11 @@ export const sendSol = async (
     console.log("Payment failed:", err?.response);
     throw new Error(err?.message || "Transaction Failed");
   }
+};
+
+export const decodeBase58Key = (base58Key: string) => {
+  const secretKey = bs58.decode(base58Key);
+  const keypair = Keypair.fromSecretKey(secretKey);
+
+  return keypair;
 };

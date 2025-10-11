@@ -100,6 +100,20 @@ export const academyApplicationSchema = z.object({
     }),
 });
 
+export const sendAcademyNotificationSchema = z.object({
+  title: z
+    .string()
+    .min(3, "Title must be at least 3 characters")
+    .max(100, "Title is too long"),
+  message: z
+    .string()
+    .min(10, "Message must be at least 10 characters")
+    .max(1000, "Message is too long"),
+});
+
 export type CreateAcademyInput = z.infer<typeof createAcademySchema>;
 export type UserRoleSchemaType = z.infer<typeof userRoleSchema>;
 export type AcademyApplicationType = z.infer<typeof academyApplicationSchema>;
+export type SendAcademyNotificationType = z.infer<
+  typeof sendAcademyNotificationSchema
+>;

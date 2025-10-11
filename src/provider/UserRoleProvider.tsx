@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useMemo,
 } from "react";
 
 interface IUserRoleContext {
@@ -14,6 +15,7 @@ interface IUserRoleContext {
   closeDialog: () => void;
   role: Role | null;
   updateUserRole: (role: Role) => void;
+  isAuthenticated: boolean;
 }
 
 interface IUserRoleProvider {
@@ -28,6 +30,10 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [role, setRole] = useState<Role | null>(null);
   const roleRef = useRef<Role | null>(null);
+  const isAuthenticated = useMemo(
+    () => (connected && publicKey && role ? true : false),
+    [connected, publicKey, role]
+  );
 
   const loadUserRole = useCallback(() => {
     if (!connected || !publicKey) {
@@ -98,6 +104,7 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
         isCheckingUserRole,
         isRoleDialogOpen,
         closeDialog,
+        isAuthenticated,
         role,
         updateUserRole,
       }}

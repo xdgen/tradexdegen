@@ -31,8 +31,6 @@ export default function HomeView() {
   const { isCheckingUserRole, isRoleDialogOpen, closeDialog } =
     useCheckUserRole();
 
-  console.log(isCheckingUserRole, "isCheckingUserRole", isRoleDialogOpen);
-
   const handleRowClick = (pair: any) => {
     navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
   };

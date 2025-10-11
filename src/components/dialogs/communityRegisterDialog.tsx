@@ -153,50 +153,50 @@ const CommunityRegisterDialog = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <FormItem>
-                <Label data-slot="form-label">Plan</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setValue("plan", value as CreateAcademyInput["plan"])
-                  }
-                  value={plan}
-                >
-                  <SelectTrigger className="!h-12">
-                    <SelectValue placeholder="Select plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Free", "Paid"].map((plan) => (
-                      <SelectItem key={plan} value={plan.toLowerCase()}>
-                        {plan}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.plan?.message && (
-                  <span className="text-destructive text-sm">
-                    {errors.plan?.message}
-                  </span>
-                )}
-              </FormItem>
-
-              <Input
-                type="text"
-                label="Payout Wallet Address"
-                placeholder="HDSDSD***************"
-                {...register("payoutWallet")}
-                error={errors.payoutWallet?.message}
-                className="mt-0"
-              />
-            </div>
+            <FormItem>
+              <Label data-slot="form-label">Plan</Label>
+              <Select
+                onValueChange={(value) =>
+                  setValue("plan", value as CreateAcademyInput["plan"])
+                }
+                value={plan}
+              >
+                <SelectTrigger className="!h-12">
+                  <SelectValue placeholder="Select plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Free", "Paid"].map((plan) => (
+                    <SelectItem key={plan} value={plan.toLowerCase()}>
+                      {plan}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.plan?.message && (
+                <span className="text-destructive text-sm">
+                  {errors.plan?.message}
+                </span>
+              )}
+            </FormItem>
 
             {plan && plan.toLowerCase() === "paid" && (
-              <Input
-                type="number"
-                label="Fee (SOL)"
-                {...register("fee")}
-                error={errors.fee?.message}
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  type="text"
+                  label="Payout Wallet Address"
+                  placeholder="HDSDSD***************"
+                  {...register("payoutWallet")}
+                  error={errors.payoutWallet?.message}
+                  className="mt-0"
+                />
+
+                <Input
+                  type="number"
+                  label="Fee (SOL)"
+                  {...register("fee")}
+                  error={errors.fee?.message}
+                />
+              </div>
             )}
 
             <FilepondUploader

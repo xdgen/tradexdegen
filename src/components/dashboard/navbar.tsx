@@ -14,8 +14,6 @@ const Navbar: React.FC = () => {
     return role === "academy";
   }, [role]);
 
-  console.log(role, "Role in Navbar");
-
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">
       {/* Left section with profile and language */}
