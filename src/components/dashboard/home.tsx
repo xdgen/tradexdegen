@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { Loader2 } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 import {
@@ -17,8 +18,7 @@ import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
 import { supabase } from "../../lib/services/supabase";
 import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
-import { useCheckUserRole } from "../../hooks/forms/useUserRole";
-import { Loader2 } from "lucide-react";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);

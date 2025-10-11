@@ -1,9 +1,10 @@
+import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
+
 import { getClassById } from "../../data";
 import StudentAcademyRegisterDialog from "../../components/dialogs/studentAcademyRegistrationDialog";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useCheckUserRole } from "../../hooks/forms/useUserRole";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
 
 function markdownToHtml(md: string): string {
   let html = md.trim();

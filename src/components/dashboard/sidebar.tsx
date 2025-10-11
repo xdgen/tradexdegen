@@ -1,5 +1,5 @@
 import { cn } from "../../lib/utils";
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // For routing
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -10,6 +10,8 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import FolderIcon from "@mui/icons-material/Folder";
 import WalletIcon from "@mui/icons-material/Wallet";
 import InsightsIcon from "@mui/icons-material/Insights";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
 
 // Define the route type
 type Route = {
@@ -59,6 +61,12 @@ const routes: Route[] = [
     pro: true,
   },
   {
+    icon: AnalyticsIcon,
+    href: "/academy-stats",
+    label: "Stats",
+    pro: true,
+  },
+  {
     icon: SettingsIcon,
     href: "/settings",
     label: "Settings",
@@ -74,8 +82,16 @@ const routes: Route[] = [
 ];
 
 const Sidebar: React.FC = () => {
+  const { isAuthenticated, role } = useCheckUserRole();
   const navigate = useNavigate();
   const location = useLocation();
+  const modifiedRoutes = useMemo(() => {
+    if (isAuthenticated && role === "student") {
+      return routes.filter((r) => r.label !== "Stats");
+    }
+
+    return routes;
+  }, [isAuthenticated, role]);
 
   // Function to handle navigation
   const onNavigate = (url: string, pro: boolean, external?: boolean) => {
@@ -95,7 +111,8 @@ const Sidebar: React.FC = () => {
               <img src="/images/gen.svg" alt="logo" className="w-full h-full" />
             </a>
           </div>
-          {routes.map((route) => (
+
+          {modifiedRoutes.map((route) => (
             <div
               key={route.href}
               onClick={() => onNavigate(route.href, route.pro, route.external)}

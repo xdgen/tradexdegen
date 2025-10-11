@@ -13,6 +13,10 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@dialectlabs/blockchain-sdk-solana": "^2.0.0-beta.4",
+    "@dialectlabs/react-sdk-blockchain-solana": "^3.0.0-beta.7",
+    "@dialectlabs/react-ui": "^3.0.0-beta.7",
+    "@dialectlabs/sdk": "^2.0.0-beta.7",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
@@ -61,6 +65,7 @@
     "@solana/web3.js": "^1.98.0",
     "@supabase/supabase-js": "^2.49.1",
     "@tanstack/react-query": "^5.69.0",
+    "@tanstack/react-table": "^8.21.3",
     "@walletconnect/core": "^2.19.2",
     "@walletconnect/utils": "^2.19.2",
     "aos": "^2.3.4",

@@ -7,9 +7,12 @@ import {
   CreateAcademyInput,
   AcademyApplicationType,
   academyApplicationSchema,
+  SendAcademyNotificationType,
+  sendAcademyNotificationSchema,
 } from "../../lib/schemas/community.schema.ts";
 import { sendSol } from "../../lib/services/solana.ts";
 import { toast } from "sonner";
+import { dapp } from "../../lib/services/dialect.ts";
 
 export function useCreateAcademyForm() {
   const form = useForm<CreateAcademyInput>({
@@ -68,10 +71,41 @@ export function useAcademyApplication() {
         payload.recipientAddress,
         payload.amount
       );
+      console.log(data);
 
       toast.success(`Payment confirmed! Signature: ${signature}`);
 
       // Register user to academy
+    } catch (err: any) {
+      toast.error(err);
+    }
+  };
+
+  return {
+    form,
+    onSubmit,
+  };
+}
+
+export function useSendAcademyNotification() {
+  const form = useForm<SendAcademyNotificationType>({
+    resolver: zodResolver(sendAcademyNotificationSchema),
+    mode: "all",
+    defaultValues: {
+      title: "",
+      message: "",
+    },
+  });
+  const recipients = ["6eYUsVivEeKAsf9xb3QeN9MDUP54dgZuyKLk176WbwDM"];
+
+  const onSubmit: SubmitHandler<SendAcademyNotificationType> = async (data) => {
+    try {
+      dapp?.messages.send({
+        ...data,
+        recipients,
+      });
+      toast.success("Notification sent to students");
+      form.reset();
     } catch (err: any) {
       toast.error(err);
     }

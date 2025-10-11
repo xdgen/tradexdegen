@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import Sidebar from "./sidebar";
+import { UserRoleProvider } from "../../provider/UserRoleProvider";
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -7,16 +8,18 @@ interface RootLayoutProps {
 
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
-    <div className="h-auto w-full flex flex-row">
+    <UserRoleProvider>
+      <div className="h-auto w-full flex flex-row">
         <div className="hidden md:flex h-full fixed z-50">
           <Sidebar />
         </div>
         <main className="overflow-y-auto md:pl-60 relative w-full">
-          <Suspense fallback={'Loading'}>
+          <Suspense fallback={"Loading"}>
             <div className="">{children}</div>
           </Suspense>
         </main>
-    </div>
+      </div>
+    </UserRoleProvider>
   );
 };
 

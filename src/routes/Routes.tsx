@@ -11,6 +11,7 @@ import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
 import ExplorerGrid from "../Pages/explorer/ExplorerGrid";
 import DetailsPage from "../Pages/explorer/DetailsPage";
+import AcademyStats from "../Pages/academy/AcademyStats";
 
 const appRoutes = [
   {
@@ -102,6 +103,14 @@ const appRoutes = [
     element: (
       <Layout>
         <DocsPage />
+      </Layout>
+    ),
+  },
+  {
+    path: "/academy-stats",
+    element: (
+      <Layout>
+        <AcademyStats />
       </Layout>
     ),
   },
