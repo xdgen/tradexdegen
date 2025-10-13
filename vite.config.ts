@@ -11,6 +11,9 @@ export default defineConfig({
     }),
     react()
   ],
+  build: {
+    target: 'es2022', // Support top-level await
+  },
   optimizeDeps: {
     esbuildOptions: {
         define: {
