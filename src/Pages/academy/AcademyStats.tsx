@@ -83,7 +83,7 @@ const mockTransactions = [
   {
     id: 1,
     xHandle: "@alice",
-    telegram: "@alice_tg",
+    wallet_address: "@alice_tg",
     hash: "5K8q7p9L3mN2oP4rS6tU8vW0xY2zA4bC6dE8fG0hI2jK4lM6nO8pQ2rS4tU6vW8xY0z",
     explorer:
       "https://explorer.solana.com/tx/5K8q7p9L3mN2oP4rS6tU8vW0xY2zA4bC6dE8fG0hI2jK4lM6nO8pQ2rS4tU6vW8xY0z",
@@ -91,7 +91,7 @@ const mockTransactions = [
   {
     id: 2,
     xHandle: "@bob",
-    telegram: "@bob_tg",
+    wallet_address: "@bob_tg",
     hash: "3J5k9mN1oQ3sU5wY7aC9eG1iK3mO5qS7uW9yA1cE3gI5kM7oQ9sU1wY3aC5eG7iK9m",
     explorer:
       "https://explorer.solana.com/tx/3J5k9mN1oQ3sU5wY7aC9eG1iK3mO5qS7uW9yA1cE3gI5kM7oQ9sU1wY3aC5eG7iK9m",
@@ -99,7 +99,7 @@ const mockTransactions = [
   {
     id: 3,
     xHandle: "@charlie",
-    telegram: "@charlie_tg",
+    wallet_address: "@charlie_tg",
     hash: "7N9p1rT3vX5zB7dF9hJ1lN3pR5tV7xZ9bD1fH3jL5nP7rT9vX1zB3dF5hJ7lN9pR1t",
     explorer:
       "https://explorer.solana.com/tx/7N9p1rT3vX5zB7dF9hJ1lN3pR5tV7xZ9bD1fH3jL5nP7rT9vX1zB3dF5hJ7lN9pR1t",
@@ -107,7 +107,7 @@ const mockTransactions = [
   {
     id: 4,
     xHandle: "@diana",
-    telegram: "@diana_tg",
+    wallet_address: "@diana_tg",
     hash: "9P1rT3vX5zB7dF9hJ1lN3pR5tV7xZ9bD1fH3jL5nP7rT9vX1zB3dF5hJ7lN9pR1tV3",
     explorer:
       "https://explorer.solana.com/tx/9P1rT3vX5zB7dF9hJ1lN3pR5tV7xZ9bD1fH3jL5nP7rT9vX1zB3dF5hJ7lN9pR1tV3",
@@ -325,7 +325,7 @@ const AcademyStats: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>X Handle</TableHead>
-                <TableHead>Telegram</TableHead>
+                <TableHead>Wallet Address</TableHead>
                 <TableHead>Transaction Hash</TableHead>
                 <TableHead>Explorer</TableHead>
               </TableRow>
@@ -334,7 +334,7 @@ const AcademyStats: React.FC = () => {
               {transactions.map((tx) => (
                 <TableRow key={tx.id}>
                   <TableCell>{tx.xHandle}</TableCell>
-                  <TableCell>{tx.telegram}</TableCell>
+                  <TableCell>{tx.wallet_address}</TableCell>
                   <TableCell className="font-mono text-xs">{tx.hash}</TableCell>
                   <TableCell>
                     <a

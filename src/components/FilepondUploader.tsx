@@ -55,13 +55,6 @@ const FilepondUploader = ({ label, setImage }: FilepondUploaderProps) => {
     options
   ) => {
     if (file) {
-      const filename = nanoid();
-      const fileExt = file?.name.split(".").pop();
-      const newFileName = `${filename}.${fileExt}`;
-      const bucketName = import.meta.env
-        .VITE_SUPABASE_PROJECT_STORAGE_BUCKET_NAME as string;
-      console.log(bucketName, newFileName);
-
       try {
         progress(false, 0, file.size);
 

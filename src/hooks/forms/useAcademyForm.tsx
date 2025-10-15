@@ -27,7 +27,6 @@ export function useCreateAcademyForm() {
       plan: undefined,
       fee: "",
       tutors: [{ value: "" }],
-      payoutWallet: "",
     },
   });
 

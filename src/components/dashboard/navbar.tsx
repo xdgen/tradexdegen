@@ -25,6 +25,7 @@ const Navbar: React.FC = () => {
 
       {/* Right section with settings and notification */}
       <div className="flex gap-4 items-center">
+        {/* Hide if academy is registered */}
         {isAcademy && <CommunityRegisterDialog />}
         <WalletMultiButton
           style={{
