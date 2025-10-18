@@ -1,6 +1,6 @@
 import React from "react";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+// import { format } from "date-fns";
+// import { Calendar as CalendarIcon } from "lucide-react";
 
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
@@ -36,8 +36,9 @@ function DatePicker({
             data-empty={!value}
             className="h-12 data-[empty=true]:text-muted-foreground justify-start text-left font-normal"
           >
-            <CalendarIcon className="size-4 mr-1.5" />
-            {value ? format(value, "PPP") : <span>{placeholder}</span>}
+            {/* <CalendarIcon className="size-4 mr-1.5" /> */}
+            {/* {value ? format(value, "PPP") : <span>{placeholder}</span>} */}
+            {value ? "d" : <span>{placeholder}</span>}
           </Button>
           {error && <span className="text-destructive text-sm">{error}</span>}
         </div>
