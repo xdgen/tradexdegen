@@ -60,7 +60,7 @@ export const useAcademy = () => {
 
     const getAcademy = (academyId: string) => {
         return useQuery({
-            queryKey: ["academy", "detail", academyId],
+            queryKey: ["academy", academyId],
             queryFn: async () => {
                 const academyPDA = getAcademyPDA(academyId, provider.wallet.publicKey);
                 return await program.account.academy.fetch(academyPDA);
