@@ -61,7 +61,6 @@ const FilepondUploader = ({ label, setImage }: FilepondUploaderProps) => {
         const upload = await pinata.upload.public.file(file, {
           metadata: { name: "academy-banner" },
         });
-        console.log(upload);
 
         if (upload) {
           const publicUrlData = `https://${
