@@ -106,6 +106,35 @@ export function useAcademyApplication() {
   };
 }
 
+export function useStudentRegistration() {
+  const form = useForm<AcademyApplicationType>({
+    resolver: zodResolver(academyApplicationSchema),
+    mode: "all",
+    defaultValues: {
+      xHandle: "",
+    },
+  });
+
+  const onSubmit = async (
+    data: AcademyApplicationType,
+    callback: () => void
+  ) => {
+    try {
+      console.log(data);
+      callback();
+
+      // Register user to academy
+    } catch (err: any) {
+      toast.error(err);
+    }
+  };
+
+  return {
+    form,
+    onSubmit,
+  };
+}
+
 export function useSendAcademyNotification() {
   const form = useForm<SendAcademyNotificationType>({
     resolver: zodResolver(sendAcademyNotificationSchema),

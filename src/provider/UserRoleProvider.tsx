@@ -10,11 +10,14 @@ import React, {
 } from "react";
 import { axios } from "../lib/axios";
 import { toast } from "sonner";
+import { PublicKey } from "@solana/web3.js";
 
 interface IUserRoleContext {
   isCheckingUserRole: boolean;
   isRoleDialogOpen: boolean;
-  closeDialog: () => void;
+  closeRoleDialog: () => void;
+  isStudentDialogOpen: boolean;
+  closeStudentDialog: () => void;
   role: Role | null;
   updateUserRole: (role: Role) => void;
   isAuthenticated: boolean;
@@ -30,6 +33,7 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
   const [isCheckingUserRole, setIsCheckingUserRole] = useState(false);
   const { publicKey, connected } = useWallet();
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
   const [role, setRole] = useState<Role | null>(null);
   const [authData, setAuthData] = useState<AuthResponse | null>(null);
 
@@ -38,8 +42,6 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
     () => (connected && publicKey && role ? true : false),
     [connected, publicKey, role]
   );
-
-  console.log(authData);
 
   const loadUserRole = useCallback(() => {
     if (!connected || !publicKey) {
@@ -54,7 +56,7 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
     }
   }, [connected, publicKey]);
 
-  const updateAuthData = (data: AuthResponse) => {
+  const updateAuthData = (data: AuthResponse, publicKey: PublicKey) => {
     setAuthData({
       token: {
         ...data.token,
@@ -68,6 +70,7 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
       },
     });
 
+    localStorage.setItem(`userRole:${publicKey.toString()}`, data.user.role);
     localStorage.setItem("authData", JSON.stringify(data));
   };
 
@@ -82,7 +85,8 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
       });
       const data = response.data as AuthResponse;
 
-      updateAuthData(data);
+      if (data.user.role === "STUDENT") setIsStudentDialogOpen(true);
+      updateAuthData(data, publicKey);
       toast.success("User successfully registered");
     } catch (err: any) {
       const message =
@@ -98,6 +102,9 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
 
     try {
       setIsCheckingUserRole(true);
+
+      // Clear user role
+      localStorage.removeItem(`userRole:${publicKey.toString()}`);
 
       const response = await axios(`/auth/check-wallet/${publicKey}`);
       const data = response.data as CheckUserResponse;
@@ -153,8 +160,12 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
     }
   }, [checkIfWalletExist]);
 
-  const closeDialog = () => {
+  const closeRoleDialog = () => {
     setIsRoleDialogOpen((prevProp) => !prevProp);
+  };
+
+  const closeStudentDialog = () => {
+    setIsStudentDialogOpen((prevProp) => !prevProp);
   };
 
   return (
@@ -162,9 +173,11 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
       value={{
         isCheckingUserRole,
         isRoleDialogOpen,
-        closeDialog,
+        closeStudentDialog,
+        closeRoleDialog,
         isAuthenticated,
         role,
+        isStudentDialogOpen,
         updateUserRole,
       }}
     >

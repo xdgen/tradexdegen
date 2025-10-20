@@ -42,6 +42,7 @@ const CommunityRegisterDialog = () => {
     onSubmit,
   } = useCreateAcademyForm();
   const plan = watch("plan");
+  console.log(errors);
 
   return (
     <Dialog>

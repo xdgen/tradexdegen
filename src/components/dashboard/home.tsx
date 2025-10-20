@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Loader2 } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 import {
@@ -19,6 +18,7 @@ import Failed from "../../../public/images/fail.svg";
 import { supabase } from "../../lib/services/supabase";
 import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
 import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import StudentAcademyRegisterDialog from "../dialogs/studentAcademyRegistrationDialog";
 
 export default function HomeView() {
   const [showDialog, setShowDialog] = useState(false);
@@ -28,8 +28,12 @@ export default function HomeView() {
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { isCheckingUserRole, isRoleDialogOpen, closeDialog } =
-    useCheckUserRole();
+  const {
+    isRoleDialogOpen,
+    closeRoleDialog,
+    isStudentDialogOpen,
+    closeStudentDialog,
+  } = useCheckUserRole();
 
   const handleRowClick = (pair: any) => {
     navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
@@ -43,21 +47,21 @@ export default function HomeView() {
     window.location.href = `/funds?balance=${balance}`;
   };
 
-  const testSol = async (walletAddress: string) => {
-    try {
-      setLoading(true);
-      const response = await SolToken(walletAddress);
-      console.log(response);
-      toast.success("Successful");
-      return;
-    } catch (error) {
-      toast.warning("Transaction might have failed");
-      console.log(error);
-      return;
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const testSol = async (walletAddress: string) => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await SolToken(walletAddress);
+  //     console.log(response);
+  //     toast.success("Successful");
+  //     return;
+  //   } catch (error) {
+  //     toast.warning("Transaction might have failed");
+  //     console.log(error);
+  //     return;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const claim = async () => {
     if (!publicKey) {
@@ -143,13 +147,13 @@ export default function HomeView() {
     );
   }
 
-  if (isCheckingUserRole) {
-    return (
-      <div className="z-[60] bg-black/10 backdrop-blur-md fixed top-0 left-0 size-full flex items-center justify-center">
-        <Loader2 className="size-12 animate-spin duration-500" />
-      </div>
-    );
-  }
+  // if (isCheckingUserRole) {
+  //   return (
+  //     <div className="z-[60] bg-black/10 backdrop-blur-md fixed top-0 left-0 size-full flex items-center justify-center">
+  //       <Loader2 className="size-12 animate-spin duration-500" />
+  //     </div>
+  //   );
+  // }
 
   const formatAge = (timestamp: number | undefined) => {
     if (!timestamp) return "N/A";
@@ -376,7 +380,15 @@ export default function HomeView() {
       </div>
 
       {/* User Role Form */}
-      <SetUserRoleDialog isOpen={isRoleDialogOpen} closeDialog={closeDialog} />
+      <SetUserRoleDialog
+        isOpen={isRoleDialogOpen}
+        closeDialog={closeRoleDialog}
+      />
+
+      <StudentAcademyRegisterDialog
+        isOpen={isStudentDialogOpen}
+        closeDialog={closeStudentDialog}
+      />
     </div>
   );
 }
