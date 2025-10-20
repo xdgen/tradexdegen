@@ -16,14 +16,13 @@ interface DatePickerProps {
 }
 
 function DatePicker({
-  value,
-  onChange,
-  error,
-  label,
-  placeholder = "Pick a date",
-}: DatePickerProps) {
-  const [open, setOpen] = React.useState(false);
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
+   value,
+   onChange,
+   error,
+   label,
+   placeholder = "Pick a date",
+ }: DatePickerProps) {
+   const [open, setOpen] = React.useState(false);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -45,11 +44,8 @@ function DatePicker({
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={date}
-          onSelect={(date) => {
-            setDate(date);
-            onChange(date);
-          }}
+          selected={value}
+          onSelect={onChange}
         />
       </PopoverContent>
     </Popover>

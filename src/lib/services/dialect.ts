@@ -27,10 +27,22 @@ const dialectSolanaSDK: DialectSdk<Solana> = Dialect.sdk(
   })
 );
 
-const dapp = await dialectSolanaSDK.dapps.find();
+// Initialize dapp asynchronously
+let dapp: any = null;
 
-if (!dapp) {
-  toast.error("Dapp not found. Please register your app first.");
-}
+const initializeDapp = async () => {
+  try {
+    dapp = await dialectSolanaSDK.dapps.find();
+    if (!dapp) {
+      toast.error("Dapp not found. Please register your app first.");
+    }
+  } catch (error) {
+    console.error("Failed to initialize Dialect dapp:", error);
+    toast.error("Failed to initialize Dialect dapp");
+  }
+};
 
-export { keypair, DAPP_ADDRESS, dapp, environment, dialectSolanaSDK };
+// Initialize immediately
+initializeDapp();
+
+export { keypair, DAPP_ADDRESS, dapp, environment, dialectSolanaSDK, initializeDapp };

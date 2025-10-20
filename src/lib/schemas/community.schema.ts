@@ -84,7 +84,7 @@ export const createAcademySchema = z
   );
 
 export const userRoleSchema = z.object({
-  role: z.enum(["academy", "student"], {
+  role: z.enum(["ACADEMY", "STUDENT"], {
     errorMap: () => ({ message: "Select a valid role" }),
   }),
 });

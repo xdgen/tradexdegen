@@ -3,7 +3,6 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { getClassById } from "../../data";
-import StudentAcademyRegisterDialog from "../../components/dialogs/studentAcademyRegistrationDialog";
 import { useCheckUserRole } from "../../provider/UserRoleProvider";
 
 function markdownToHtml(md: string): string {
@@ -51,7 +50,7 @@ export default function DetailsPage() {
   const isEnded = item.status === "Ended";
 
   if (connected) {
-    if (role === "student") {
+    if (role === "STUDENT") {
       if (isEnded) {
         content = (
           <button
@@ -62,15 +61,7 @@ export default function DetailsPage() {
           </button>
         );
       } else {
-        content = (
-          <StudentAcademyRegisterDialog
-            academy={{
-              name: "Degen",
-              fee: 0.1,
-              recipientAddress: "6eYUsVivEeKAsf9xb3QeN9MDUP54dgZuyKLk176WbwDM",
-            }}
-          />
-        );
+        content = <h1>Content</h1>;
       }
     }
   } else {

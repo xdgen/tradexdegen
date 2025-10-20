@@ -1,19 +1,14 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { useAcademyApplication } from "../../hooks/forms/useAcademyForm";
+import { useStudentRegistration } from "../../hooks/forms/useAcademyForm";
 import { Input } from "../ui/input";
 
 const StudentAcademyRegisterDialog = ({
-  academy,
+  isOpen,
+  closeDialog,
 }: {
-  academy: { name: string; fee: number; recipientAddress: string };
+  isOpen: boolean;
+  closeDialog: () => void;
 }) => {
   const {
     form: {
@@ -22,35 +17,26 @@ const StudentAcademyRegisterDialog = ({
       formState: { errors, isValid, isSubmitting },
     },
     onSubmit,
-  } = useAcademyApplication();
+  } = useStudentRegistration();
+
+  const handleStudentForm = () => {
+    // updateUserRole();
+    closeDialog();
+  };
 
   return (
-    <Dialog>
-      <DialogTrigger>
-        <button
-          className="px-4 py-2 rounded-lg font-semibold transition  bg-gradient-to-r from-fuchsia-500 to-teal-400 text-black hover:brightness-110"
-          aria-label="Register for class"
-        >
-          Register
-        </button>
-      </DialogTrigger>
-
-      <DialogContent className="w-1/3 max-w-full">
+    <Dialog open={isOpen}>
+      <DialogContent
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        showClose={false}
+      >
         <DialogHeader>
-          <DialogTitle>Become a Student of {academy.name} Academy</DialogTitle>
-          <DialogDescription>
-            Submit your details to enroll and become part of the learning
-            community.
-          </DialogDescription>
+          <DialogTitle>Set necessary detail</DialogTitle>
         </DialogHeader>
 
         <form
-          onSubmit={handleSubmit((data) =>
-            onSubmit(data, {
-              recipientAddress: academy.recipientAddress,
-              amount: academy.fee,
-            })
-          )}
+          onSubmit={handleSubmit((data) => onSubmit(data, handleStudentForm))}
           className="h-full grid grid-rows-[1fr_max-content] gap-y-3 overflow-hidden"
         >
           <Input
@@ -67,7 +53,7 @@ const StudentAcademyRegisterDialog = ({
             className="w-full rounded-full"
             size="lg"
           >
-            Continue to pay {academy.fee} SOL
+            Submit
           </Button>
         </form>
       </DialogContent>

@@ -11,7 +11,7 @@ const Navbar: React.FC = () => {
   const isAcademy = useMemo(() => {
     if (!role) null;
 
-    return role === "academy";
+    return role === "ACADEMY";
   }, [role]);
 
   return (

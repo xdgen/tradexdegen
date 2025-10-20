@@ -133,7 +133,7 @@ const AcademyStats: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
-    if (role !== "academy") {
+    if (role !== "ACADEMY") {
       // Redirect or show error
       return;
     }
@@ -183,7 +183,7 @@ const AcademyStats: React.FC = () => {
     }
   };
 
-  if (role !== "academy") {
+  if (role !== "ACADEMY") {
     return (
       <div className="text-white text-center mt-20">
         Access denied. Academy role required.

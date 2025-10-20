@@ -14,11 +14,11 @@ import { Button } from "../ui/button";
 
 const roles: RoleData[] = [
   {
-    title: "academy",
+    title: "ACADEMY",
     description: "Create lessons, share insights, and guide students.",
   },
   {
-    title: "student",
+    title: "STUDENT",
     description: "Learn degen strategies, complete lessons, and track progress",
   },
 ];
@@ -35,7 +35,7 @@ const SetUserRoleDialog = ({
   const role = form.watch("role");
 
   const handleSumbit = () => {
-    updateUserRole(role!);
+    updateUserRole(role.toUpperCase() as Role);
     closeDialog();
   };
 
@@ -81,7 +81,9 @@ const SetUserRoleDialog = ({
                   )}
                 />
                 <div>
-                  <p className="font-medium capitalize">{title}</p>
+                  <p className="font-medium capitalize">
+                    {title.toLowerCase()}
+                  </p>
                   <p className="text-sm text-gray-600 select-none">
                     {description}
                   </p>

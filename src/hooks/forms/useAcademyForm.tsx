@@ -13,6 +13,7 @@ import {
 import { sendSol } from "../../lib/services/solana.ts";
 import { toast } from "sonner";
 import { dapp } from "../../lib/services/dialect.ts";
+import { axiosAsync } from "../../lib/axios.ts";
 
 export function useCreateAcademyForm() {
   const form = useForm<CreateAcademyInput>({
@@ -35,8 +36,14 @@ export function useCreateAcademyForm() {
     name: "tutors",
   } as never);
 
-  const onSubmit: SubmitHandler<CreateAcademyInput> = (data) => {
-    console.log(data);
+  const onSubmit: SubmitHandler<CreateAcademyInput> = async (data) => {
+    try {
+      const { data } = await axiosAsync.post("/academies/");
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message || err.message || "Unknown error occurred";
+      toast.error(message);
+    }
   };
 
   return {
@@ -73,6 +80,35 @@ export function useAcademyApplication() {
       console.log(data);
 
       toast.success(`Payment confirmed! Signature: ${signature}`);
+
+      // Register user to academy
+    } catch (err: any) {
+      toast.error(err);
+    }
+  };
+
+  return {
+    form,
+    onSubmit,
+  };
+}
+
+export function useStudentRegistration() {
+  const form = useForm<AcademyApplicationType>({
+    resolver: zodResolver(academyApplicationSchema),
+    mode: "all",
+    defaultValues: {
+      xHandle: "",
+    },
+  });
+
+  const onSubmit = async (
+    data: AcademyApplicationType,
+    callback: () => void
+  ) => {
+    try {
+      console.log(data);
+      callback();
 
       // Register user to academy
     } catch (err: any) {

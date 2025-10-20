@@ -1,4 +1,4 @@
-type Role = "academy" | "student";
+type Role = "ACADEMY" | "STUDENT";
 
 interface RoleData {
   title: Role;
