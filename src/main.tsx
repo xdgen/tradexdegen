@@ -8,6 +8,8 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import SolanaWalletProvider from "./provider/WalletProvider ";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAcademy } from "./hooks/useAcademy";
 
 const router = createBrowserRouter(appRoutes);
 
@@ -71,9 +73,13 @@ const App = () => {
   );
 };
 
+const queryClient = new QueryClient()
+
 // Move StrictMode to wrap the entire app render
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </React.StrictMode>
 );

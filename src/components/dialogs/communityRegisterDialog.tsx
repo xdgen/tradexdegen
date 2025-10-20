@@ -210,7 +210,7 @@ const CommunityRegisterDialog = () => {
 
           <Button
             isLoading={isSubmitting}
-            disabled={!isValid || isSubmitting}
+            disabled={isSubmitting}
             className="w-full rounded-full"
             size="lg"
           >
