@@ -42,6 +42,7 @@ const CommunityRegisterDialog = () => {
     onSubmit,
   } = useCreateAcademyForm();
   const plan = watch("plan");
+  console.log(errors);
 
   return (
     <Dialog>
@@ -207,7 +208,7 @@ const CommunityRegisterDialog = () => {
 
           <Button
             isLoading={isSubmitting}
-            disabled={!isValid || isSubmitting}
+            disabled={isSubmitting}
             className="w-full rounded-full"
             size="lg"
           >

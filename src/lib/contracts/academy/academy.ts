@@ -55,10 +55,6 @@ export type XdegenAcademy = {
               {
                 "kind": "account",
                 "path": "signer"
-              },
-              {
-                "kind": "arg",
-                "path": "academyId"
               }
             ]
           }
@@ -69,10 +65,6 @@ export type XdegenAcademy = {
         }
       ],
       "args": [
-        {
-          "name": "academyId",
-          "type": "string"
-        },
         {
           "name": "data",
           "type": {
@@ -142,6 +134,122 @@ export type XdegenAcademy = {
       ]
     },
     {
+      "name": "enroll",
+      "discriminator": [
+        58,
+        12,
+        36,
+        3,
+        142,
+        28,
+        1,
+        43
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "student",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  117,
+                  100,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "academy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  97,
+                  100,
+                  101,
+                  109,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "academy.owner",
+                "account": "academy"
+              }
+            ]
+          }
+        },
+        {
+          "name": "enrollment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  110,
+                  114,
+                  111,
+                  108,
+                  108,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "academy"
+              },
+              {
+                "kind": "account",
+                "path": "student"
+              }
+            ]
+          }
+        },
+        {
+          "name": "feeVault",
+          "writable": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize",
       "discriminator": [
         175,
@@ -189,6 +297,43 @@ export type XdegenAcademy = {
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "processUndelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "writable": true
+        },
+        {
+          "name": "buffer"
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "accountSeeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -229,6 +374,19 @@ export type XdegenAcademy = {
         20,
         81,
         57
+      ]
+    },
+    {
+      "name": "studentEnrollment",
+      "discriminator": [
+        7,
+        11,
+        108,
+        190,
+        179,
+        90,
+        191,
+        134
       ]
     }
   ],
@@ -280,10 +438,6 @@ export type XdegenAcademy = {
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "id",
-            "type": "string"
-          },
           {
             "name": "owner",
             "type": "pubkey"
@@ -339,6 +493,10 @@ export type XdegenAcademy = {
           {
             "name": "totalEnrollmentAmount",
             "type": "u64"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
           },
           {
             "name": "bump",
@@ -465,6 +623,30 @@ export type XdegenAcademy = {
           {
             "name": "totalEnrolledAcademies",
             "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "studentEnrollment",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "academy",
+            "type": "pubkey"
+          },
+          {
+            "name": "student",
+            "type": "pubkey"
+          },
+          {
+            "name": "enrolledAt",
+            "type": "i64"
           },
           {
             "name": "bump",

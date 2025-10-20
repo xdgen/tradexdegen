@@ -49,10 +49,6 @@
               {
                 "kind": "account",
                 "path": "signer"
-              },
-              {
-                "kind": "arg",
-                "path": "academy_id"
               }
             ]
           }
@@ -63,10 +59,6 @@
         }
       ],
       "args": [
-        {
-          "name": "academy_id",
-          "type": "string"
-        },
         {
           "name": "data",
           "type": {
@@ -136,6 +128,122 @@
       ]
     },
     {
+      "name": "enroll",
+      "discriminator": [
+        58,
+        12,
+        36,
+        3,
+        142,
+        28,
+        1,
+        43
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "student",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  117,
+                  100,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "academy",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  97,
+                  100,
+                  101,
+                  109,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "academy.owner",
+                "account": "Academy"
+              }
+            ]
+          }
+        },
+        {
+          "name": "enrollment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  110,
+                  114,
+                  111,
+                  108,
+                  108,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "academy"
+              },
+              {
+                "kind": "account",
+                "path": "student"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fee_vault",
+          "writable": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize",
       "discriminator": [
         175,
@@ -183,6 +291,43 @@
           "type": "pubkey"
         }
       ]
+    },
+    {
+      "name": "process_undelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "base_account",
+          "writable": true
+        },
+        {
+          "name": "buffer"
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "account_seeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -223,6 +368,19 @@
         20,
         81,
         57
+      ]
+    },
+    {
+      "name": "StudentEnrollment",
+      "discriminator": [
+        7,
+        11,
+        108,
+        190,
+        179,
+        90,
+        191,
+        134
       ]
     }
   ],
@@ -274,10 +432,6 @@
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "id",
-            "type": "string"
-          },
           {
             "name": "owner",
             "type": "pubkey"
@@ -333,6 +487,10 @@
           {
             "name": "total_enrollment_amount",
             "type": "u64"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
           },
           {
             "name": "bump",
@@ -459,6 +617,30 @@
           {
             "name": "total_enrolled_academies",
             "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StudentEnrollment",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "academy",
+            "type": "pubkey"
+          },
+          {
+            "name": "student",
+            "type": "pubkey"
+          },
+          {
+            "name": "enrolled_at",
+            "type": "i64"
           },
           {
             "name": "bump",

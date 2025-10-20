@@ -54,7 +54,9 @@ const FilepondUploader = ({ label, setImage }: FilepondUploaderProps) => {
     transfer,
     options
   ) => {
+    console.log('no file')
     if (file) {
+      console.log('file')
       const filename = nanoid();
       const fileExt = file?.name.split(".").pop();
       const newFileName = `${filename}.${fileExt}`;
