@@ -4,13 +4,15 @@ import come2 from '../public/images/com2.jpg'
 
 
 export interface AcademyClass {
-  id: string;
+  id?: string;
+  pda?: string;
+  owner?: string;
   title: string;
   description: string; // markdown supported
   banner: string; // URL (IPFS or https)
   facilitator: string;
   isPaid: boolean;
-  price: number; // in SOL
+  price?: number; // in SOL
   startDate: string; // ISO date string
   endDate: string; // ISO date string
   status: ClassStatus;

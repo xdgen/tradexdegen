@@ -24,6 +24,11 @@ interface CreateStudent {
     twitterHandle: string;
 }
 
+interface Enroll {
+    studentPDA: PublicKey,
+    academyPDA: PublicKey
+}
+
 export const useAcademy = () => {
     const provider = useAnchor();
     const program  = useMemo(() => new Program(
@@ -88,6 +93,39 @@ export const useAcademy = () => {
         }
     })
 
+    const enroll = useMutation({
+        mutationFn: async (payload: Enroll) => {
+            const enrollmentPDA = getEnrollmentPDA(payload.academyPDA, payload.studentPDA);
+            const tx = await program.methods.enroll()
+            .accountsPartial({
+                config: getConfigPDA(),
+                student: payload.studentPDA,
+                academy: payload.academyPDA,
+                enrollment: getEnrollmentPDA(payload.academyPDA, payload.studentPDA)
+            }).rpc();
+            return {
+                tx,
+                enrollmentPDA
+            }
+        },
+        onSuccess: async (data) => {
+            const pda = data.enrollmentPDA; // the contract address to supply to API
+            console.log(pda)
+            toast.success(`Student created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`);
+        }
+    })
+
+    const getEnrollmentPDA = (academy: PublicKey, student: PublicKey) => {
+        return PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("enrollment"),
+                academy.toBuffer(),
+                student.toBuffer()
+            ],
+            programId
+        )[0]
+    }
+
     const getAcademy = (wallet: PublicKey) => {
         return useQuery({
             queryKey: ["academy", wallet.toBase58()],
@@ -139,8 +177,11 @@ export const useAcademy = () => {
         initialize,
         createAcademy,
         getAcademyPDA,
+        getEnrollmentPDA,
+        getStudentPDA,
         getAllAcademies,
         createStudent,
+        enroll,
         getAcademy,
         getStudent
     }

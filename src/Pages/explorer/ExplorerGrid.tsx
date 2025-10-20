@@ -2,10 +2,46 @@ import { useEffect, useState } from "react";
 import { classes, AcademyClass } from "../../data";
 import ClassCard from "./components/ClassCard";
 import Navbar from "../../components/dashboard/navbar";
+import { useAcademy } from "../../hooks/useAcademy";
 
 export default function ExplorerGrid() {
   const [items, setItems] = useState<AcademyClass[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { getAllAcademies } = useAcademy();
+
+  // if (getAllAcademies.isLoading) {
+  //   setLoading(true);
+  // } else {
+  //   setLoading(false);
+  // }
+
+  function formatDate(time: number) {
+    const formatted = Math.floor(time * 1000);
+    return new Date(formatted).toISOString()
+  }
+
+  useEffect(() => {
+    if (getAllAcademies.data) {
+      const data: AcademyClass[] = getAllAcademies.data.map(academy => {
+        return {
+          owner: academy.account.owner.toBase58(),
+          pda: academy.publicKey.toBase58(),
+          title: academy.account.title,
+          banner: academy.account.banner,
+          description: academy.account.description,
+          startDate: formatDate(academy.account.startDate.toNumber()),
+          endDate: formatDate(academy.account.endDate.toNumber()),
+          isPaid: !academy.account.fee ? false: true,
+          status: 'upcoming',
+          price: academy.account.fee,
+          students: academy.account.totalStudents,
+          mentors: academy.account.tutors.length,
+          facilitator: academy.account.tutors[0]
+        }
+      })
+      setItems(data)
+    }
+  }, [getAllAcademies.data])
 
   useEffect(() => {
     const timer = setTimeout(() => {
