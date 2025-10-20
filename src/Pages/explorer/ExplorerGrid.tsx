@@ -3,6 +3,7 @@ import { classes, AcademyClass } from "../../data";
 import ClassCard from "./components/ClassCard";
 import Navbar from "../../components/dashboard/navbar";
 import { useAcademy } from "../../hooks/useAcademy";
+import type { ClassStatus } from "../../data";
 
 export default function ExplorerGrid() {
   const [items, setItems] = useState<AcademyClass[]>([]);
@@ -20,22 +21,39 @@ export default function ExplorerGrid() {
     return new Date(formatted).toISOString()
   }
 
+  function compareDate(startTime: number, endTime: number): ClassStatus {
+    const currentDate = new Date();
+    const startDate = new Date(startTime * 1000);
+    const endDate = new Date(endTime * 1000);
+
+    if (currentDate < startDate) {
+      return "Upcoming";
+    } else if (currentDate >= startDate && currentDate <= endDate) {
+      return "Ongoing";
+    } else {
+      return "Ended";
+    }
+  }
+
   useEffect(() => {
     if (getAllAcademies.data) {
       const data: AcademyClass[] = getAllAcademies.data.map(academy => {
+        const startDate = academy.account.startDate.toNumber()
+        const endDate = academy.account.endDate.toNumber();
+        const status: ClassStatus = compareDate(startDate, endDate);
         return {
           owner: academy.account.owner.toBase58(),
           pda: academy.publicKey.toBase58(),
           title: academy.account.title,
           banner: academy.account.banner,
           description: academy.account.description,
-          startDate: formatDate(academy.account.startDate.toNumber()),
-          endDate: formatDate(academy.account.endDate.toNumber()),
+          startDate: formatDate(startDate),
+          endDate: formatDate(endDate),
           isPaid: !academy.account.fee ? false: true,
-          status: 'upcoming',
-          price: academy.account.fee,
-          students: academy.account.totalStudents,
-          mentors: academy.account.tutors.length,
+          status,
+          price: academy.account.fee ? academy.account.fee.toNumber() : undefined,
+          students: academy.account.totalStudents.toNumber(),
+          mentors: academy.account.tutors.length > 0 ? academy.account.tutors : null,
           facilitator: academy.account.tutors[0]
         }
       })

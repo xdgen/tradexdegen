@@ -1,6 +1,6 @@
-export type ClassStatus = "Ongoing" | "Upcoming" | "Ended";
 import come1 from '../public/images/com1.jpg'
 import come2 from '../public/images/com2.jpg'
+export type ClassStatus = "Ongoing" | "Upcoming" | "Ended";
 
 
 export interface AcademyClass {
