@@ -5,13 +5,39 @@ import { ScrollArea } from "./ui/scroll-area";
 import { ChatInterface } from "./chat/chatInterface";
 import { cn } from "..//lib/utils";
 import { useChatContext } from "../provider/ChatProvider";
+import {
+  Chat,
+  Channel,
+  ChannelList,
+  Window,
+  ChannelHeader,
+  MessageList,
+  MessageInput,
+  Thread,
+  useCreateChatClient,
+} from "stream-chat-react";
+import "stream-chat-react/dist/css/v2/index.css";
 
 interface AcademySidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const apiKey =
+  "qhh94cd4jpww57wd3y8ygfzz4bs3gp8ageumb7nbgjx59bmgjh9gtqt8u44bv8ve";
+const userId = "user-id";
+const token = "authentication-tokenafun28vnpbqp";
+
+const filters = { members: { $in: [userId] }, type: "messaging" };
+const options = { presence: true, state: true };
+
 export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
+  const client = useCreateChatClient({
+    apiKey,
+    tokenOrProvider: token,
+    userData: { id: userId },
+  });
+
   const [selectedAcademy, setSelectedAcademy] = useState<string | null>(null);
   const { academies, getUnreadCount, markAsRead } = useChatContext();
 
@@ -25,6 +51,8 @@ export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
   };
 
   const selectedAcademyData = academies.find((a) => a.id === selectedAcademy);
+
+  if (!client) return <div>Loading...</div>;
 
   return (
     <div
@@ -90,6 +118,18 @@ export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
                 );
               })}
             </div>
+
+            <Chat client={client}>
+              <ChannelList
+                filters={filters}
+                sort={{ last_message_at: -1 }}
+                options={options}
+              />
+              <Channel>
+                <MessageList />
+                <MessageInput />
+              </Channel>
+            </Chat>
           </ScrollArea>
         </div>
       )}
