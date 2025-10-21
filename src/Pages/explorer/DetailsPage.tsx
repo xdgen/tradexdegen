@@ -2,8 +2,11 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { getClassById } from "../../data";
+import { getClassById, ClassStatus, AcademyClass } from "../../data";
 import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { useAcademy } from "../../hooks/useAcademy";
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useEffect, useState } from "react";
 
 function markdownToHtml(md: string): string {
   let html = md.trim();
@@ -28,14 +31,76 @@ export default function DetailsPage() {
   const { role } = useCheckUserRole();
   const params = useParams();
   const navigate = useNavigate();
-  const item = params.id ? getClassById(params.id) : undefined;
-  let content;
+  const [item, setItem] = useState<AcademyClass | null>(null);
+  const { getAcademyByPDA, enroll, getStudent, getStudentPDA } = useAcademy();
 
-  if (!item) {
+  // Early return if no valid ID
+  if (!params.id || params.id === "undefined") {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-gray-400">Class not found.</p>
+          <p className="text-gray-400">Invalid academy ID.</p>
+          <Link
+            to="/explorer"
+            className="mt-3 inline-block text-fuchsia-300 hover:text-fuchsia-200 underline"
+          >
+            Back to Explorer
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Get academy data by PDA - simplified approach
+  const academyPDA = new PublicKey(params.id);
+  const { data: academyData } = getAcademyByPDA(academyPDA);
+
+  console.log(academyData)
+  useEffect(() => {
+    if (academyData) {
+      const data = {
+        id: academyPDA!.toBase58(),
+        pda: academyPDA!.toBase58(),
+        owner: academyData.owner.toBase58(),
+        title: academyData.title,
+        description: academyData.description,
+        banner: academyData.banner,
+        facilitator: academyData.tutors[0] || 'Unknown',
+        isPaid: academyData.fee ? true : false,
+        price: academyData.fee ? academyData.fee.toNumber() / LAMPORTS_PER_SOL : undefined,
+        startDate: new Date(academyData.startDate.toNumber() * 1000).toISOString(),
+        endDate: new Date(academyData.endDate.toNumber() * 1000).toISOString(),
+        status: compareDate(academyData.startDate.toNumber(), academyData.endDate.toNumber()),
+        students: academyData.totalStudents.toNumber(),
+        mentors: academyData.tutors.length > 0 ? academyData.tutors : null,
+      }
+      setItem(data);
+    }
+  }, [academyData])
+  
+  function compareDate(startTime: number, endTime: number): ClassStatus {
+    const currentDate = new Date();
+    const startDate = new Date(startTime * 1000);
+    const endDate = new Date(endTime * 1000);
+
+    if (currentDate < startDate) {
+      return "Upcoming";
+    } else if (currentDate >= startDate && currentDate <= endDate) {
+      return "Ongoing";
+    } else {
+      return "Ended";
+    }
+  }
+
+  let content;
+
+  if (!item || !params.id) {
+    return (
+      <div className="min-h-screen bg-background text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <p className="text-gray-400">
+            {params.id ? "Academy not found or still loading..." : "Invalid academy ID."}
+          </p>
           <Link
             to="/explorer"
             className="mt-3 inline-block text-fuchsia-300 hover:text-fuchsia-200 underline"
@@ -61,8 +126,30 @@ export default function DetailsPage() {
           </button>
         );
       } else {
-        content = <h1>Content</h1>;
+        content = (
+          <button
+            onClick={() => {
+              if (academyPDA) {
+                enroll.mutate({
+                  studentPDA: getStudentPDA(useWallet().publicKey!),
+                  academyPDA: academyPDA
+                });
+              }
+            }}
+            disabled={enroll.isPending}
+            className="px-4 py-2 rounded-lg font-semibold transition bg-fuchsia-600 hover:bg-fuchsia-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Register for class"
+          >
+            {enroll.isPending ? "Registering..." : "Register for Class"}
+          </button>
+        );
       }
+    } else {
+      content = (
+        <div className="text-sm text-gray-400">
+          Student registration only
+        </div>
+      );
     }
   } else {
     content = (
@@ -75,7 +162,7 @@ export default function DetailsPage() {
             backgroundColor: "#0E0E0F",
             fontSize: "14px",
             color: "white",
-            border: "1px solid rbga(255, 255, 255, 0.4)",
+            border: "1px solid rgba(255, 255, 255, 0.4)",
           }}
         />
       </div>

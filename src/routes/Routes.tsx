@@ -9,6 +9,7 @@ import PnlPage from "../Pages/pnl/page";
 import SettingPage from "../Pages/setting/settings";
 import SwapPage from "../Pages/swap/Swap";
 import TradingPage from "../Pages/trading/TradingPage";
+import AdminTrading from "../Pages/trading/AdminTrading";
 import ExplorerGrid from "../Pages/explorer/ExplorerGrid";
 import DetailsPage from "../Pages/explorer/DetailsPage";
 import AcademyStats from "../Pages/academy/AcademyStats";
@@ -79,6 +80,14 @@ const appRoutes = [
     element: (
       <Layout>
         <TradingPage />
+      </Layout>
+    ),
+  },
+  {
+    path: "/admin/trading",
+    element: (
+      <Layout>
+        <AdminTrading />
       </Layout>
     ),
   },

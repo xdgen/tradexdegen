@@ -13,7 +13,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.32.1",
+    "@coral-xyz/anchor": "^0.30.1",
     "@dialectlabs/blockchain-sdk-solana": "^2.0.0-beta.4",
     "@dialectlabs/react-sdk-blockchain-solana": "^3.0.0-beta.7",
     "@dialectlabs/react-ui": "^3.0.0-beta.7",
@@ -77,7 +77,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
-    "date-fns": "^3.6.0",
+    "date-fns": "^2.30.0",
     "decimal.js": "^10.4.3",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.3.0",

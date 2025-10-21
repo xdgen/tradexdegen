@@ -5,34 +5,28 @@ import Navbar from "../../components/dashboard/navbar";
 import { useAcademy } from "../../hooks/useAcademy";
 import type { ClassStatus } from "../../data";
 
+function compareDate(startTime: number, endTime: number): ClassStatus {
+  const currentDate = new Date();
+  const startDate = new Date(startTime * 1000);
+  const endDate = new Date(endTime * 1000);
+
+  if (currentDate < startDate) {
+    return "Upcoming";
+  } else if (currentDate >= startDate && currentDate <= endDate) {
+    return "Ongoing";
+  } else {
+    return "Ended";
+  }
+}
+
 export default function ExplorerGrid() {
   const [items, setItems] = useState<AcademyClass[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { getAllAcademies } = useAcademy();
 
-  // if (getAllAcademies.isLoading) {
-  //   setLoading(true);
-  // } else {
-  //   setLoading(false);
-  // }
-
   function formatDate(time: number) {
     const formatted = Math.floor(time * 1000);
     return new Date(formatted).toISOString()
-  }
-
-  function compareDate(startTime: number, endTime: number): ClassStatus {
-    const currentDate = new Date();
-    const startDate = new Date(startTime * 1000);
-    const endDate = new Date(endTime * 1000);
-
-    if (currentDate < startDate) {
-      return "Upcoming";
-    } else if (currentDate >= startDate && currentDate <= endDate) {
-      return "Ongoing";
-    } else {
-      return "Ended";
-    }
   }
 
   useEffect(() => {
@@ -58,6 +52,7 @@ export default function ExplorerGrid() {
         }
       })
       setItems(data)
+      setLoading(false)
     }
   }, [getAllAcademies.data])
 
@@ -98,7 +93,7 @@ export default function ExplorerGrid() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => (
-              <ClassCard key={item.id} data={item} />
+              <ClassCard key={item.pda} data={item} />
             ))}
           </div>
         )}

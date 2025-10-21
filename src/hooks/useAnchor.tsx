@@ -5,7 +5,11 @@ export const useAnchor = () => {
     const wallet = useAnchorWallet();
     const { connection } = useConnection()
 
-    const provider = new AnchorProvider(connection, wallet!);
-    setProvider(provider); // set provider
+    if (!wallet) {
+        return null;
+    }
+
+    const provider = new AnchorProvider(connection, wallet);
+    setProvider(provider);
     return provider;
 }

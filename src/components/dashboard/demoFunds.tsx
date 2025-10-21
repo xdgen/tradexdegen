@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useTrade } from "../../hooks/useTrade";
 
 export default function DemoFund() {
   const location = useLocation();
@@ -23,6 +24,7 @@ export default function DemoFund() {
   const { publicKey } = useWallet();
 
   const { isConnected } = useAppKitAccount();
+  const { claim: claimToken } = useTrade()
 
   if (!isConnected) {
     console.log("Wallet not connected");
@@ -58,17 +60,19 @@ export default function DemoFund() {
       alert("Please connect your wallet!");
       return;
     }
-    try {
-      setLoading(true);
-      const tx = await claimXSOL(publicKey, amount);
-      console.log(tx?.message);
-      toast.success("XSOL claimed successfully");
-    } catch (error) {
-      toast.warning("Transaction might have failed");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    // try {
+    //   setLoading(true);
+    //   const tx = await claimXSOL(publicKey, amount);
+    //   console.log(tx?.message);
+    //   toast.success("XSOL claimed successfully");
+    // } catch (error) {
+    //   toast.warning("Transaction might have failed");
+    //   console.error(error);
+    // } finally {
+    //   setLoading(false);
+    // }
+
+    claimToken.mutateAsync()
   };
 
   useEffect(() => {

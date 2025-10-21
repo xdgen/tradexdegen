@@ -1,4 +1,4 @@
-import { createAssociatedTokenAccountInstruction, createMint, createTransferInstruction, getAssociatedTokenAddress, getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
+import { createAssociatedTokenAccountInstruction, createMint, createTransferInstruction, getAssociatedTokenAddress, mintTo } from "@solana/spl-token";
 import { Connection, Keypair, ParsedAccountData, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import supabase from "./database";
 
@@ -328,22 +328,22 @@ export const createTokenIfNotExists = async (
     await saveMeme(tokenName, tokenMintString, mintAddress);
 
     // Get or create the program's associated token account for this mint
-    const programTokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,    // Connection to the Solana cluster
-        xDegenWalletKeypair,         // Payer's Keypair
+    const programTokenAccount = await getOrCreateATA(
         tokenMint,          // Mint address (should be a valid PublicKey)
-        Xdegen_wallet         // Owner's address (should be a valid PublicKey)
+        Xdegen_wallet,      // Owner's address (should be a valid PublicKey)
+        xDegenWalletKeypair // Payer's Keypair
     );
 
     console.log("🚀 ~ programTokenAccount:", programTokenAccount)
 
     // Mint the initial supply of tokens to the program's token account
+    const tokenAccountAddress = programTokenAccount.address || programTokenAccount;
 
     await mintTo(
         connection,
         xDegenWalletKeypair,
         tokenMint,
-        programTokenAccount.address,
+        tokenAccountAddress,
         Xdegen_wallet,
         1000000000000000 * 1e9
     )
@@ -389,9 +389,48 @@ export const getMeme = async (tokenMint: string, tokenName?: string) => {
     return data[0].mint;
 }
 
-export const getSPLTokenBalance = async (walletPublicKey: PublicKey, tokenMintAddress: string) => {
+// Improved helper function to get or create associated token account with error handling
+const getOrCreateATA = async (mint: PublicKey, owner: PublicKey, payer: Keypair) => {
     try {
+        // Check if ATA already exists first for better performance
+        const associatedTokenAccount = await getAssociatedTokenAddress(mint, owner);
+        const accountInfo = await connection.getAccountInfo(associatedTokenAccount);
 
+        if (!accountInfo) {
+            // ATA doesn't exist, create it manually
+            const instruction = createAssociatedTokenAccountInstruction(
+                payer.publicKey, // payer
+                associatedTokenAccount, // associated token account
+                owner, // owner
+                mint // mint
+            );
+
+            // Create and send transaction to create ATA
+            const transaction = new Transaction().add(instruction);
+            transaction.feePayer = payer.publicKey;
+            transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+            transaction.sign(payer);
+            const txId = await connection.sendRawTransaction(transaction.serialize());
+            await connection.confirmTransaction(txId);
+
+            return { address: associatedTokenAccount };
+        }
+
+        // ATA exists, return the address directly
+        return { address: associatedTokenAccount };
+    } catch (error) {
+        console.error("Failed to get or create associated token account:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to create token account for mint ${mint.toBase58()}: ${errorMessage}`);
+    }
+}
+
+export const getSPLTokenBalance = async (walletPublicKey: PublicKey, tokenMintAddress: string, retryCount = 0): Promise<number> => {
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
+    try {
         // Define the token mint public key (SPL token you want to check)
         const mintPublicKey = new PublicKey(tokenMintAddress);
 
@@ -410,9 +449,19 @@ export const getSPLTokenBalance = async (walletPublicKey: PublicKey, tokenMintAd
         const tokenAccountInfo = tokenAccounts.value[0].account.data.parsed;
         const balance = tokenAccountInfo.info.tokenAmount.uiAmount;
 
-        console.log("Token balance:", balance);
+        console.log(`Token balance for ${tokenMintAddress}:`, balance);
         return balance;
     } catch (error) {
-        console.error("Error fetching token balance:", error);
+        console.error(`Error fetching token balance (attempt ${retryCount + 1}/${maxRetries + 1}):`, error);
+
+        // Retry logic for network errors
+        if (retryCount < maxRetries) {
+            console.log(`Retrying in ${retryDelay * (retryCount + 1)}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay * (retryCount + 1)));
+            return getSPLTokenBalance(walletPublicKey, tokenMintAddress, retryCount + 1);
+        }
+
+        console.error("Max retries reached, returning 0");
+        return 0;
     }
 }
