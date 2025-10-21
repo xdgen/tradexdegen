@@ -14,8 +14,11 @@ const axios = Axios.create({
 
 axiosAsync.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    const authData = localStorage.getItem("authData");
+    if (authData) {
+      const parsedAuthData = JSON.parse(authData as string) as AuthResponse;
+
+      const token = parsedAuthData.token.accessToken;
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

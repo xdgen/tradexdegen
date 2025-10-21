@@ -16,6 +16,15 @@ interface AcademyStats {
   retentionRate: number;
 }
 
+interface Academy {
+  id: string;
+  academyStreamId: string;
+  contract_address: string;
+  created_at: Date;
+  updated_at: Date;
+  userId: string;
+}
+
 interface Token {
   accessToken: string;
   refreshToken: string;
@@ -40,4 +49,8 @@ interface CheckUserResponse {
   status: boolean;
   message: string;
   wallet: string;
+}
+
+interface AcademyResponse<T> extends Omit<CheckUserResponse, "wallet"> {
+  data: T;
 }

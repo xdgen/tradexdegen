@@ -5,15 +5,19 @@ import { WalletBar } from "./walletBar";
 import CommunityRegisterDialog from "../dialogs/communityRegisterDialog";
 import { DialectSolanaNotificationsButton } from "../Dialect";
 import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import useLocalStorageSubscription from "../../hooks/useLocalStorageSubscription";
 
 const Navbar: React.FC = () => {
-  const { role } = useCheckUserRole();
+  const { role, authData } = useCheckUserRole();
+  const [academyCreated] = useLocalStorageSubscription(
+    `academy-${authData?.user.id}`
+  );
+
   const isAcademy = useMemo(() => {
     if (!role) null;
 
     return role === "ACADEMY";
   }, [role]);
-  console.log(role, "current role");
 
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">
@@ -27,7 +31,7 @@ const Navbar: React.FC = () => {
       {/* Right section with settings and notification */}
       <div className="flex gap-4 items-center">
         {/* Hide if academy is registered */}
-        {isAcademy && <CommunityRegisterDialog />}
+        {isAcademy && !academyCreated && <CommunityRegisterDialog />}
         <WalletMultiButton
           style={{
             margin: "1px 0",

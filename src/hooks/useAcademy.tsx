@@ -6,6 +6,7 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useMemo } from "react";
+import { axiosAsync } from "../lib/axios";
 
 export type Plan = { free: {} } | { paid: {} };
 
@@ -73,36 +74,48 @@ export const useAcademy = () => {
         );
       }
 
-      const academyData = {
-        ...payload,
-        owner: provider.wallet.publicKey,
-        startDate: new BN(payload.startDate),
-        endDate: new BN(payload.endDate),
-        fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
-      };
+      // const academyData = {
+      //   ...payload,
+      //   owner: provider.wallet.publicKey,
+      //   startDate: new BN(payload.startDate),
+      //   endDate: new BN(payload.endDate),
+      //   fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
+      // };
 
-      const tx = await program.methods
-        .createAcademy(academyData)
-        .accountsPartial({
-          signer: provider.wallet.publicKey,
-          config: getConfigPDA(),
-          academy: getAcademyPDA(provider.wallet.publicKey),
-        })
-        .rpc();
+      // const tx = await program.methods
+      //   .createAcademy(academyData)
+      //   .accountsPartial({
+      //     signer: provider.wallet.publicKey,
+      //     config: getConfigPDA(),
+      //     academy: getAcademyPDA(provider.wallet.publicKey),
+      //   })
+      //   .rpc();
 
       return {
         academyPDA: getAcademyPDA(provider.wallet.publicKey),
-        tx,
+        tx: "random",
       };
     },
     onSuccess: async (data) => {
-      console.log(data.academyPDA); // the contract address to supply to API
+      console.log(data.academyPDA);
 
-      // Invalidate and refetch all academies to show the new one
-      await queryClient.invalidateQueries({ queryKey: ["academy"] });
-      toast.success(
-        `Academy created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
-      );
+      const response = await axiosAsync.post("/academies", {
+        contractAddress: data.academyPDA,
+      });
+      const dataResponse = response.data as AcademyResponse<Academy>;
+
+      if (dataResponse.status) {
+        // Invalidate and refetch all academies to show the new one
+        await queryClient.invalidateQueries({ queryKey: ["academy"] });
+        toast.success(
+          `Academy created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+        );
+
+        localStorage.setItem(
+          `academy:${dataResponse.data.userId}`,
+          JSON.stringify(true)
+        );
+      }
     },
   });
 

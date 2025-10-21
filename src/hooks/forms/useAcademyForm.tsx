@@ -23,7 +23,8 @@ export function useCreateAcademyForm() {
     defaultValues: {
       title: "",
       desc: "",
-      banner: "",
+      banner:
+        "https://apricot-historic-wolverine-360.mypinata.cloud/ipfs/bafkreihnlbpiclvyc6qh56e2pguqa3sv3ye2t4pl44dtawz4xrqoetft6a",
       startDate: undefined,
       endDate: undefined,
       plan: undefined,
@@ -39,22 +40,31 @@ export function useCreateAcademyForm() {
 
   const { createAcademy } = useAcademy();
 
-  const onSubmit: SubmitHandler<CreateAcademyInput> = async (data) => {
-    const tutors = data.tutors.map((tutor) => tutor.value);
-    const startDate = Math.floor(data.startDate.getTime() / 1000);
-    const endDate = Math.floor(data.endDate.getTime() / 1000);
+  const onSubmit = async (data: CreateAcademyInput, callback: () => void) => {
+    try {
+      const tutors = data.tutors.map((tutor) => tutor.value);
+      const startDate = Math.floor(data.startDate.getTime() / 1000);
+      const endDate = Math.floor(data.endDate.getTime() / 1000);
 
-    const plan: Plan = data.plan == "free" ? { free: {} } : { paid: {} };
-    await createAcademy.mutateAsync({
-      title: data.title,
-      description: data.desc,
-      banner: data.banner,
-      startDate: startDate,
-      endDate: endDate,
-      plan: plan,
-      fee: data.fee ? Number(data.fee) : null,
-      tutors: tutors,
-    });
+      const plan: Plan = data.plan == "free" ? { free: {} } : { paid: {} };
+      await createAcademy.mutateAsync({
+        title: data.title,
+        description: data.desc,
+        banner: data.banner,
+        startDate: startDate,
+        endDate: endDate,
+        plan: plan,
+        fee: data.fee ? Number(data.fee) : null,
+        tutors: tutors,
+      });
+
+      callback();
+
+      toast.success(`${data.title} Academy created successfully`);
+      form.reset();
+    } catch (err) {
+      toast.error("Academy creation failed");
+    }
   };
 
   return {
