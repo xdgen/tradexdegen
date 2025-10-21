@@ -12,11 +12,11 @@ const statusColor: Record<AcademyClass["status"], string> = {
 
 export default function ClassCard({ data }: Props) {
   const navigate = useNavigate();
-  const { id, title, banner, facilitator, isPaid, price, status } = data;
+  const { id, pda, title, banner, facilitator, isPaid, price, status } = data;
 
   return (
     <button
-      onClick={() => navigate(`/class/${id}`)}
+      onClick={() => navigate(`/class/${pda}`)}
       className="group text-left relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-secondary/70 to-secondary/30 hover:from-secondary/80 hover:to-secondary/50 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
       aria-label={`Open details for ${title}`}
     >

@@ -128,26 +128,29 @@ const CommunityRegisterDialog = () => {
                 )}
               >
                 {fields.map((field, index) => (
-                  <div
-                    key={field.id}
-                    className="grid grid-cols-[1fr_max-content] items-center gap-1 w-full"
-                  >
-                    <Input
-                      {...register(`tutors.${index}.value` as const, {
-                        required: true,
-                      })}
-                      placeholder={`Tutor ${index + 1}`}
-                      className="border p-2 rounded flex-1 w-full"
-                      error={errors.tutors && errors.tutors[0]?.value?.message}
-                    />
-                    {fields.length !== 1 && (
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="text-[#545454] w-max"
-                      >
-                        <CancelIcon />
-                      </button>
+                  <div key={field.id} className="flex flex-col gap-y-2 w-full">
+                    <div className="grid grid-cols-[1fr_max-content] items-center gap-1">
+                      <Input
+                        {...register(`tutors.${index}.value` as const, {
+                          required: true,
+                        })}
+                        placeholder={`Tutor ${index + 1}`}
+                        className="border p-2 rounded flex-1 w-full"
+                      />
+                      {fields.length !== 1 && (
+                        <button
+                          type="button"
+                          onClick={() => remove(index)}
+                          className="text-[#545454] w-max"
+                        >
+                          <CancelIcon />
+                        </button>
+                      )}
+                    </div>
+                    {errors.tutors && errors.tutors[0]?.value?.message && (
+                      <span className="text-destructive text-sm">
+                        {errors.tutors[0]?.value?.message}
+                      </span>
                     )}
                   </div>
                 ))}
@@ -181,15 +184,15 @@ const CommunityRegisterDialog = () => {
             </FormItem>
 
             {plan && plan.toLowerCase() === "paid" && (
-              <div className="grid grid-cols-2 gap-2">
-                <Input
+              <div className="">
+                {/* <Input
                   type="text"
                   label="Payout Wallet Address"
                   placeholder="HDSDSD***************"
                   {...register("payoutWallet")}
                   error={errors.payoutWallet?.message}
                   className="mt-0"
-                />
+                /> */}
 
                 <Input
                   type="number"

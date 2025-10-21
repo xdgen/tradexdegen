@@ -8,6 +8,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import SolanaWalletProvider from "./provider/WalletProvider ";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const router = createBrowserRouter(appRoutes);
 
@@ -38,36 +39,40 @@ const App = () => {
   //   new SolflareWalletAdapter(),
   // ];
 
+  const queryClient = new QueryClient()
+
   return (
-    <SolanaWalletProvider>
-      <RouterProvider router={router} />
-      <Toaster position="top-right" />
-      {isSmallScreen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(10, 30, 10, 0.8)",
-            opacity: "0.7",
-            color: "white",
-            textAlign: "center",
-            padding: "10px",
-            fontWeight: "900",
-            zIndex: 1000,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            fontSize: "30px",
-          }}
-        >
-          Screen size too small. Please use a larger screen for the best
-          experience.
-        </div>
-      )}
-    </SolanaWalletProvider>
+    <QueryClientProvider client={queryClient}>
+      <SolanaWalletProvider>
+        <RouterProvider router={router} />
+        <Toaster position="top-right" />
+        {isSmallScreen && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              backgroundColor: "rgba(10, 30, 10, 0.8)",
+              opacity: "0.7",
+              color: "white",
+              textAlign: "center",
+              padding: "10px",
+              fontWeight: "900",
+              zIndex: 1000,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              fontSize: "30px",
+            }}
+          >
+            Screen size too small. Please use a larger screen for the best
+            experience.
+          </div>
+        )}
+      </SolanaWalletProvider>
+    </QueryClientProvider>
   );
 };
 

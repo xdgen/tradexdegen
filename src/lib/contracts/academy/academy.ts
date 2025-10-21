@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/xdegen_academy.json`.
  */
 export type XdegenAcademy = {
-  "address": "FZmWrz1rThQFg12HStZygrVgShFkKBfybPxyYhcmFCJ5",
+  "address": "4v26LBK8f9VcaTo36dVYfcDAo33mMsfMkDJeVoXaoqjn",
   "metadata": {
     "name": "xdegenAcademy",
     "version": "0.1.0",
@@ -430,6 +430,11 @@ export type XdegenAcademy = {
       "code": 6007,
       "name": "stringTooLong",
       "msg": "String Too Long"
+    },
+    {
+      "code": 6008,
+      "name": "invalidDestinationWallet",
+      "msg": "Invalid destination wallet"
     }
   ],
   "types": [
@@ -479,11 +484,7 @@ export type XdegenAcademy = {
           {
             "name": "tutors",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "tutor"
-                }
-              }
+              "vec": "string"
             }
           },
           {
@@ -583,11 +584,7 @@ export type XdegenAcademy = {
           {
             "name": "tutors",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "tutor"
-                }
-              }
+              "vec": "string"
             }
           }
         ]
@@ -651,30 +648,6 @@ export type XdegenAcademy = {
           {
             "name": "bump",
             "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "tutor",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "email",
-            "type": "string"
-          },
-          {
-            "name": "bio",
-            "type": "string"
-          },
-          {
-            "name": "expertise",
-            "type": "string"
           }
         ]
       }

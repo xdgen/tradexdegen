@@ -1,5 +1,5 @@
 {
-  "address": "FZmWrz1rThQFg12HStZygrVgShFkKBfybPxyYhcmFCJ5",
+  "address": "4v26LBK8f9VcaTo36dVYfcDAo33mMsfMkDJeVoXaoqjn",
   "metadata": {
     "name": "xdegen_academy",
     "version": "0.1.0",
@@ -424,6 +424,11 @@
       "code": 6007,
       "name": "StringTooLong",
       "msg": "String Too Long"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidDestinationWallet",
+      "msg": "Invalid destination wallet"
     }
   ],
   "types": [
@@ -473,11 +478,7 @@
           {
             "name": "tutors",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "Tutor"
-                }
-              }
+              "vec": "string"
             }
           },
           {
@@ -577,11 +578,7 @@
           {
             "name": "tutors",
             "type": {
-              "vec": {
-                "defined": {
-                  "name": "Tutor"
-                }
-              }
+              "vec": "string"
             }
           }
         ]
@@ -645,30 +642,6 @@
           {
             "name": "bump",
             "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Tutor",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "name",
-            "type": "string"
-          },
-          {
-            "name": "email",
-            "type": "string"
-          },
-          {
-            "name": "bio",
-            "type": "string"
-          },
-          {
-            "name": "expertise",
-            "type": "string"
           }
         ]
       }

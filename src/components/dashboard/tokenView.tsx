@@ -32,7 +32,7 @@ import {
   sell,
   Xdegen_mint,
 } from "../testToken/swapfunction";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
 
 import {
@@ -46,6 +46,9 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from '../ui/button';
+import { useTrade } from '@/hooks/useTrade';
+import { BN } from "@coral-xyz/anchor";
+import { getMint } from '@solana/spl-token';
 
 type StatItem = {
   label: string;
@@ -276,6 +279,7 @@ export default function TokenView() {
 
   const { publicKey, sendTransaction } = useWallet();
   const { address } = useAppKitAccount();
+  const { buy: buyToken, sell: sellToken } = useTrade();
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -284,6 +288,10 @@ export default function TokenView() {
       updateStats(location.state.pairData);
     }
   }, [location.state]);
+
+
+  console.log('pairData', pairData);
+
 
   useEffect(() => {
     if (!chartContainerRef.current || !pairData) return;
@@ -535,38 +543,77 @@ export default function TokenView() {
   }, [pairData, timeframe]);
 
   useEffect(() => {
-    (async () => {
-      if (!pairData) return;
-      const walletPublicKey = publicKey;
+    if (!pairData || !publicKey) {
+      setXSol("0");
+      setXTokenMint("0");
+      return;
+    }
 
-      if (!walletPublicKey) {
-        setXSol("0");
-        setXTokenMint("0");
-        return;
-      }
+    let isCancelled = false;
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
+    const fetchBalances = async () => {
+      if (isCancelled) return;
+
       try {
-        console.log("checking balance");
+        console.log("Fetching token balances...");
         const Xdegen_mint = "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce";
+
+        // Fetch XDEGEN SOL balance
+        const xXSol = await getSPLTokenBalance(publicKey, Xdegen_mint);
+        if (!isCancelled) {
+          setXSol(xXSol.toString());
+        }
+
+        // Fetch paired token balance
         const getXdegenTokenMint = await getMeme(pairData.baseToken.address);
-        const xXSol = await getSPLTokenBalance(walletPublicKey, Xdegen_mint);
-        if (!getXdegenTokenMint) {
-          setXTokenMint("0");
-        } else {
-          const xXToken = await getSPLTokenBalance(
-            walletPublicKey,
-            getXdegenTokenMint
-          );
-          setXTokenMint(xXToken);
+        if (!isCancelled) {
+          if (!getXdegenTokenMint) {
+            setXTokenMint("0");
+          } else {
+            const xXToken = await getSPLTokenBalance(publicKey, getXdegenTokenMint);
+            setXTokenMint(xXToken.toString());
+          }
         }
-        if (!xXSol) {
-          setXSol("0");
-        } else {
-          setXSol(xXSol);
-        }
+
+        console.log("Balances updated successfully");
+        retryCount = 0; // Reset retry count on success
       } catch (error) {
-        console.error("Failed to fetch trading :", error);
+        console.error("Failed to fetch token balances:", error);
+
+        // Retry logic with exponential backoff
+        if (retryCount < maxRetries && !isCancelled) {
+          retryCount++;
+          console.log(`Retrying balance fetch (${retryCount}/${maxRetries})...`);
+          setTimeout(fetchBalances, retryDelay * retryCount);
+        } else {
+          console.error("Max retries reached, setting balances to 0");
+          if (!isCancelled) {
+            setXSol("0");
+            setXTokenMint("0");
+          }
+        }
       }
-    })()
+    };
+
+    // Initial fetch with debounce
+    const debounceTimer = setTimeout(fetchBalances, 300);
+
+    // Set up periodic refresh every 30 seconds to ensure balances stay updated
+    const refreshInterval = setInterval(() => {
+      if (!isCancelled) {
+        console.log("Periodic balance refresh...");
+        fetchBalances();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(debounceTimer);
+      clearInterval(refreshInterval);
+    };
   }, [pairData, publicKey, updateBal]);
 
   const fetchData = async () => {
@@ -610,60 +657,82 @@ export default function TokenView() {
     setSwap(option);
   };
 
+  const { connection } = useConnection();
+
   const handleBuy = async () => {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
+
     try {
       const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-      console.log(pairData.baseToken);
-      const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
-      const tokenAmount =
-        +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
-      const tokenName = pairData.baseToken.symbol;
-      const tokenMint = pairData.baseToken.address;
-      const buyNow = await buy(
-        Xdegen_mint,
-        +orderAmount,
-        walletPublicKey,
-        tokenName,
-        tokenMint,
+
+      if (!pairData?.baseToken?.address) {
+        throw new Error("Token data not available!");
+      }
+
+      // Calculate token amount based on XSOL amount and price
+      const xsolAmount = parseFloat(orderAmount);
+      const tokenPrice = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const tokenAmount = xsolAmount / tokenPrice;
+
+      console.log('Buy parameters:', {
+        xsolAmount,
+        tokenPrice,
         tokenAmount,
-        sendTransaction
+        tokenSymbol: pairData.baseToken.symbol,
+        tokenMint: pairData.baseToken.address
+      });
+
+      // Get or create the token mint for this pair - this also persists the association if it doesn't exist
+      const tokenMintAddress = await getMeme(pairData.baseToken.address, pairData.baseToken.name);
+
+      if (!tokenMintAddress) {
+        throw new Error("Unable to get or create token mint address");
+      }
+
+      const tokenMint = new PublicKey(tokenMintAddress);
+
+      // Prepare token parameters for the contract
+      const tokenParams = {
+        name: pairData.baseToken.name || pairData.baseToken.symbol,
+        symbol: pairData.baseToken.symbol,
+        decimals: 9, // Default SPL token decimals
+        uri: pairData.info?.imageUrl || "",
+        supply: tokenAmount
+      };
+
+      console.log(getMint(connection, pairData.baseToken.address))
+
+      // Call the updated buy mutation with all required parameters
+      // await buyToken.mutateAsync({
+      //   mint: tokenMint,
+      //   buyAmount: tokenAmount,
+      //   tokenParams,
+      //   pairData: {
+      //     tokenMint: pairData.baseToken.address,
+      //     priceNative: pairData.priceNative,
+      //     priceUsd: pairData.priceUsd,
+      //     xsolAmount: xsolAmount // The XSOL amount the user is buying for
+      //   }
+      // });
+
+      toast.success(
+        `Successfully bought ${tokenAmount.toFixed(6)} ${pairData.baseToken.symbol} for ${xsolAmount} XSOL`,
+        {
+          action: {
+            label: "View Transaction",
+            onClick: () => window.open(`https://solscan.io/tx/${buyToken.data}?cluster=devnet`, "_blank")
+          }
+        }
       );
 
-      const { signature, confirmation } = buyNow;
-
-      if (confirmation){
-        console.log(
-          `Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
-        );
-        toast.success(
-          `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `,
-          {
-            action: {
-              label: "View Transaction",
-              onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
-            }
-          }
-        );
-      } else {
-        toast.success(
-          `Transaction not confirmed`,
-          {
-            action: {
-              label: "View Transaction",
-              onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
-            }
-          }
-        );
-      }
     } catch (error) {
-      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
-      console.log(error);
+      console.error("Buy transaction failed:", error);
+      toast.error(error instanceof Error ? error.message : "Transaction failed");
     } finally {
       if (updateBal) {
         setUpdateBal(false);
@@ -828,13 +897,13 @@ export default function TokenView() {
     };
   }, [pairData, timeframe]);
 
-  const toggleIndicator = (indicator: string) => {
-    setIndicators((prev) =>
-      prev.includes(indicator)
-        ? prev.filter((i) => i !== indicator)
-        : [...prev, indicator]
-    );
-  };
+  // const toggleIndicator = (indicator: string) => {
+  //   setIndicators((prev) =>
+  //     prev.includes(indicator)
+  //       ? prev.filter((i) => i !== indicator)
+  //       : [...prev, indicator]
+  //   );
+  // };
 
   if (!pairData) {
     return <div className="text-white">Loading...</div>;
@@ -983,10 +1052,10 @@ export default function TokenView() {
           )}
 
           <div className="flex-1 bg-gray-900/30">
-            {/* <div className="flex flex-col justify-start items-start">
+            <div className="flex flex-col justify-start items-start">
               <TimeframeSelector />
               <ChartControls />
-            </div> */}
+            </div>
             <div
               ref={chartContainerRef}
               className="w-full h-[500px]"

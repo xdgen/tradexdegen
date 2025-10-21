@@ -54,23 +54,14 @@ const FilepondUploader = ({ label, setImage }: FilepondUploaderProps) => {
     transfer,
     options
   ) => {
-    console.log('no file')
+    console.log("no file");
     if (file) {
-      console.log('file')
-      const filename = nanoid();
-      const fileExt = file?.name.split(".").pop();
-      const newFileName = `${filename}.${fileExt}`;
-      const bucketName = import.meta.env
-        .VITE_SUPABASE_PROJECT_STORAGE_BUCKET_NAME as string;
-      console.log(bucketName, newFileName);
-
       try {
         progress(false, 0, file.size);
 
         const upload = await pinata.upload.public.file(file, {
           metadata: { name: "academy-banner" },
         });
-        console.log(upload);
 
         if (upload) {
           const publicUrlData = `https://${

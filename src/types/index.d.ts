@@ -1,4 +1,4 @@
-type Role = "academy" | "student";
+type Role = "ACADEMY" | "STUDENT";
 
 interface RoleData {
   title: Role;
@@ -14,4 +14,30 @@ interface AcademyStats {
   averageRating: number;
   monthlyEnrollments: number;
   retentionRate: number;
+}
+
+interface Token {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresAt: Date;
+  refreshTokenExpiresAt: Date;
+}
+
+interface User {
+  id: string;
+  wallet: string;
+  role: Role;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface AuthResponse {
+  token: Token;
+  user: User;
+}
+
+interface CheckUserResponse {
+  status: boolean;
+  message: string;
+  wallet: string;
 }
