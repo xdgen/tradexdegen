@@ -2,6 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { useStudentRegistration } from "../../hooks/forms/useAcademyForm";
 import { Input } from "../ui/input";
+import { useAcademy } from "../../hooks/useAcademy";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { toast } from "sonner";
 
 const StudentAcademyRegisterDialog = ({
   isOpen,
@@ -16,12 +19,29 @@ const StudentAcademyRegisterDialog = ({
       register,
       formState: { errors, isValid, isSubmitting },
     },
-    onSubmit,
   } = useStudentRegistration();
+  const { createStudent } = useAcademy();
+  const { updateUserRole } = useCheckUserRole();
 
-  const handleStudentForm = () => {
-    // updateUserRole();
-    closeDialog();
+  console.log(isOpen)
+
+  const handleStudentForm = async (data: { xHandle: string }) => {
+    try {
+      // Create student on-chain
+      await createStudent.mutateAsync({
+        twitterHandle: data.xHandle
+      });
+
+      // Update user role to STUDENT
+      updateUserRole("STUDENT");
+
+      // Close the dialog
+      closeDialog();
+      console.log(data)
+    } catch (error) {
+      console.error("Error in student registration:", error);
+      toast.error("Failed to register as student");
+    }
   };
 
   return (
@@ -36,7 +56,7 @@ const StudentAcademyRegisterDialog = ({
         </DialogHeader>
 
         <form
-          onSubmit={handleSubmit((data) => onSubmit(data, handleStudentForm))}
+          onSubmit={handleSubmit(handleStudentForm)}
           className="h-full grid grid-rows-[1fr_max-content] gap-y-3 overflow-hidden"
         >
           <Input

@@ -46,7 +46,7 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from '../ui/button';
-import { useTrade } from '@/hooks/useTrade';
+import { useTrade } from '../../hooks/useTrade';
 import { BN } from "@coral-xyz/anchor";
 import { getMint } from '@solana/spl-token';
 
@@ -288,9 +288,6 @@ export default function TokenView() {
       updateStats(location.state.pairData);
     }
   }, [location.state]);
-
-
-  console.log('pairData', pairData);
 
 
   useEffect(() => {
@@ -897,13 +894,13 @@ export default function TokenView() {
     };
   }, [pairData, timeframe]);
 
-  // const toggleIndicator = (indicator: string) => {
-  //   setIndicators((prev) =>
-  //     prev.includes(indicator)
-  //       ? prev.filter((i) => i !== indicator)
-  //       : [...prev, indicator]
-  //   );
-  // };
+  const toggleIndicator = (indicator: string) => {
+    setIndicators((prev) =>
+      prev.includes(indicator)
+        ? prev.filter((i) => i !== indicator)
+        : [...prev, indicator]
+    );
+  };
 
   if (!pairData) {
     return <div className="text-white">Loading...</div>;

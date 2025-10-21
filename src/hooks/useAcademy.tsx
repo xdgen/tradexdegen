@@ -62,7 +62,7 @@ export const useAcademy = () => {
         mutationKey: ["academy", "create"],
         mutationFn: async (payload: CreateAcademy) => {
             if (!provider || !provider.wallet?.publicKey || !program) {
-                throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
+                throw new Error("Wallet not connected. Please connect your wallet to create academy.");
             }
 
             const academyData = {
@@ -74,10 +74,10 @@ export const useAcademy = () => {
             };
 
             const tx = await program.methods.createAcademy(academyData).accountsPartial({
-                signer: provider.wallet.publicKey,
-                config: getConfigPDA(),
-                academy: getAcademyPDA(provider.wallet.publicKey)
-            }).rpc();
+                    signer: provider.wallet.publicKey,
+                    config: getConfigPDA(),
+                    academy: getAcademyPDA(provider.wallet.publicKey)
+                }).rpc();
 
             return {
                 academyPDA: getAcademyPDA(provider.wallet.publicKey),
