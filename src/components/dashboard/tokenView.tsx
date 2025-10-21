@@ -897,13 +897,13 @@ export default function TokenView() {
     };
   }, [pairData, timeframe]);
 
-  const toggleIndicator = (indicator: string) => {
-    setIndicators((prev) =>
-      prev.includes(indicator)
-        ? prev.filter((i) => i !== indicator)
-        : [...prev, indicator]
-    );
-  };
+  // const toggleIndicator = (indicator: string) => {
+  //   setIndicators((prev) =>
+  //     prev.includes(indicator)
+  //       ? prev.filter((i) => i !== indicator)
+  //       : [...prev, indicator]
+  //   );
+  // };
 
   if (!pairData) {
     return <div className="text-white">Loading...</div>;
