@@ -26,10 +26,12 @@ import { priceDataService, PriceData } from "../../utils/priceData";
 import XIcon from "@mui/icons-material/X";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import {
+  buy,
   // buy,
   getMeme,
   getSPLTokenBalance,
   sell,
+  Xdegen_mint,
   // Xdegen_mint,
 } from "../testToken/swapfunction";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -282,7 +284,6 @@ export default function TokenView() {
 
   const { publicKey, sendTransaction } = useWallet();
   const { address } = useAppKitAccount();
-  const { buy: buyToken, sell: sellToken } = useTrade();
 
   useEffect(() => {
     if (location.state && location.state.pairData) {
@@ -670,93 +671,58 @@ export default function TokenView() {
   const handleBuy = async () => {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
-
     try {
-      const walletPublicKey = publicKey
-        ? publicKey
-        : address
-        ? new PublicKey(address)
-        : undefined;
+      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-
-      if (!pairData?.baseToken?.address) {
-        throw new Error("Token data not available!");
-      }
-
-      // Calculate token amount based on XSOL amount and price
-      const xsolAmount = parseFloat(orderAmount);
-      const tokenPrice = parseFloat(
-        parseFloat(pairData.priceNative).toFixed(9)
-      );
-      const tokenAmount = xsolAmount / tokenPrice;
-
-      console.log("Buy parameters:", {
-        xsolAmount,
-        tokenPrice,
+      console.log(pairData.baseToken);
+      const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const tokenAmount =
+        +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const tokenName = pairData.baseToken.symbol;
+      const tokenMint = pairData.baseToken.address;
+      const buyNow = await buy(
+        Xdegen_mint,
+        +orderAmount,
+        walletPublicKey,
+        tokenName,
+        tokenMint,
         tokenAmount,
-        tokenSymbol: pairData.baseToken.symbol,
-        tokenMint: pairData.baseToken.address,
-      });
-
-      // Get or create the token mint for this pair - this also persists the association if it doesn't exist
-      const tokenMintAddress = await getMeme(
-        pairData.baseToken.address,
-        pairData.baseToken.name
+        sendTransaction
       );
 
-      if (!tokenMintAddress) {
-        throw new Error("Unable to get or create token mint address");
+      const { signature, confirmation } = buyNow;
+
+      if (confirmation){
+        console.log(
+          'Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}'
+        );
+        toast.success(
+          `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `,
+          {
+            action: {
+              label: "View Transaction",
+              onClick: () => window.open("https://solscan.io/tx/${signature}?cluster=devnet", "_blank")
+            }
+          }
+        );
+      } else {
+        toast.success(`
+          Transaction not confirmed,
+          {
+            action: {
+              label: "View Transaction",
+              onClick: () => window.open(https://solscan.io/tx/${signature}?cluster=devnet, "_blank")
+            }
+          }
+          `
+        );
       }
-
-      const tokenMint = new PublicKey(tokenMintAddress);
-
-      // Prepare token parameters for the contract
-      const tokenParams = {
-        name: pairData.baseToken.name || pairData.baseToken.symbol,
-        symbol: pairData.baseToken.symbol,
-        decimals: 9, // Default SPL token decimals
-        uri: pairData.info?.imageUrl || "",
-        supply: tokenAmount,
-      };
-
-      console.log(getMint(connection, pairData.baseToken.address));
-
-      // Call the updated buy mutation with all required parameters
-      // await buyToken.mutateAsync({
-      //   mint: tokenMint,
-      //   buyAmount: tokenAmount,
-      //   tokenParams,
-      //   pairData: {
-      //     tokenMint: pairData.baseToken.address,
-      //     priceNative: pairData.priceNative,
-      //     priceUsd: pairData.priceUsd,
-      //     xsolAmount: xsolAmount // The XSOL amount the user is buying for
-      //   }
-      // });
-
-      toast.success(
-        `Successfully bought ${tokenAmount.toFixed(6)} ${
-          pairData.baseToken.symbol
-        } for ${xsolAmount} XSOL`,
-        {
-          action: {
-            label: "View Transaction",
-            onClick: () =>
-              window.open(
-                `https://solscan.io/tx/${buyToken.data}?cluster=devnet`,
-                "_blank"
-              ),
-          },
-        }
-      );
     } catch (error) {
-      console.error("Buy transaction failed:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Transaction failed"
-      );
+      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
+      console.log(error);
     } finally {
       if (updateBal) {
         setUpdateBal(false);

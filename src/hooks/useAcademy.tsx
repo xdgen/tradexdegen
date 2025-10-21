@@ -155,18 +155,23 @@ export const useAcademy = () => {
       }
 
       const pda = getStudentPDA(provider.wallet.publicKey); 
+      console.log(pda)
       
-      const response = await axiosAsync.post("/students", {
-        twitterHandle: data.twitter,
-        contractAddress: pda,
-      });
-      console.log(response)
-      const dataResponse = response.data;
-      if (dataResponse.status) {
-        await queryClient.invalidateQueries({ queryKey: ["student", "create"] });
-        toast.success(
-          `Student created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
-        );
+      try {
+        const response = await axiosAsync.post("/students", {
+          twitterHandle: data.twitter,
+          contractAddress: pda,
+        });
+        console.log(response)
+        const dataResponse = response.data;
+        if (dataResponse.status) {
+          await queryClient.invalidateQueries({ queryKey: ["student", "create"] });
+          toast.success(
+            `Student created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+          );
+        }
+      } catch(error) {
+        console.log(error)
       }
     },
   });
