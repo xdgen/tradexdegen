@@ -4,13 +4,13 @@ import React, {
   createContext,
   useState,
   useCallback,
-  useRef,
   useEffect,
   useMemo,
 } from "react";
 import { axios } from "../lib/axios";
 import { toast } from "sonner";
 import { PublicKey } from "@solana/web3.js";
+import useLocalStorageSubscription from "../hooks/useLocalStorageSubscription";
 
 interface IUserRoleContext {
   isCheckingUserRole: boolean;
@@ -19,6 +19,7 @@ interface IUserRoleContext {
   isStudentDialogOpen: boolean;
   closeStudentDialog: () => void;
   role: Role | null;
+  authData: AuthResponse | null;
   updateUserRole: (role: Role) => void;
   isAuthenticated: boolean;
 }
@@ -34,27 +35,22 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
   const { publicKey, connected } = useWallet();
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
-  const [role, setRole] = useState<Role | null>(null);
   const [authData, setAuthData] = useState<AuthResponse | null>(null);
-
-  const roleRef = useRef<Role | null>(null);
+  const key =
+    connected && publicKey ? `userRole:${publicKey.toString()}` : null;
+  const [role, setRole, roleRef] = useLocalStorageSubscription<Role>(
+    key,
+    (val) => val as Role,
+    null
+  ) as unknown as [
+    Role | null,
+    React.Dispatch<React.SetStateAction<Role | null>>,
+    React.MutableRefObject<Role | null>
+  ];
   const isAuthenticated = useMemo(
     () => (connected && publicKey && role ? true : false),
     [connected, publicKey, role]
   );
-
-  const loadUserRole = useCallback(() => {
-    if (!connected || !publicKey) {
-      setRole(null);
-      return;
-    }
-
-    const saved = localStorage.getItem(`userRole:${publicKey.toString()}`);
-    if (saved) {
-      roleRef.current = saved as Role;
-      setRole(saved as Role);
-    }
-  }, [connected, publicKey]);
 
   const updateAuthData = (data: AuthResponse, publicKey: PublicKey) => {
     setAuthData({
@@ -84,6 +80,9 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
         role: newRole.toUpperCase(),
       });
       const data = response.data as AuthResponse;
+
+      setRole(data.user.role as Role);
+      roleRef.current = data.user.role as Role;
 
       if (data.user.role === "STUDENT") setIsStudentDialogOpen(true);
       updateAuthData(data, publicKey);
@@ -151,22 +150,13 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
   }, [authData]);
 
   useEffect(() => {
-    loadUserRole();
-  }, [loadUserRole]);
-
-  useEffect(() => {
     if (connected && publicKey && !role) {
       checkIfWalletExist();
     }
   }, [checkIfWalletExist]);
 
-  const closeRoleDialog = () => {
-    setIsRoleDialogOpen((prevProp) => !prevProp);
-  };
-
-  const closeStudentDialog = () => {
-    setIsStudentDialogOpen((prevProp) => !prevProp);
-  };
+  const closeRoleDialog = () => setIsRoleDialogOpen(false);
+  const closeStudentDialog = () => setIsStudentDialogOpen(false);
 
   return (
     <UserRoleContext.Provider
@@ -174,6 +164,7 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
         isCheckingUserRole,
         isRoleDialogOpen,
         closeStudentDialog,
+        authData,
         closeRoleDialog,
         isAuthenticated,
         role,

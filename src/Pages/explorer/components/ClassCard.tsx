@@ -1,8 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { AcademyClass } from "../../../data";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
+import { cn } from "../../../lib/utils";
 
-type Props = { data: AcademyClass };
+type Props = { data: AcademyClass; isLoading: boolean };
 
 const statusColor: Record<AcademyClass["status"], string> = {
   Ongoing: "text-emerald-400 border-emerald-500/30",
@@ -10,14 +16,17 @@ const statusColor: Record<AcademyClass["status"], string> = {
   Ended: "text-gray-400 border-gray-500/20",
 };
 
-export default function ClassCard({ data }: Props) {
+export default function ClassCard({ data, isLoading }: Props) {
   const navigate = useNavigate();
   const { id, pda, title, banner, facilitator, isPaid, price, status } = data;
 
   return (
     <button
       onClick={() => navigate(`/class/${pda}`)}
-      className="group text-left relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-secondary/70 to-secondary/30 hover:from-secondary/80 hover:to-secondary/50 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400"
+      className={cn(
+        "group text-left relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-b from-secondary/70 to-secondary/30 hover:from-secondary/80 hover:to-secondary/50 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400",
+        isLoading ? "bg-zinc-900 animate-pulse duration-500" : ""
+      )}
       aria-label={`Open details for ${title}`}
     >
       <div className="relative h-40 w-full overflow-hidden">
@@ -34,7 +43,9 @@ export default function ClassCard({ data }: Props) {
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-black/10 to-black/40" />
       </div>
       <div className="p-4">
-        <h3 className="text-base font-bold text-white/90 line-clamp-1">{title}</h3>
+        <h3 className="text-base font-bold text-white/90 line-clamp-1">
+          {title}
+        </h3>
         <p className="mt-1 text-xs text-gray-400">Facilitator: {facilitator}</p>
 
         <div className="mt-3 flex items-center gap-2">
@@ -53,7 +64,9 @@ export default function ClassCard({ data }: Props) {
                 </span>
               </TooltipTrigger>
               <TooltipContent className="text-xs">
-                {isPaid ? "Paid: Requires SOL to register" : "Free: No SOL needed!"}
+                {isPaid
+                  ? "Paid: Requires SOL to register"
+                  : "Free: No SOL needed!"}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -69,5 +82,3 @@ export default function ClassCard({ data }: Props) {
     </button>
   );
 }
-
-

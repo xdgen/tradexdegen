@@ -2,7 +2,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { getClassById, ClassStatus, AcademyClass } from "../../data";
+import { ClassStatus, AcademyClass } from "../../data";
 import { useCheckUserRole } from "../../provider/UserRoleProvider";
 import { useAcademy } from "../../hooks/useAcademy";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -27,12 +27,12 @@ function markdownToHtml(md: string): string {
 }
 
 export default function DetailsPage() {
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
   const { role } = useCheckUserRole();
   const params = useParams();
   const navigate = useNavigate();
   const [item, setItem] = useState<AcademyClass | null>(null);
-  const { getAcademyByPDA, enroll, getStudent, getStudentPDA } = useAcademy();
+  const { getAcademyByPDA, enroll, getStudentPDA } = useAcademy();
 
   // Early return if no valid ID
   if (!params.id || params.id === "undefined") {
@@ -53,9 +53,9 @@ export default function DetailsPage() {
 
   // Get academy data by PDA - simplified approach
   const academyPDA = new PublicKey(params.id);
-  const { data: academyData } = getAcademyByPDA(academyPDA);
+  const { data: academyData, isLoading: isFetchingAcademyData } =
+    getAcademyByPDA(academyPDA);
 
-  console.log(academyData)
   useEffect(() => {
     if (academyData) {
       const data = {
@@ -65,19 +65,26 @@ export default function DetailsPage() {
         title: academyData.title,
         description: academyData.description,
         banner: academyData.banner,
-        facilitator: academyData.tutors[0] || 'Unknown',
+        facilitator: academyData.tutors[0] || "Unknown",
         isPaid: academyData.fee ? true : false,
-        price: academyData.fee ? academyData.fee.toNumber() / LAMPORTS_PER_SOL : undefined,
-        startDate: new Date(academyData.startDate.toNumber() * 1000).toISOString(),
+        price: academyData.fee
+          ? academyData.fee.toNumber() / LAMPORTS_PER_SOL
+          : undefined,
+        startDate: new Date(
+          academyData.startDate.toNumber() * 1000
+        ).toISOString(),
         endDate: new Date(academyData.endDate.toNumber() * 1000).toISOString(),
-        status: compareDate(academyData.startDate.toNumber(), academyData.endDate.toNumber()),
+        status: compareDate(
+          academyData.startDate.toNumber(),
+          academyData.endDate.toNumber()
+        ),
         students: academyData.totalStudents.toNumber(),
         mentors: academyData.tutors.length > 0 ? academyData.tutors : null,
-      }
+      };
       setItem(data);
     }
-  }, [academyData])
-  
+  }, [academyData]);
+
   function compareDate(startTime: number, endTime: number): ClassStatus {
     const currentDate = new Date();
     const startDate = new Date(startTime * 1000);
@@ -99,7 +106,9 @@ export default function DetailsPage() {
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-6">
         <div className="text-center">
           <p className="text-gray-400">
-            {params.id ? "Academy not found or still loading..." : "Invalid academy ID."}
+            {params.id
+              ? "Academy not found or still loading..."
+              : "Invalid academy ID."}
           </p>
           <Link
             to="/explorer"
@@ -114,6 +123,16 @@ export default function DetailsPage() {
 
   const isEnded = item.status === "Ended";
 
+  if (isFetchingAcademyData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="w-full h-56 sm:h-72 md:h-80 lg:h-96 bg-zinc-900 animate-pulse" />
+
+        <div className="mx-auto h-80 max-w-5xl px-4 sm:px-6 lg:px-8 bg-zinc-900 animate-pulse" />
+      </div>
+    );
+  }
+
   if (connected) {
     if (role === "STUDENT") {
       if (isEnded) {
@@ -121,6 +140,7 @@ export default function DetailsPage() {
           <button
             className="px-4 py-2 rounded-lg font-semibold transition bg-gray-700 text-gray-400 cursor-not-allowed hover:brightness-110"
             aria-label="Register for class"
+            disabled={true}
           >
             Class Ended
           </button>
@@ -131,8 +151,8 @@ export default function DetailsPage() {
             onClick={() => {
               if (academyPDA) {
                 enroll.mutate({
-                  studentPDA: getStudentPDA(useWallet().publicKey!),
-                  academyPDA: academyPDA
+                  studentPDA: getStudentPDA(publicKey!),
+                  academyPDA: academyPDA,
                 });
               }
             }}
@@ -145,11 +165,7 @@ export default function DetailsPage() {
         );
       }
     } else {
-      content = (
-        <div className="text-sm text-gray-400">
-          Student registration only
-        </div>
-      );
+      content = null;
     }
   } else {
     content = (

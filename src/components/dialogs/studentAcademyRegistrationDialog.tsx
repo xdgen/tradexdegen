@@ -23,8 +23,6 @@ const StudentAcademyRegisterDialog = ({
   const { createStudent } = useAcademy();
   const { updateUserRole } = useCheckUserRole();
 
-  console.log(isOpen)
-
   const handleStudentForm = async (data: { xHandle: string }) => {
     try {
       // Create student on-chain

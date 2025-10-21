@@ -26,13 +26,13 @@ export default function ExplorerGrid() {
 
   function formatDate(time: number) {
     const formatted = Math.floor(time * 1000);
-    return new Date(formatted).toISOString()
+    return new Date(formatted).toISOString();
   }
 
   useEffect(() => {
     if (getAllAcademies.data) {
-      const data: AcademyClass[] = getAllAcademies.data.map(academy => {
-        const startDate = academy.account.startDate.toNumber()
+      const data: AcademyClass[] = getAllAcademies.data.map((academy) => {
+        const startDate = academy.account.startDate.toNumber();
         const endDate = academy.account.endDate.toNumber();
         const status: ClassStatus = compareDate(startDate, endDate);
         return {
@@ -43,18 +43,21 @@ export default function ExplorerGrid() {
           description: academy.account.description,
           startDate: formatDate(startDate),
           endDate: formatDate(endDate),
-          isPaid: !academy.account.fee ? false: true,
+          isPaid: !academy.account.fee ? false : true,
           status,
-          price: academy.account.fee ? academy.account.fee.toNumber() : undefined,
+          price: academy.account.fee
+            ? academy.account.fee.toNumber()
+            : undefined,
           students: academy.account.totalStudents.toNumber(),
-          mentors: academy.account.tutors.length > 0 ? academy.account.tutors : null,
-          facilitator: academy.account.tutors[0]
-        }
-      })
-      setItems(data)
-      setLoading(false)
+          mentors:
+            academy.account.tutors.length > 0 ? academy.account.tutors : null,
+          facilitator: academy.account.tutors[0],
+        };
+      });
+      setItems(data);
+      setLoading(false);
     }
-  }, [getAllAcademies.data])
+  }, [getAllAcademies.data]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -93,7 +96,11 @@ export default function ExplorerGrid() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((item) => (
-              <ClassCard key={item.pda} data={item} />
+              <ClassCard
+                key={item.pda}
+                data={item}
+                isLoading={getAllAcademies.isLoading}
+              />
             ))}
           </div>
         )}
