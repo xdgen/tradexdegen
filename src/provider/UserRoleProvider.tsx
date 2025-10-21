@@ -46,14 +46,39 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
   const loadUserRole = useCallback(() => {
     if (!connected || !publicKey) {
       setRole(null);
+      roleRef.current = null;
       return;
     }
 
-    const saved = localStorage.getItem(`userRole:${publicKey.toString()}`);
+    const key = `userRole:${publicKey.toString()}`;
+    const saved = localStorage.getItem(key);
+
     if (saved) {
       roleRef.current = saved as Role;
       setRole(saved as Role);
+    } else {
+      setRole(null);
+      roleRef.current = null;
     }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === key) {
+        const newValue = event.newValue as Role | null;
+        if (newValue) {
+          roleRef.current = newValue;
+          setRole(newValue);
+        } else {
+          roleRef.current = null;
+          setRole(null);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, [connected, publicKey]);
 
   const updateAuthData = (data: AuthResponse, publicKey: PublicKey) => {
@@ -84,6 +109,9 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
         role: newRole.toUpperCase(),
       });
       const data = response.data as AuthResponse;
+
+      setRole(data.user.role as Role);
+      roleRef.current = data.user.role as Role;
 
       if (data.user.role === "STUDENT") setIsStudentDialogOpen(true);
       updateAuthData(data, publicKey);
@@ -160,13 +188,8 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
     }
   }, [checkIfWalletExist]);
 
-  const closeRoleDialog = () => {
-    setIsRoleDialogOpen((prevProp) => !prevProp);
-  };
-
-  const closeStudentDialog = () => {
-    setIsStudentDialogOpen((prevProp) => !prevProp);
-  };
+  const closeRoleDialog = () => setIsRoleDialogOpen(false);
+  const closeStudentDialog = () => setIsStudentDialogOpen(false);
 
   return (
     <UserRoleContext.Provider

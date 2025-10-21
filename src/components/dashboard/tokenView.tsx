@@ -1,22 +1,22 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  BarChart3, 
-  DollarSign, 
-  Activity, 
-  Volume2, 
-  Target, 
-  Settings, 
-  CrosshairIcon, 
-  LayersIcon, 
+import {
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  DollarSign,
+  Activity,
+  Volume2,
+  Target,
+  Settings,
+  CrosshairIcon,
+  LayersIcon,
   ZoomInIcon,
   ZoomOutIcon,
   BarChartIcon,
   TrendingUpIcon,
   TrendingDownIcon,
-} from 'lucide-react';
+} from "lucide-react";
 
 import { CustomTooltip } from "../ui/tooltip";
 import { Tooltip } from "@mui/material";
@@ -26,11 +26,11 @@ import { priceDataService, PriceData } from "../../utils/priceData";
 import XIcon from "@mui/icons-material/X";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import {
-  buy,
+  // buy,
   getMeme,
   getSPLTokenBalance,
   sell,
-  Xdegen_mint,
+  // Xdegen_mint,
 } from "../testToken/swapfunction";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
@@ -45,10 +45,10 @@ import {
 
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { Button } from '../ui/button';
-import { useTrade } from '@/hooks/useTrade';
-import { BN } from "@coral-xyz/anchor";
-import { getMint } from '@solana/spl-token';
+import { Button } from "../ui/button";
+import { useTrade } from "../../hooks/useTrade";
+// import { BN } from "@coral-xyz/anchor";
+import { getMint } from "@solana/spl-token";
 
 type StatItem = {
   label: string;
@@ -180,8 +180,9 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("candles")}
-          className={`hover:bg-white/10 ${chartType === "candles" ? "bg-white/20" : ""
-            }`}
+          className={`hover:bg-white/10 ${
+            chartType === "candles" ? "bg-white/20" : ""
+          }`}
         >
           <BarChartIcon className="h-4 w-4" />
         </Button>
@@ -192,8 +193,9 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("line")}
-          className={`hover:bg-white/10 ${chartType === "line" ? "bg-white/20" : ""
-            }`}
+          className={`hover:bg-white/10 ${
+            chartType === "line" ? "bg-white/20" : ""
+          }`}
         >
           <TrendingUpIcon className="h-4 w-4" />
         </Button>
@@ -204,8 +206,9 @@ const ChartControls = () => {
           variant="ghost"
           size="icon"
           onClick={() => toggleChartType("area")}
-          className={`hover:bg-white/10 ${chartType === "area" ? "bg-white/20" : ""
-            }`}
+          className={`hover:bg-white/10 ${
+            chartType === "area" ? "bg-white/20" : ""
+          }`}
         >
           <TrendingDownIcon className="h-4 w-4" />
         </Button>
@@ -256,8 +259,8 @@ export default function TokenView() {
   const [XSol, setXSol] = useState("0");
   const [XTokenMint, setXTokenMint] = useState("0");
   const [updateBal, setUpdateBal] = useState(false);
-  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
-  const [priceInput, setPriceInput] = useState('');
+  const [orderType, setOrderType] = useState<"market" | "limit">("market");
+  const [priceInput, setPriceInput] = useState("");
   const [slippage, setSlippage] = useState(0.5);
   const [chartData, setChartData] = useState<CandlestickData[]>([]);
 
@@ -289,9 +292,7 @@ export default function TokenView() {
     }
   }, [location.state]);
 
-
-  console.log('pairData', pairData);
-
+  console.log("pairData", pairData);
 
   useEffect(() => {
     if (!chartContainerRef.current || !pairData) return;
@@ -457,7 +458,7 @@ export default function TokenView() {
   //     ];
 
   //     console.log('pairData', pairData)
-      
+
   //     script.innerHTML = JSON.stringify({
   //       autosize: true,
   //       symbol: possibleSymbols[0],
@@ -573,7 +574,10 @@ export default function TokenView() {
           if (!getXdegenTokenMint) {
             setXTokenMint("0");
           } else {
-            const xXToken = await getSPLTokenBalance(publicKey, getXdegenTokenMint);
+            const xXToken = await getSPLTokenBalance(
+              publicKey,
+              getXdegenTokenMint
+            );
             setXTokenMint(xXToken.toString());
           }
         }
@@ -586,7 +590,9 @@ export default function TokenView() {
         // Retry logic with exponential backoff
         if (retryCount < maxRetries && !isCancelled) {
           retryCount++;
-          console.log(`Retrying balance fetch (${retryCount}/${maxRetries})...`);
+          console.log(
+            `Retrying balance fetch (${retryCount}/${maxRetries})...`
+          );
           setTimeout(fetchBalances, retryDelay * retryCount);
         } else {
           console.error("Max retries reached, setting balances to 0");
@@ -664,7 +670,11 @@ export default function TokenView() {
     const loadingId = toast.loading("Processing ... ");
 
     try {
-      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+      const walletPublicKey = publicKey
+        ? publicKey
+        : address
+        ? new PublicKey(address)
+        : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
@@ -676,19 +686,24 @@ export default function TokenView() {
 
       // Calculate token amount based on XSOL amount and price
       const xsolAmount = parseFloat(orderAmount);
-      const tokenPrice = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const tokenPrice = parseFloat(
+        parseFloat(pairData.priceNative).toFixed(9)
+      );
       const tokenAmount = xsolAmount / tokenPrice;
 
-      console.log('Buy parameters:', {
+      console.log("Buy parameters:", {
         xsolAmount,
         tokenPrice,
         tokenAmount,
         tokenSymbol: pairData.baseToken.symbol,
-        tokenMint: pairData.baseToken.address
+        tokenMint: pairData.baseToken.address,
       });
 
       // Get or create the token mint for this pair - this also persists the association if it doesn't exist
-      const tokenMintAddress = await getMeme(pairData.baseToken.address, pairData.baseToken.name);
+      const tokenMintAddress = await getMeme(
+        pairData.baseToken.address,
+        pairData.baseToken.name
+      );
 
       if (!tokenMintAddress) {
         throw new Error("Unable to get or create token mint address");
@@ -702,10 +717,10 @@ export default function TokenView() {
         symbol: pairData.baseToken.symbol,
         decimals: 9, // Default SPL token decimals
         uri: pairData.info?.imageUrl || "",
-        supply: tokenAmount
+        supply: tokenAmount,
       };
 
-      console.log(getMint(connection, pairData.baseToken.address))
+      console.log(getMint(connection, pairData.baseToken.address));
 
       // Call the updated buy mutation with all required parameters
       // await buyToken.mutateAsync({
@@ -721,18 +736,25 @@ export default function TokenView() {
       // });
 
       toast.success(
-        `Successfully bought ${tokenAmount.toFixed(6)} ${pairData.baseToken.symbol} for ${xsolAmount} XSOL`,
+        `Successfully bought ${tokenAmount.toFixed(6)} ${
+          pairData.baseToken.symbol
+        } for ${xsolAmount} XSOL`,
         {
           action: {
             label: "View Transaction",
-            onClick: () => window.open(`https://solscan.io/tx/${buyToken.data}?cluster=devnet`, "_blank")
-          }
+            onClick: () =>
+              window.open(
+                `https://solscan.io/tx/${buyToken.data}?cluster=devnet`,
+                "_blank"
+              ),
+          },
         }
       );
-
     } catch (error) {
       console.error("Buy transaction failed:", error);
-      toast.error(error instanceof Error ? error.message : "Transaction failed");
+      toast.error(
+        error instanceof Error ? error.message : "Transaction failed"
+      );
     } finally {
       if (updateBal) {
         setUpdateBal(false);
@@ -748,7 +770,11 @@ export default function TokenView() {
     setLoading(true);
     const loadingId = toast.loading("Processing ... ");
     try {
-      const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
+      const walletPublicKey = publicKey
+        ? publicKey
+        : address
+        ? new PublicKey(address)
+        : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
@@ -766,8 +792,8 @@ export default function TokenView() {
       );
 
       const { signature, confirmation } = sellNow;
-      
-      if(!confirmation.value.err) {
+
+      if (!confirmation.value.err) {
         console.log(
           `Selling ${orderAmount} ${pairData?.baseToken.symbol} at ${price}`
         );
@@ -776,23 +802,30 @@ export default function TokenView() {
           {
             action: {
               label: "View Transaction",
-              onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
-            }
+              onClick: () =>
+                window.open(
+                  `https://solscan.io/tx/${signature}?cluster=devnet`,
+                  "_blank"
+                ),
+            },
           }
         );
       } else {
-        toast.success(
-          `Transaction not confirmed`,
-          {
-            action: {
-              label: "View Transaction",
-              onClick: () => window.open(`https://solscan.io/tx/${signature}?cluster=devnet`, "_blank")
-            }
-          }
-        );
+        toast.success(`Transaction not confirmed`, {
+          action: {
+            label: "View Transaction",
+            onClick: () =>
+              window.open(
+                `https://solscan.io/tx/${signature}?cluster=devnet`,
+                "_blank"
+              ),
+          },
+        });
       }
     } catch (error) {
-      toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
+      toast.warning(
+        error instanceof Error ? error.message : "Transaction might have failed"
+      );
       console.log(error);
     } finally {
       if (updateBal) {
@@ -830,8 +863,9 @@ export default function TokenView() {
         <Button
           key={tf}
           onClick={() => setTimeframe(tf as any)}
-          className={`px-3 py-1 ${timeframe === tf ? "bg-blue-500" : "bg-secondary"
-            }`}
+          className={`px-3 py-1 ${
+            timeframe === tf ? "bg-blue-500" : "bg-secondary"
+          }`}
         >
           {tf}
         </Button>
@@ -917,23 +951,39 @@ export default function TokenView() {
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center space-x-4 mb-4">
               <img
-                src={pairData.info?.imageUrl || `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(0)}`}
+                src={
+                  pairData.info?.imageUrl ||
+                  `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(
+                    0
+                  )}`
+                }
                 alt={pairData.baseToken.name}
                 className="w-10 h-10 rounded-full"
                 onError={(e) => {
-                  e.currentTarget.src = `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(0)}`;
+                  e.currentTarget.src = `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(
+                    0
+                  )}`;
                 }}
               />
               <div>
                 <h2 className="text-lg font-bold">{pairData.baseToken.name}</h2>
-                <span className="text-gray-400">{pairData.baseToken.symbol.toUpperCase()}/{pairData.quoteToken.symbol.toUpperCase()}</span>
+                <span className="text-gray-400">
+                  {pairData.baseToken.symbol.toUpperCase()}/
+                  {pairData.quoteToken.symbol.toUpperCase()}
+                </span>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold">${parseFloat(pairData.priceUsd).toFixed(6)}</div>
-              <div className={`flex items-center space-x-1 ${
-                (pairData.priceChange?.h24 || 0) > 0 ? 'text-green-400' : 'text-red-400'
-              }`}>
+              <div className="text-2xl font-bold">
+                ${parseFloat(pairData.priceUsd).toFixed(6)}
+              </div>
+              <div
+                className={`flex items-center space-x-1 ${
+                  (pairData.priceChange?.h24 || 0) > 0
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
                 {(pairData.priceChange?.h24 || 0) > 0 ? (
                   <TrendingUp className="w-4 h-4" />
                 ) : (
@@ -954,21 +1004,36 @@ export default function TokenView() {
                     <Activity className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-400">Market Cap</span>
                   </div>
-                  <span className="text-sm font-medium">${pairData.marketCap ? pairData.marketCap.toLocaleString() : 'N/A'}</span>
+                  <span className="text-sm font-medium">
+                    $
+                    {pairData.marketCap
+                      ? pairData.marketCap.toLocaleString()
+                      : "N/A"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Volume2 className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-400">24h Volume</span>
                   </div>
-                  <span className="text-sm font-medium">${pairData.volume?.h24 ? pairData.volume.h24.toLocaleString() : 'N/A'}</span>
+                  <span className="text-sm font-medium">
+                    $
+                    {pairData.volume?.h24
+                      ? pairData.volume.h24.toLocaleString()
+                      : "N/A"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-400">Liquidity</span>
                   </div>
-                  <span className="text-sm font-medium">${pairData.liquidity?.usd ? pairData.liquidity.usd.toLocaleString() : 'N/A'}</span>
+                  <span className="text-sm font-medium">
+                    $
+                    {pairData.liquidity?.usd
+                      ? pairData.liquidity.usd.toLocaleString()
+                      : "N/A"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -980,7 +1045,9 @@ export default function TokenView() {
                 {stats.map((item, index) => (
                   <div key={index} className="space-y-1">
                     <div className="flex justify-between text-xs text-gray-400">
-                      <p>{item.label} ({getTimeFrameLabel(item.timeFrame)})</p>
+                      <p>
+                        {item.label} ({getTimeFrameLabel(item.timeFrame)})
+                      </p>
                       <p>{item.oppositeLabel}</p>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400">
@@ -1022,23 +1089,41 @@ export default function TokenView() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <img
-                    src={pairData.info?.imageUrl || `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(0)}`}
+                    src={
+                      pairData.info?.imageUrl ||
+                      `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(
+                        0
+                      )}`
+                    }
                     alt={pairData.baseToken.name}
                     className="w-8 h-8 rounded-full"
                     onError={(e) => {
-                      e.currentTarget.src = `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(0)}`;
+                      e.currentTarget.src = `https://via.placeholder.com/40/333/fff?text=${pairData.baseToken.symbol.charAt(
+                        0
+                      )}`;
                     }}
                   />
                   <div>
-                    <h2 className="text-xl font-bold">{pairData.baseToken.name}</h2>
-                    <span className="text-gray-400">{pairData.baseToken.symbol.toUpperCase()}/{pairData.quoteToken.symbol.toUpperCase()}</span>
+                    <h2 className="text-xl font-bold">
+                      {pairData.baseToken.name}
+                    </h2>
+                    <span className="text-gray-400">
+                      {pairData.baseToken.symbol.toUpperCase()}/
+                      {pairData.quoteToken.symbol.toUpperCase()}
+                    </span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold">${parseFloat(pairData.priceUsd).toFixed(6)}</div>
-                  <div className={`flex items-center space-x-1 ${
-                    (pairData.priceChange?.h24 || 0) > 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
+                  <div className="text-2xl font-bold">
+                    ${parseFloat(pairData.priceUsd).toFixed(6)}
+                  </div>
+                  <div
+                    className={`flex items-center space-x-1 ${
+                      (pairData.priceChange?.h24 || 0) > 0
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }`}
+                  >
                     {(pairData.priceChange?.h24 || 0) > 0 ? (
                       <TrendingUp className="w-4 h-4" />
                     ) : (
@@ -1059,7 +1144,7 @@ export default function TokenView() {
             <div
               ref={chartContainerRef}
               className="w-full h-[500px]"
-              style={{ minHeight: '400px' }}
+              style={{ minHeight: "400px" }}
             />
           </div>
         </div>
@@ -1068,15 +1153,15 @@ export default function TokenView() {
         <div className="w-80 bg-gray-900/50 backdrop-blur-sm border-l border-gray-800 flex flex-col">
           <div className="p-4 border-b border-gray-800">
             <h3 className="text-lg font-bold mb-4">Trade</h3>
-            
+
             {/* Buy/Sell Toggle */}
             <div className="flex bg-gray-800 rounded-lg p-1 mb-4">
               <button
                 onClick={() => setOption("Buy")}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all cursor-pointer ${
                   swap === "Buy"
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-400 hover:text-white'
+                    ? "bg-green-600 text-white"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
                 Buy
@@ -1085,8 +1170,8 @@ export default function TokenView() {
                 onClick={() => setOption("Sell")}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all cursor-pointer ${
                   swap === "Sell"
-                    ? 'bg-red-600 text-white'
-                    : 'text-gray-400 hover:text-white'
+                    ? "bg-red-600 text-white"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
                 Sell
@@ -1096,21 +1181,21 @@ export default function TokenView() {
             {/* Market/Limit Toggle */}
             <div className="flex bg-gray-800 rounded-lg p-1 mb-4">
               <button
-                onClick={() => setOrderType('market')}
+                onClick={() => setOrderType("market")}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                  orderType === 'market'
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-white'
+                  orderType === "market"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
                 Market
               </button>
               <button
-                onClick={() => setOrderType('limit')}
+                onClick={() => setOrderType("limit")}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all cursor-pointer ${
-                  orderType === 'limit'
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-white'
+                  orderType === "limit"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
                 Limit
@@ -1118,9 +1203,11 @@ export default function TokenView() {
             </div>
 
             {/* Price Input (for limit orders) */}
-            {orderType === 'limit' && (
+            {orderType === "limit" && (
               <div className="mb-4">
-                <label className="block text-sm text-gray-400 mb-2">Price</label>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Price
+                </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -1137,7 +1224,9 @@ export default function TokenView() {
             {/* Quick Amount Buttons (for Buy) */}
             {swap === "Buy" && (
               <div className="mb-4">
-                <label className="block text-sm text-gray-400 mb-2">Quick Amount</label>
+                <label className="block text-sm text-gray-400 mb-2">
+                  Quick Amount
+                </label>
                 <div className="grid grid-cols-5 gap-2">
                   {[0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(
                     (amount, index) => (
@@ -1147,7 +1236,11 @@ export default function TokenView() {
                         onClick={() => setOrderAmount(amount.toString())}
                         disabled={loading}
                       >
-                        <img src="/images/solana.svg" alt="solana" className="w-3 h-3" />
+                        <img
+                          src="/images/solana.svg"
+                          alt="solana"
+                          className="w-3 h-3"
+                        />
                         {amount}
                       </button>
                     )
@@ -1203,11 +1296,13 @@ export default function TokenView() {
               }
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                 swap === "Buy"
-                  ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'
-                  : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800'
+                  ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                  : "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {loading ? "Processing..." : `${swap} ${pairData.baseToken.symbol.toUpperCase()}`}
+              {loading
+                ? "Processing..."
+                : `${swap} ${pairData.baseToken.symbol.toUpperCase()}`}
             </button>
 
             {/* Balance Info */}
@@ -1224,7 +1319,9 @@ export default function TokenView() {
           <div className="p-4 border-t border-gray-800">
             <div className="flex items-center space-x-2 text-gray-400 hover:text-white cursor-pointer">
               <Settings className="w-4 h-4" />
-              <a href="/setting" className="text-sm">Advanced settings</a>
+              <a href="/setting" className="text-sm">
+                Advanced settings
+              </a>
             </div>
           </div>
         </div>

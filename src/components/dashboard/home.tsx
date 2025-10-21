@@ -28,12 +28,6 @@ export default function HomeView() {
   const [pairs, setPairs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const {
-    isRoleDialogOpen,
-    closeRoleDialog,
-    isStudentDialogOpen,
-    closeStudentDialog,
-  } = useCheckUserRole();
 
   const handleRowClick = (pair: any) => {
     navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
@@ -378,17 +372,6 @@ export default function HomeView() {
           </div>
         ))}
       </div>
-
-      {/* User Role Form */}
-      <SetUserRoleDialog
-        isOpen={isRoleDialogOpen}
-        closeDialog={closeRoleDialog}
-      />
-
-      <StudentAcademyRegisterDialog
-        isOpen={isStudentDialogOpen}
-        closeDialog={closeStudentDialog}
-      />
     </div>
   );
 }

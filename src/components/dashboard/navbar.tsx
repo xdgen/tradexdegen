@@ -13,6 +13,7 @@ const Navbar: React.FC = () => {
 
     return role === "ACADEMY";
   }, [role]);
+  console.log(role, "current role");
 
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">

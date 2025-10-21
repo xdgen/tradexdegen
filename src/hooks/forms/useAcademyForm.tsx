@@ -13,6 +13,7 @@ import {
 import { sendSol } from "../../lib/services/solana.ts";
 import { toast } from "sonner";
 import { dapp } from "../../lib/services/dialect.ts";
+import { axiosAsync } from "../../lib/axios.ts";
 import { Plan, useAcademy } from "../useAcademy.tsx";
 
 export function useCreateAcademyForm() {
@@ -36,17 +37,15 @@ export function useCreateAcademyForm() {
     name: "tutors",
   } as never);
 
-  const { 
-    createAcademy
-  } = useAcademy();
+  const { createAcademy } = useAcademy();
 
-  const onSubmit: SubmitHandler<CreateAcademyInput> = (data) => {
-    const tutors = data.tutors.map(tutor => tutor.value);
-    const startDate = Math.floor(data.startDate.getTime() / 1000)
-    const endDate = Math.floor(data.endDate.getTime() / 1000)
+  const onSubmit: SubmitHandler<CreateAcademyInput> = async (data) => {
+    const tutors = data.tutors.map((tutor) => tutor.value);
+    const startDate = Math.floor(data.startDate.getTime() / 1000);
+    const endDate = Math.floor(data.endDate.getTime() / 1000);
 
-    const plan: Plan = data.plan == 'free' ? { free: {} } : { paid: {} }
-    createAcademy.mutateAsync({
+    const plan: Plan = data.plan == "free" ? { free: {} } : { paid: {} };
+    await createAcademy.mutateAsync({
       title: data.title,
       description: data.desc,
       banner: data.banner,
@@ -54,9 +53,8 @@ export function useCreateAcademyForm() {
       endDate: endDate,
       plan: plan,
       fee: data.fee ? Number(data.fee) : null,
-      tutors: tutors
+      tutors: tutors,
     });
-
   };
 
   return {
@@ -120,7 +118,7 @@ export function useStudentRegistration() {
     callback: () => void
   ) => {
     try {
-      console.log(data);
+      // const response = await axiosAsync.post()
       callback();
 
       // Register user to academy
