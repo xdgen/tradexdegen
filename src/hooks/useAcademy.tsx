@@ -65,52 +65,57 @@ export const useAcademy = () => {
     },
   });
 
-    const createAcademy = useMutation({
-        mutationKey: ["academy", "create"],
-        mutationFn: async (payload: CreateAcademy) => {
-            if (!provider || !provider.wallet?.publicKey || !program) {
-                throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
-            }
+  const createAcademy = useMutation({
+    mutationKey: ["academy", "create"],
+    mutationFn: async (payload: CreateAcademy) => {
+      if (!provider || !provider.wallet?.publicKey || !program) {
+        throw new Error(
+          "Wallet not connected. Please connect your wallet to use trading features."
+        );
+      }
 
-            const academyData = {
-              ...payload,
-              owner: provider.wallet.publicKey,
-              startDate: new BN(payload.startDate),
-              endDate: new BN(payload.endDate),
-              fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
-            };
+      const academyData = {
+        ...payload,
+        owner: provider.wallet.publicKey,
+        startDate: new BN(payload.startDate),
+        endDate: new BN(payload.endDate),
+        fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
+      };
 
-            const tx = await program.methods.createAcademy(academyData).accountsPartial({
-                signer: provider.wallet.publicKey,
-                config: getConfigPDA(),
-                academy: getAcademyPDA(provider.wallet.publicKey)
-            }).rpc();
+      const tx = await program.methods
+        .createAcademy(academyData)
+        .accountsPartial({
+          signer: provider.wallet.publicKey,
+          config: getConfigPDA(),
+          academy: getAcademyPDA(provider.wallet.publicKey),
+        })
+        .rpc();
 
-          return {
-            academyPDA: getAcademyPDA(provider.wallet.publicKey),
-            tx,
-          };
-        },
-      onSuccess: async (data) => {
-        console.log(data.academyPDA);
+      return {
+        academyPDA: getAcademyPDA(provider.wallet.publicKey),
+        tx,
+      };
+    },
+    onSuccess: async (data) => {
+      console.log(data.academyPDA);
 
-        const response = await axiosAsync.post("/academies", {
-          contractAddress: data.academyPDA,
-        });
-        const dataResponse = response.data as AcademyResponse<Academy>;
+      const response = await axiosAsync.post("/academies", {
+        contractAddress: data.academyPDA,
+      });
+      const dataResponse = response.data as AcademyResponse<Academy>;
 
-        if (dataResponse.status) {
-          // Invalidate and refetch all academies to show the new one
-          await queryClient.invalidateQueries({ queryKey: ["academy"] });
-          toast.success(
-            `Academy created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
-          );
+      if (dataResponse.status) {
+        // Invalidate and refetch all academies to show the new one
+        await queryClient.invalidateQueries({ queryKey: ["academy"] });
+        toast.success(
+          `Academy created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+        );
 
-          localStorage.setItem(
-            `academy:${dataResponse.data.userId}`,
-            JSON.stringify(true)
-          );
-        }
+        localStorage.setItem(
+          `academy:${dataResponse.data.userId}`,
+          JSON.stringify(true)
+        );
+      }
     },
   });
 
@@ -144,8 +149,8 @@ export const useAcademy = () => {
 
       return {
         tx,
-        twitter: payload.twitterHandle
-      }
+        twitter: payload.twitterHandle,
+      };
     },
     onSuccess: async (data) => {
       if (!provider || !provider.wallet?.publicKey || !program) {
@@ -154,24 +159,26 @@ export const useAcademy = () => {
         );
       }
 
-      const pda = getStudentPDA(provider.wallet.publicKey); 
-      console.log(pda)
-      
+      const pda = getStudentPDA(provider.wallet.publicKey);
+      console.log(pda);
+
       try {
         const response = await axiosAsync.post("/students", {
           twitterHandle: data.twitter,
           contractAddress: pda,
         });
-        console.log(response)
+        console.log(response);
         const dataResponse = response.data;
         if (dataResponse.status) {
-          await queryClient.invalidateQueries({ queryKey: ["student", "create"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["student", "create"],
+          });
           toast.success(
             `Student created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
           );
         }
-      } catch(error) {
-        console.log(error)
+      } catch (error) {
+        console.log(error);
       }
     },
   });
@@ -228,11 +235,11 @@ export const useAcademy = () => {
     )[0];
   };
 
-  const getAcademy = (wallet: PublicKey) => {
+  const getAcademy = (wallet: PublicKey | undefined) => {
     return useQuery({
-      queryKey: ["academy", wallet.toBase58()],
+      queryKey: ["academy", wallet?.toBase58() ?? "no-wallet"],
       queryFn: async () => {
-        if (!provider || !provider.wallet?.publicKey || !program) {
+        if (!wallet || !provider || !provider.wallet?.publicKey || !program) {
           throw new Error(
             "Wallet not connected. Please connect your wallet to use trading features."
           );
@@ -241,6 +248,8 @@ export const useAcademy = () => {
         const academyPDA = getAcademyPDA(provider.wallet.publicKey);
         return await program.account.academy.fetch(academyPDA);
       },
+      enabled: !!wallet && !!provider && !!program, // 🧠 only fetch when ready
+      staleTime: 1000 * 60, // optional: 1 minute caching
     });
   };
 

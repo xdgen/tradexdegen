@@ -13,18 +13,19 @@ import {
 import { sendSol } from "../../lib/services/solana.ts";
 import { toast } from "sonner";
 import { dapp } from "../../lib/services/dialect.ts";
-import { axiosAsync } from "../../lib/axios.ts";
+// import { axiosAsync } from "../../lib/axios.ts";
 import { Plan, useAcademy } from "../useAcademy.tsx";
+import { useCheckUserRole } from "../../provider/UserRoleProvider.tsx";
 
 export function useCreateAcademyForm() {
+  const { authData } = useCheckUserRole();
   const form = useForm<CreateAcademyInput>({
     resolver: zodResolver(createAcademySchema),
     mode: "all",
     defaultValues: {
       title: "",
       desc: "",
-      banner:
-        "https://apricot-historic-wolverine-360.mypinata.cloud/ipfs/bafkreihnlbpiclvyc6qh56e2pguqa3sv3ye2t4pl44dtawz4xrqoetft6a",
+      banner: "",
       startDate: undefined,
       endDate: undefined,
       plan: undefined,
@@ -60,6 +61,7 @@ export function useCreateAcademyForm() {
 
       callback();
 
+      localStorage.setItem(`academy-${authData?.user.id}`, "true");
       toast.success(`${data.title} Academy created successfully`);
       form.reset();
     } catch (err) {

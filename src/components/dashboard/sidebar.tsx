@@ -86,7 +86,7 @@ const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const modifiedRoutes = useMemo(() => {
-    if (isAuthenticated && role === "STUDENT") {
+    if (!isAuthenticated || role !== "ACADEMY") {
       return routes.filter((r) => r.label !== "Stats");
     }
 

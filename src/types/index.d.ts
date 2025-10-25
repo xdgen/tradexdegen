@@ -9,11 +9,6 @@ interface AcademyStats {
   studentsCount: number;
   accumulatedFees: number;
   totalEarnings: number;
-  activeStudents: number;
-  courseCompletionRate: number;
-  averageRating: number;
-  monthlyEnrollments: number;
-  retentionRate: number;
 }
 
 interface Academy {
