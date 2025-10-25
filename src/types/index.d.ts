@@ -46,6 +46,6 @@ interface CheckUserResponse {
   wallet: string;
 }
 
-interface AcademyResponse<T> extends Omit<CheckUserResponse, "wallet"> {
+interface APIResponse<T> extends Omit<CheckUserResponse, "wallet"> {
   data: T;
 }

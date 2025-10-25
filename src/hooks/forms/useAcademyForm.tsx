@@ -13,7 +13,6 @@ import {
 import { sendSol } from "../../lib/services/solana.ts";
 import { toast } from "sonner";
 import { dapp } from "../../lib/services/dialect.ts";
-// import { axiosAsync } from "../../lib/axios.ts";
 import { Plan, useAcademy } from "../useAcademy.tsx";
 import { useCheckUserRole } from "../../provider/UserRoleProvider.tsx";
 
@@ -125,23 +124,8 @@ export function useStudentRegistration() {
     },
   });
 
-  const onSubmit = async (
-    data: AcademyApplicationType,
-    callback: () => void
-  ) => {
-    try {
-      // const response = await axiosAsync.post()
-      callback();
-
-      // Register user to academy
-    } catch (err: any) {
-      toast.error(err);
-    }
-  };
-
   return {
     form,
-    onSubmit,
   };
 }
 

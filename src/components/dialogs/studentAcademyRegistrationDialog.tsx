@@ -3,7 +3,6 @@ import { Button } from "../ui/button";
 import { useStudentRegistration } from "../../hooks/forms/useAcademyForm";
 import { Input } from "../ui/input";
 import { useAcademy } from "../../hooks/useAcademy";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
 import { toast } from "sonner";
 
 const StudentAcademyRegisterDialog = ({
@@ -21,23 +20,17 @@ const StudentAcademyRegisterDialog = ({
     },
   } = useStudentRegistration();
   const { createStudent } = useAcademy();
-  const { updateUserRole } = useCheckUserRole();
 
   const handleStudentForm = async (data: { xHandle: string }) => {
     try {
       // Create student on-chain
       await createStudent.mutateAsync({
-        twitterHandle: data.xHandle
+        twitterHandle: data.xHandle,
       });
-
-      // Update user role to STUDENT
-      updateUserRole("STUDENT");
 
       // Close the dialog
       closeDialog();
-      console.log(data)
     } catch (error) {
-      console.error("Error in student registration:", error);
       toast.error("Failed to register as student");
     }
   };

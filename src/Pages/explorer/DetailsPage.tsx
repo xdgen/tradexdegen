@@ -122,6 +122,7 @@ export default function DetailsPage() {
   }
 
   const isEnded = item.status === "Ended";
+  const isOngoing = item.status === "Ongoing";
 
   if (isFetchingAcademyData) {
     return (
@@ -145,6 +146,8 @@ export default function DetailsPage() {
             Class Ended
           </button>
         );
+      } else if (isOngoing) {
+        content = null;
       } else {
         content = (
           <button

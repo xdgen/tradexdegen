@@ -97,12 +97,10 @@ export const useAcademy = () => {
       };
     },
     onSuccess: async (data) => {
-      console.log(data.academyPDA);
-
       const response = await axiosAsync.post("/academies", {
         contractAddress: data.academyPDA,
       });
-      const dataResponse = response.data as AcademyResponse<Academy>;
+      const dataResponse = response.data as APIResponse<Academy>;
 
       if (dataResponse.status) {
         // Invalidate and refetch all academies to show the new one
@@ -139,6 +137,8 @@ export const useAcademy = () => {
         );
       }
 
+      console.log(getStudentPDA(provider.wallet.publicKey).toBase58());
+
       const tx = await program.methods
         .createStudent(payload.twitterHandle)
         .accountsPartial({
@@ -160,14 +160,14 @@ export const useAcademy = () => {
       }
 
       const pda = getStudentPDA(provider.wallet.publicKey);
-      console.log(pda);
+      console.log("Student", provider, data, pda);
 
       try {
         const response = await axiosAsync.post("/students", {
           twitterHandle: data.twitter,
           contractAddress: pda,
         });
-        console.log(response);
+
         const dataResponse = response.data;
         if (dataResponse.status) {
           await queryClient.invalidateQueries({
@@ -208,11 +208,27 @@ export const useAcademy = () => {
       return {
         tx,
         enrollmentPDA,
+        academyPDA: payload.academyPDA,
       };
     },
     onSuccess: async (data) => {
-      const pda = data.enrollmentPDA; // the contract address to supply to API
-      console.log(pda);
+      const enrollmentPDA = data.enrollmentPDA;
+      const academyPDA = data.academyPDA;
+
+      const response = await axiosAsync.post("/students/enroll", {
+        academyContract: academyPDA,
+        contractAddress: enrollmentPDA,
+      });
+
+      const dataResponse = response.data as APIResponse<any>;
+
+      if (dataResponse.status) {
+        // Invalidate and refetch all academies to show the new one
+        await queryClient.invalidateQueries({ queryKey: ["enroll"] });
+        toast.success(
+          `Student successfully enrolled to academy \nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+        );
+      }
 
       // Invalidate and refetch all academies to update student counts
       await queryClient.invalidateQueries({ queryKey: ["enroll"] });
