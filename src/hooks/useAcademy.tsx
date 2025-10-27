@@ -82,36 +82,36 @@ export const useAcademy = () => {
         fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
       };
 
-            const transaction = new Transaction();
-            const createAcademyTx = await program.methods.createAcademy(academyData).accountsPartial({
-                signer: provider.wallet.publicKey,
-                config: getConfigPDA(),
-                academy: getAcademyPDA(provider.wallet.publicKey)
-            }).transaction();
+      const transaction = new Transaction();
+      const createAcademyTx = await program.methods.createAcademy(academyData).accountsPartial({
+          signer: provider.wallet.publicKey,
+          config: getConfigPDA(),
+          academy: getAcademyPDA(provider.wallet.publicKey)
+      }).transaction();
 
-            transaction.add(createAcademyTx);
-            transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-            transaction.feePayer = provider.wallet.publicKey;
+      transaction.add(createAcademyTx);
+      transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+      transaction.feePayer = provider.wallet.publicKey;
 
-            // Sign and send transaction
-            const signedTransaction = await provider.wallet.signTransaction(transaction);
-            const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
-            await provider.connection.confirmTransaction(txId);
+      // Sign and send transaction
+      const signedTransaction = await provider.wallet.signTransaction(transaction);
+      const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+      await provider.connection.confirmTransaction(txId);
 
-          return {
-            academyPDA: getAcademyPDA(provider.wallet.publicKey),
-            tx: txId,
-          };
-        },
+      return {
+          academyPDA: getAcademyPDA(provider.wallet.publicKey),
+          tx: txId,
+        };
+    },
       onSuccess: async (data) => {
         console.log(data.academyPDA);
 
         const response = await axiosAsync.post("/academies", {
           contractAddress: data.academyPDA,
         });
-        const dataResponse = response.data as AcademyResponse<Academy>;
+        const dataResponse = response.data;
 
-      if (dataResponse.status) {
+      if (dataResponse?.status) {
         // Invalidate and refetch all academies to show the new one
         await queryClient.invalidateQueries({ queryKey: ["academy"] });
         toast.success(

@@ -88,8 +88,9 @@ export const useTrade = () => {
                 toast.error(`Insufficient balance in admin token account`);
                 return;
             }
-
-            return await program.methods.deposit(new BN(amount))
+            
+            const transaction = new Transaction();
+            const depositTx = await program.methods.deposit(new BN(amount))
             .accountsPartial({
                 admin: configAccount.admin,
                 config: getConfigPDA(),
@@ -97,7 +98,17 @@ export const useTrade = () => {
                 adminTokenAccount,
                 vault: configAccount.vault,
                 tokenProgram: TOKEN_PROGRAM_ID
-            }).rpc();
+            }).transaction();
+
+            transaction.add(depositTx);
+            transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+            transaction.feePayer = provider.wallet.publicKey;
+
+            // Sign and send transaction
+            const signedTransaction = await provider.wallet.signTransaction(transaction);
+            const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+            await provider.connection.confirmTransaction(txId);
+            return txId;
         },
         onSuccess: async (tx) => {
             toast.success(`Deposit was successful\nhttps://explorer.solana.com/tx/${tx}?cluster=devnet`);
@@ -158,6 +169,7 @@ export const useTrade = () => {
                 const userMintAta = await getAssociatedTokenAddress(newMint.publicKey, provider.wallet.publicKey);
                 
                 // Add buy instruction to the same transaction
+                const transaction = new Transaction(); 
                 const buyTx = await program.methods.buy(tokenParams, new BN(adjustedBuyAmount))
                 .accountsPartial({
                     trader: provider.wallet.publicKey,
@@ -168,7 +180,7 @@ export const useTrade = () => {
                     traderMintAta: userMintAta,
                     metadata: getMetadataPDA(newMint.publicKey),
                     xdegenMint: XdegentMint,
-                    traderXdegenAta: userXdegenAta,
+                    traderXdegenAta: walletXdegenAta,
                     tokenProgram: TOKEN_PROGRAM_ID
                 }).transaction();
 
@@ -180,6 +192,7 @@ export const useTrade = () => {
                 const signedTransaction = await provider.wallet.signTransaction(transaction);
                 const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
                 await provider.connection.confirmTransaction(txId);
+                console.log('your signature', txId)
             }
 
             // const configAccount = await program.account.config.fetch(getConfigPDA());
@@ -475,14 +488,25 @@ export const useTrade = () => {
 
             const adminXdegenAta = await getAssociatedTokenAddress(XdegentMint, configAccount.admin);
 
-            return await program.methods.withdraw(new BN(adjustedAmount))
+            const transaction = new Transaction();
+            const withdrawTx = await program.methods.withdraw(new BN(adjustedAmount))
             .accountsPartial({
                 admin: configAccount.admin,
                 config: getConfigPDA(),
                 xdegenMint: XdegentMint,
                 vault: configAccount.vault,
                 adminXdegenAta: adminXdegenAta
-            }).rpc();
+            }).instruction();
+
+            transaction.add(withdrawTx);
+            transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+            transaction.feePayer = provider.wallet.publicKey;
+
+            // Sign and send transaction
+            const signedTransaction = await provider.wallet.signTransaction(transaction);
+            const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+            await provider.connection.confirmTransaction(txId);
+            return txId;
         },
         onSuccess: async (tx) => {
             toast.success(`Withdraw transaction successful\nhttps://explorer.solana.com/tx/${tx}?cluster=devnet`);
