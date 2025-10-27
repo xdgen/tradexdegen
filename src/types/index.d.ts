@@ -9,11 +9,6 @@ interface AcademyStats {
   studentsCount: number;
   accumulatedFees: number;
   totalEarnings: number;
-  activeStudents: number;
-  courseCompletionRate: number;
-  averageRating: number;
-  monthlyEnrollments: number;
-  retentionRate: number;
 }
 
 interface Academy {
@@ -51,6 +46,6 @@ interface CheckUserResponse {
   wallet: string;
 }
 
-interface AcademyResponse<T> extends Omit<CheckUserResponse, "wallet"> {
+interface APIResponse<T> extends Omit<CheckUserResponse, "wallet"> {
   data: T;
 }

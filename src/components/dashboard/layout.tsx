@@ -1,11 +1,8 @@
 import React, { Suspense } from "react";
 import Sidebar from "./sidebar";
-import {
-  useCheckUserRole,
-  UserRoleProvider,
-} from "../../provider/UserRoleProvider";
+import { useCheckUserRole } from "../../provider/UserRoleProvider";
 import { ChatProvider } from "../../provider/ChatProvider";
-import { ChatWidget } from "../chat/chatWidget";
+// import { ChatWidget } from "../chat/chatWidget";
 import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
 import StudentAcademyRegisterDialog from "../dialogs/studentAcademyRegistrationDialog";
 
@@ -34,7 +31,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
         </main>
       </div>
 
-      <ChatWidget />
+      {/* <ChatWidget /> */}
 
       {/* User Role Form */}
       <SetUserRoleDialog

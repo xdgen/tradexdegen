@@ -6,9 +6,10 @@ import CommunityRegisterDialog from "../dialogs/communityRegisterDialog";
 import { DialectSolanaNotificationsButton } from "../Dialect";
 import { useCheckUserRole } from "../../provider/UserRoleProvider";
 import useLocalStorageSubscription from "../../hooks/useLocalStorageSubscription";
+import { Loader2 } from "lucide-react";
 
 const Navbar: React.FC = () => {
-  const { role, authData } = useCheckUserRole();
+  const { role, authData, isCheckingUserRole } = useCheckUserRole();
   const [academyCreated] = useLocalStorageSubscription(
     `academy-${authData?.user.id}`
   );
@@ -32,6 +33,7 @@ const Navbar: React.FC = () => {
       <div className="flex gap-4 items-center">
         {/* Hide if academy is registered */}
         {isAcademy && !academyCreated && <CommunityRegisterDialog />}
+        {isCheckingUserRole && <Loader2 className="animate-spin w-6" />}
         <WalletMultiButton
           style={{
             margin: "1px 0",

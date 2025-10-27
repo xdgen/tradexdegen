@@ -65,20 +65,22 @@ export const useAcademy = () => {
     },
   });
 
-    const createAcademy = useMutation({
-        mutationKey: ["academy", "create"],
-        mutationFn: async (payload: CreateAcademy) => {
-            if (!provider || !provider.wallet?.publicKey || !program) {
-                throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
-            }
+  const createAcademy = useMutation({
+    mutationKey: ["academy", "create"],
+    mutationFn: async (payload: CreateAcademy) => {
+      if (!provider || !provider.wallet?.publicKey || !program) {
+        throw new Error(
+          "Wallet not connected. Please connect your wallet to use trading features."
+        );
+      }
 
-            const academyData = {
-              ...payload,
-              owner: provider.wallet.publicKey,
-              startDate: new BN(payload.startDate),
-              endDate: new BN(payload.endDate),
-              fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
-            };
+      const academyData = {
+        ...payload,
+        owner: provider.wallet.publicKey,
+        startDate: new BN(payload.startDate),
+        endDate: new BN(payload.endDate),
+        fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
+      };
 
             const transaction = new Transaction();
             const createAcademyTx = await program.methods.createAcademy(academyData).accountsPartial({
@@ -109,18 +111,18 @@ export const useAcademy = () => {
         });
         const dataResponse = response.data as AcademyResponse<Academy>;
 
-        if (dataResponse.status) {
-          // Invalidate and refetch all academies to show the new one
-          await queryClient.invalidateQueries({ queryKey: ["academy"] });
-          toast.success(
-            `Academy created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
-          );
+      if (dataResponse.status) {
+        // Invalidate and refetch all academies to show the new one
+        await queryClient.invalidateQueries({ queryKey: ["academy"] });
+        toast.success(
+          `Academy created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+        );
 
-          localStorage.setItem(
-            `academy:${dataResponse.data.userId}`,
-            JSON.stringify(true)
-          );
-        }
+        localStorage.setItem(
+          `academy:${dataResponse.data.userId}`,
+          JSON.stringify(true)
+        );
+      }
     },
   });
 
@@ -182,14 +184,20 @@ export const useAcademy = () => {
         
         const dataResponse = response.data;
         if (dataResponse.status) {
-          await queryClient.invalidateQueries({ queryKey: ["student", "create"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["student", "create"],
+          });
           toast.success(
             `Student created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
           );
         }
-      } catch(error) {
-        console.log(error)
+      } catch (error: any) {
+        console.log(error?.message);
       }
+    },
+    onError: async (error: any) => {
+      console.log(error?.message);
+      console.log("Error registering user", error);
     },
   });
 
@@ -229,11 +237,27 @@ export const useAcademy = () => {
       return {
         tx: txId,
         enrollmentPDA,
+        academyPDA: payload.academyPDA,
       };
     },
     onSuccess: async (data) => {
-      const pda = data.enrollmentPDA; // the contract address to supply to API
-      console.log(pda);
+      const enrollmentPDA = data.enrollmentPDA;
+      const academyPDA = data.academyPDA;
+
+      const response = await axiosAsync.post("/students/enroll", {
+        academyContract: academyPDA,
+        contractAddress: enrollmentPDA,
+      });
+
+      const dataResponse = response.data as APIResponse<any>;
+
+      if (dataResponse.status) {
+        // Invalidate and refetch all academies to show the new one
+        await queryClient.invalidateQueries({ queryKey: ["enroll"] });
+        toast.success(
+          `Student successfully enrolled to academy \nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+        );
+      }
 
       // Invalidate and refetch all academies to update student counts
       await queryClient.invalidateQueries({ queryKey: ["enroll"] });
@@ -256,11 +280,11 @@ export const useAcademy = () => {
     )[0];
   };
 
-  const getAcademy = (wallet: PublicKey) => {
+  const getAcademy = (wallet: PublicKey | undefined) => {
     return useQuery({
-      queryKey: ["academy", wallet.toBase58()],
+      queryKey: ["academy", wallet?.toBase58() ?? "no-wallet"],
       queryFn: async () => {
-        if (!provider || !provider.wallet?.publicKey || !program) {
+        if (!wallet || !provider || !provider.wallet?.publicKey || !program) {
           throw new Error(
             "Wallet not connected. Please connect your wallet to use trading features."
           );
@@ -269,6 +293,8 @@ export const useAcademy = () => {
         const academyPDA = getAcademyPDA(provider.wallet.publicKey);
         return await program.account.academy.fetch(academyPDA);
       },
+      enabled: !!wallet && !!provider && !!program, // 🧠 only fetch when ready
+      staleTime: 1000 * 60, // optional: 1 minute caching
     });
   };
 
