@@ -23,6 +23,7 @@ const StudentAcademyRegisterDialog = ({
 
   const handleStudentForm = async (data: { xHandle: string }) => {
     try {
+      console.log(data, "student data");
       // Create student on-chain
       await createStudent.mutateAsync({
         twitterHandle: data.xHandle,
@@ -30,7 +31,8 @@ const StudentAcademyRegisterDialog = ({
 
       // Close the dialog
       closeDialog();
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error?.message);
       toast.error("Failed to register as student");
     }
   };

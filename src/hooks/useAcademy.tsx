@@ -137,8 +137,6 @@ export const useAcademy = () => {
         );
       }
 
-      console.log(getStudentPDA(provider.wallet.publicKey).toBase58());
-
       const tx = await program.methods
         .createStudent(payload.twitterHandle)
         .accountsPartial({
@@ -146,6 +144,8 @@ export const useAcademy = () => {
           student: getStudentPDA(provider.wallet.publicKey),
         })
         .rpc();
+
+      console.log("Student tx", tx);
 
       return {
         tx,
@@ -160,7 +160,7 @@ export const useAcademy = () => {
       }
 
       const pda = getStudentPDA(provider.wallet.publicKey);
-      console.log("Student", provider, data, pda);
+      console.log("Student PDA", pda);
 
       try {
         const response = await axiosAsync.post("/students", {
@@ -177,9 +177,13 @@ export const useAcademy = () => {
             `Student created successfully\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
           );
         }
-      } catch (error) {
-        console.log(error);
+      } catch (error: any) {
+        console.log(error?.message);
       }
+    },
+    onError: async (error: any) => {
+      console.log(error?.message);
+      console.log("Error registering user", error);
     },
   });
 
