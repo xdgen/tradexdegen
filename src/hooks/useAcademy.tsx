@@ -2,7 +2,7 @@ import { useAnchor } from "./useAnchor";
 import { Program, BN } from "@coral-xyz/anchor";
 import AcademyIDL from "../lib/contracts/academy/academy.json";
 import type { XdegenAcademy as XdegenAcademyType } from "@/lib/contracts/academy/academy";
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useMemo } from "react";
@@ -80,15 +80,25 @@ export const useAcademy = () => {
               fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
             };
 
-            const tx = await program.methods.createAcademy(academyData).accountsPartial({
+            const transaction = new Transaction();
+            const createAcademyTx = await program.methods.createAcademy(academyData).accountsPartial({
                 signer: provider.wallet.publicKey,
                 config: getConfigPDA(),
                 academy: getAcademyPDA(provider.wallet.publicKey)
-            }).rpc();
+            }).transaction();
+
+            transaction.add(createAcademyTx);
+            transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+            transaction.feePayer = provider.wallet.publicKey;
+
+            // Sign and send transaction
+            const signedTransaction = await provider.wallet.signTransaction(transaction);
+            const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+            await provider.connection.confirmTransaction(txId);
 
           return {
             academyPDA: getAcademyPDA(provider.wallet.publicKey),
-            tx,
+            tx: txId,
           };
         },
       onSuccess: async (data) => {
@@ -134,16 +144,25 @@ export const useAcademy = () => {
         );
       }
 
-      const tx = await program.methods
+      const transaction = new Transaction();
+      const createStudentTx = await program.methods
         .createStudent(payload.twitterHandle)
         .accountsPartial({
           config: getConfigPDA(),
           student: getStudentPDA(provider.wallet.publicKey),
-        })
-        .rpc();
+        }).transaction();
+
+        transaction.add(createStudentTx);
+        transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+        transaction.feePayer = provider.wallet.publicKey;
+
+        // Sign and send transaction
+        const signedTransaction = await provider.wallet.signTransaction(transaction);
+        const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+        await provider.connection.confirmTransaction(txId);
 
       return {
-        tx,
+        tx: txId,
         twitter: payload.twitterHandle
       }
     },
@@ -155,14 +174,12 @@ export const useAcademy = () => {
       }
 
       const pda = getStudentPDA(provider.wallet.publicKey); 
-      console.log(pda)
-      
       try {
         const response = await axiosAsync.post("/students", {
           twitterHandle: data.twitter,
           contractAddress: pda,
         });
-        console.log(response)
+        
         const dataResponse = response.data;
         if (dataResponse.status) {
           await queryClient.invalidateQueries({ queryKey: ["student", "create"] });
@@ -189,17 +206,28 @@ export const useAcademy = () => {
         payload.academyPDA,
         payload.studentPDA
       );
-      const tx = await program.methods
+
+      const transaction = new Transaction();
+      const enrollStudentTx = await program.methods
         .enroll()
         .accountsPartial({
           config: getConfigPDA(),
           student: payload.studentPDA,
           academy: payload.academyPDA,
           enrollment: getEnrollmentPDA(payload.academyPDA, payload.studentPDA),
-        })
-        .rpc();
+        }).transaction();
+
+      transaction.add(enrollStudentTx);
+      transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+      transaction.feePayer = provider.wallet.publicKey;
+
+      // Sign and send transaction
+      const signedTransaction = await provider.wallet.signTransaction(transaction);
+      const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+      await provider.connection.confirmTransaction(txId);
+      
       return {
-        tx,
+        tx: txId,
         enrollmentPDA,
       };
     },

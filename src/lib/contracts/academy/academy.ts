@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/xdegen_academy.json`.
  */
 export type XdegenAcademy = {
-  "address": "4v26LBK8f9VcaTo36dVYfcDAo33mMsfMkDJeVoXaoqjn",
+  "address": "EHM5exkojUZBEog15k8ukDYwpXQ6gyiUvJu7VDk3BEWf",
   "metadata": {
     "name": "xdegenAcademy",
     "version": "0.1.0",
@@ -295,43 +295,6 @@ export type XdegenAcademy = {
         {
           "name": "feeVault",
           "type": "pubkey"
-        }
-      ]
-    },
-    {
-      "name": "processUndelegation",
-      "discriminator": [
-        196,
-        28,
-        41,
-        206,
-        48,
-        37,
-        51,
-        167
-      ],
-      "accounts": [
-        {
-          "name": "baseAccount",
-          "writable": true
-        },
-        {
-          "name": "buffer"
-        },
-        {
-          "name": "payer",
-          "writable": true
-        },
-        {
-          "name": "systemProgram"
-        }
-      ],
-      "args": [
-        {
-          "name": "accountSeeds",
-          "type": {
-            "vec": "bytes"
-          }
         }
       ]
     }

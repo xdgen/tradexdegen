@@ -112,7 +112,7 @@ export const buy = async (
     }
 
     if (!findsellingMint) {
-        throw new Error('Insuffient Balance7');
+        throw new Error('Insuffient Balance');
     }
 
     let findbuyingMint: string;
@@ -233,6 +233,7 @@ export const SPLTransfer = async (
     const destinationAccount = await connection.getAccountInfo(destinationAccountAta);
 
     const checkDecimals = await connection.getParsedAccountInfo(new PublicKey(mint));
+    console.log('information', checkDecimals, mint)
     if (!checkDecimals.value) {
         throw new Error('Token account not found');
     }
@@ -387,6 +388,22 @@ export const getMeme = async (tokenMint: string, tokenName?: string) => {
         return null
     }
     return data[0].mint;
+}
+
+export const getMemeData = async (tokenParams: any, provider: any) => {
+    const { data, error } = await supabase
+        .from('meme')
+        .select()
+        .eq('mainMint', tokenParams.mint)
+        .eq('name', tokenParams.name)
+        .eq('wallet', provider.wallet.publicKey.toBase58());
+
+    if (error) {
+        console.error(error);
+        throw error;
+    }
+
+    return data;
 }
 
 // Improved helper function to get or create associated token account with error handling

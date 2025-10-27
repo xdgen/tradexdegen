@@ -23,6 +23,8 @@
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@hookform/resolvers": "^3.9.0",
     "@metaplex-foundation/mpl-token-metadata": "^3.2.1",
+    "@metaplex-foundation/umi": "^1.4.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.4.1",
     "@mui/icons-material": "^6.1.1",
     "@mui/material": "^6.1.1",
     "@pythnetwork/client": "^2.22.0",

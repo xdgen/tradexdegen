@@ -3,11 +3,23 @@ import { useAnchor } from "./useAnchor";
 import { Program, BN, AnchorProvider } from "@coral-xyz/anchor";
 import TradeIDL from "../lib/contracts/trade/trade.json"
 import type { XdegenDemo as XdegenTrade } from "@/lib/contracts/trade/trade";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createAssociatedTokenAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { createAssociatedTokenAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, getMint, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import supabase from "../components/testToken/database";
+
+const network = import.meta.env.VITE_SOLANA_RPC_URL_ARRAY.split(',')[1];
+const mainnetConnection = new Connection(network)
+
+export type TokenParams = {
+    name: string;
+    symbol: string;
+    url?: string;
+    supply: number;
+    mint: PublicKey;
+    decimals?: number; 
+}
 
 export const useTrade = () => {
     const provider = useAnchor();
@@ -95,131 +107,66 @@ export const useTrade = () => {
     const buy = useMutation({
         mutationKey: ["buy"],
         mutationFn: async ({
-            mint,
             buyAmount,
             tokenParams,
-            pairData
         }: {
-            mint: PublicKey;
             buyAmount: number;
-            tokenParams: any;
-            pairData?: any
+            tokenParams: TokenParams;
         }) => {
             if (!provider || !provider.wallet?.publicKey || !program) {
                 throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
             }
 
-            const configAccount = await program.account.config.fetch(getConfigPDA());
-            const newMint = Keypair.generate();
-            const mintInfo = await getMintInfo(newMint.publicKey);
-            const adjustedBuyAmount = buyAmount * Math.pow(10, mintInfo.decimals);
-
-            // Check if user has previously minted this token (has token account)
-            const userMintAta = await getAssociatedTokenAddress(mint, provider.wallet.publicKey);
-            const mintAccountInfo = await provider.connection.getAccountInfo(userMintAta);
-
-            // Get token info for contract instruction
-            const tokenInfo = {
-                name: tokenParams.name || "Unknown Token",
-                symbol: tokenParams.symbol || "UNKNOWN",
-                decimals: mintInfo.decimals,
-                uri: tokenParams.uri || "",
-                supply: tokenParams.supply
-            };
-
-            // Persist tokenMint from pairData if provided using createTokenIfNotExists function
-            if (pairData?.tokenMint) {
-                try {
-                    const { getMeme, createTokenIfNotExists } = await import("../components/testToken/swapfunction");
-
-                    // First check if association already exists
-                    const existingAssociation = await getMeme(pairData.tokenMint);
-
-                    if (!existingAssociation) {
-                        // No association exists, create new token and save the association
-                        console.log(`No existing association found for ${pairData.tokenMint}, creating new token and association`);
-
-                        // Create new token mint (this also saves the association in database)
-                        const newTokenMint = await createTokenIfNotExists(tokenInfo.name, pairData.tokenMint);
-
-                        console.log(`Token association created and saved: ${pairData.tokenMint} -> ${newTokenMint}`);
-                    } else {
-                        console.log(`Existing association found: ${pairData.tokenMint} -> ${existingAssociation}`);
-                    }
-                } catch (error) {
-                    console.error("Failed to persist token association:", error);
-                    // No localStorage fallback - let the error propagate
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    throw new Error(`Failed to persist token association: ${errorMessage}`);
-                }
+            const xdegenMintInfo = await getMintInfo(XdegentMint);
+            if (!xdegenMintInfo) {
+                throw new Error(`Mint info not found for mint: ${tokenParams.mint}`)
             }
 
-            if (mintAccountInfo && mintAccountInfo.data.length > 0) {
-                // User has previously minted this token, use mintToken instruction
-                const userXdegenAtaOrInstruction = await getOrCreateTokenAccount(provider, XdegentMint, provider.wallet.publicKey);
-                const transaction = new Transaction();
+            const tokenToBuyInfo = await getMint(mainnetConnection, tokenParams.mint);
+            if (!tokenToBuyInfo) {
+                throw new Error(`Mint info not found for mint: ${tokenParams.mint}`)
+            }
 
-                let userXdegenAta: PublicKey;
-                if (userXdegenAtaOrInstruction instanceof PublicKey) {
-                    userXdegenAta = userXdegenAtaOrInstruction;
-                } else {
-                    transaction.add(userXdegenAtaOrInstruction);
-                    userXdegenAta = await getAssociatedTokenAddress(XdegentMint, provider.wallet.publicKey);
-                }
+            tokenParams.decimals = tokenToBuyInfo.decimals;
+            tokenParams.url = "https://random.ipfs"
 
-                const mintTokenTx = await program.methods.mintToken(
-                    new BN(adjustedBuyAmount),
-                    new BN(tokenParams.xsolAmount * Math.pow(10, mintInfo.decimals))
-                )
-                .accountsPartial({
-                    buyer: provider.wallet.publicKey,
-                    admin: configAccount.admin,
-                    config: getConfigPDA(),
-                    mint: mint,
-                    xdegenMint: XdegentMint,
-                    vault: configAccount.vault,
-                    buyerXdegenAta: userXdegenAta,
-                    buyerMintAta: userMintAta,
-                    tokenProgram: TOKEN_PROGRAM_ID
-                }).transaction();
+            const walletXdegenAta = await getAssociatedTokenAddress(
+                XdegentMint,
+                provider.wallet.publicKey
+            );
+            const adjustedBuyAmount = buyAmount * Math.pow(10, xdegenMintInfo.decimals);
+            
+            let memeData;
+            try {
+                memeData = await supabase
+                    .from('meme')
+                    .select()
+                    .eq('mainMint', tokenParams.mint)
+                    .eq('name', tokenParams.name)
+                    .eq('wallet', provider.wallet.publicKey.toBase58());
 
-                transaction.add(mintTokenTx);
-                transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-                transaction.feePayer = provider.wallet.publicKey;
+            } catch (error) {
+                console.error('Error querying meme data:', error);
+                throw new Error(`Failed to query meme data: ${error instanceof Error ? error.message : String(error)}`);
+            }
 
-                // Sign and send transaction
-                const signedTransaction = await provider.wallet.signTransaction(transaction);
-                const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
-                await provider.connection.confirmTransaction(txId);
-
-                return txId;
+            const configAccount = await program.account.config.fetch(getConfigPDA());
+            if (memeData.data && memeData.data.length > 0) {
+                console.log('minting token');
             } else {
-                // User doesn't have mint token, use buy instruction (initializes the token)
-                const userXdegenAtaOrInstruction = await getOrCreateTokenAccount(provider, XdegentMint, provider.wallet.publicKey);
-
-                // Build transaction with potential ATA creation + buy
-                const transaction = new Transaction();
-
-                let userXdegenAta: PublicKey;
-                if (userXdegenAtaOrInstruction instanceof PublicKey) {
-                    // ATA already exists, just use the address
-                    userXdegenAta = userXdegenAtaOrInstruction;
-                } else {
-                    // ATA needs to be created, add creation instruction to transaction
-                    transaction.add(userXdegenAtaOrInstruction);
-                    userXdegenAta = await getAssociatedTokenAddress(XdegentMint, provider.wallet.publicKey);
-                }
-
+                const newMint = Keypair.generate();
+                const userMintAta = await getAssociatedTokenAddress(newMint.publicKey, provider.wallet.publicKey);
+                
                 // Add buy instruction to the same transaction
-                const buyTx = await program.methods.buy(tokenInfo, new BN(adjustedBuyAmount))
+                const buyTx = await program.methods.buy(tokenParams, new BN(adjustedBuyAmount))
                 .accountsPartial({
                     trader: provider.wallet.publicKey,
                     admin: configAccount.admin,
                     config: getConfigPDA(),
                     vault: configAccount.vault,
-                    mint: mint,
+                    mint: newMint.publicKey,
                     traderMintAta: userMintAta,
-                    metadata: getMetadataPDA(mint),
+                    metadata: getMetadataPDA(newMint.publicKey),
                     xdegenMint: XdegentMint,
                     traderXdegenAta: userXdegenAta,
                     tokenProgram: TOKEN_PROGRAM_ID
@@ -233,9 +180,135 @@ export const useTrade = () => {
                 const signedTransaction = await provider.wallet.signTransaction(transaction);
                 const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
                 await provider.connection.confirmTransaction(txId);
-
-                return txId;
             }
+
+            // const configAccount = await program.account.config.fetch(getConfigPDA());
+            // const newMint = Keypair.generate();
+            // const mintInfo = await getMintInfo(newMint.publicKey);
+            // const adjustedBuyAmount = buyAmount * Math.pow(10, mintInfo.decimals);
+
+            // // Check if user has previously minted this token (has token account)
+            // const userMintAta = await getAssociatedTokenAddress(mint, provider.wallet.publicKey);
+            // const mintAccountInfo = await provider.connection.getAccountInfo(userMintAta);
+
+            // // Get token info for contract instruction
+            // const tokenInfo = {
+            //     name: tokenParams.name || "Unknown Token",
+            //     symbol: tokenParams.symbol || "UNKNOWN",
+            //     decimals: mintInfo.decimals,
+            //     uri: tokenParams.uri || "",
+            //     supply: tokenParams.supply
+            // };
+
+            // // Persist tokenMint from pairData if provided using createTokenIfNotExists function
+            // if (pairData?.tokenMint) {
+            //     try {
+            //         const { getMeme, createTokenIfNotExists } = await import("../components/testToken/swapfunction");
+
+            //         // First check if association already exists
+            //         const existingAssociation = await getMeme(pairData.tokenMint);
+
+            //         if (!existingAssociation) {
+            //             // No association exists, create new token and save the association
+            //             console.log(`No existing association found for ${pairData.tokenMint}, creating new token and association`);
+
+            //             // Create new token mint (this also saves the association in database)
+            //             const newTokenMint = await createTokenIfNotExists(tokenInfo.name, pairData.tokenMint);
+
+            //             console.log(`Token association created and saved: ${pairData.tokenMint} -> ${newTokenMint}`);
+            //         } else {
+            //             console.log(`Existing association found: ${pairData.tokenMint} -> ${existingAssociation}`);
+            //         }
+            //     } catch (error) {
+            //         console.error("Failed to persist token association:", error);
+            //         // No localStorage fallback - let the error propagate
+            //         const errorMessage = error instanceof Error ? error.message : String(error);
+            //         throw new Error(`Failed to persist token association: ${errorMessage}`);
+            //     }
+            // }
+
+            // if (mintAccountInfo && mintAccountInfo.data.length > 0) {
+            //     // User has previously minted this token, use mintToken instruction
+            //     const userXdegenAtaOrInstruction = await getOrCreateTokenAccount(provider, XdegentMint, provider.wallet.publicKey);
+            //     const transaction = new Transaction();
+
+            //     let userXdegenAta: PublicKey;
+            //     if (userXdegenAtaOrInstruction instanceof PublicKey) {
+            //         userXdegenAta = userXdegenAtaOrInstruction;
+            //     } else {
+            //         transaction.add(userXdegenAtaOrInstruction);
+            //         userXdegenAta = await getAssociatedTokenAddress(XdegentMint, provider.wallet.publicKey);
+            //     }
+
+            //     const mintTokenTx = await program.methods.mintToken(
+            //         new BN(adjustedBuyAmount),
+            //         new BN(tokenParams.xsolAmount * Math.pow(10, mintInfo.decimals))
+            //     )
+            //     .accountsPartial({
+            //         buyer: provider.wallet.publicKey,
+            //         admin: configAccount.admin,
+            //         config: getConfigPDA(),
+            //         mint: mint,
+            //         xdegenMint: XdegentMint,
+            //         vault: configAccount.vault,
+            //         buyerXdegenAta: userXdegenAta,
+            //         buyerMintAta: userMintAta,
+            //         tokenProgram: TOKEN_PROGRAM_ID
+            //     }).transaction();
+
+            //     transaction.add(mintTokenTx);
+            //     transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+            //     transaction.feePayer = provider.wallet.publicKey;
+
+            //     // Sign and send transaction
+            //     const signedTransaction = await provider.wallet.signTransaction(transaction);
+            //     const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+            //     await provider.connection.confirmTransaction(txId);
+
+            //     return txId;
+            // } else {
+            //     // User doesn't have mint token, use buy instruction (initializes the token)
+            //     const userXdegenAtaOrInstruction = await getOrCreateTokenAccount(provider, XdegentMint, provider.wallet.publicKey);
+
+            //     // Build transaction with potential ATA creation + buy
+            //     const transaction = new Transaction();
+
+            //     let userXdegenAta: PublicKey;
+            //     if (userXdegenAtaOrInstruction instanceof PublicKey) {
+            //         // ATA already exists, just use the address
+            //         userXdegenAta = userXdegenAtaOrInstruction;
+            //     } else {
+            //         // ATA needs to be created, add creation instruction to transaction
+            //         transaction.add(userXdegenAtaOrInstruction);
+            //         userXdegenAta = await getAssociatedTokenAddress(XdegentMint, provider.wallet.publicKey);
+            //     }
+
+            //     // Add buy instruction to the same transaction
+            //     const buyTx = await program.methods.buy(tokenInfo, new BN(adjustedBuyAmount))
+            //     .accountsPartial({
+            //         trader: provider.wallet.publicKey,
+            //         admin: configAccount.admin,
+            //         config: getConfigPDA(),
+            //         vault: configAccount.vault,
+            //         mint: mint,
+            //         traderMintAta: userMintAta,
+            //         metadata: getMetadataPDA(mint),
+            //         xdegenMint: XdegentMint,
+            //         traderXdegenAta: userXdegenAta,
+            //         tokenProgram: TOKEN_PROGRAM_ID
+            //     }).transaction();
+
+            //     transaction.add(buyTx);
+            //     transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+            //     transaction.feePayer = provider.wallet.publicKey;
+
+            //     // Sign and send transaction
+            //     const signedTransaction = await provider.wallet.signTransaction(transaction);
+            //     const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
+            //     await provider.connection.confirmTransaction(txId);
+
+            //     return txId;
+            // }
         },
         onSuccess: async (tx) => {
             toast.success(`Buy transaction successful\nhttps://explorer.solana.com/tx/${tx}?cluster=devnet`);
@@ -422,7 +495,6 @@ export const useTrade = () => {
     const claim = useMutation({
         mutationKey: ["claim", provider?.wallet?.publicKey?.toBase58() || "disconnected"],
         mutationFn: async () => {
-            console.log(provider, provider?.wallet.publicKey.toBase58(), program, provider?.wallet.payer)
             if (!provider || !provider.wallet?.publicKey || !program) {
                 throw new Error("Wallet not connected. Please connect your wallet to claim.");
             }

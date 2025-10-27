@@ -48,7 +48,7 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Button } from '../ui/button';
-import { useTrade } from '../../hooks/useTrade';
+import { TokenParams, useTrade } from '../../hooks/useTrade';
 import { BN } from "@coral-xyz/anchor";
 import { getMint } from '@solana/spl-token';
 
@@ -285,6 +285,8 @@ export default function TokenView() {
   const { publicKey, sendTransaction } = useWallet();
   const { address } = useAppKitAccount();
 
+  const { buy: buyToken } = useTrade()
+
   useEffect(() => {
     if (location.state && location.state.pairData) {
       setPairData(location.state.pairData);
@@ -292,10 +294,6 @@ export default function TokenView() {
       updateStats(location.state.pairData);
     }
   }, [location.state]);
-
-
-  console.log('pairData', pairData);
-
 
   useEffect(() => {
     if (!chartContainerRef.current || !pairData) return;
@@ -666,63 +664,101 @@ export default function TokenView() {
     setSwap(option);
   };
 
-  const { connection } = useConnection();
+  // const handleBuy = async () => {
+  //   setLoading(true);
+  //   const loadingId = toast.loading("Processing ... ");
+  //   try {
+  //     const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
-  const handleBuy = async () => {
-    setLoading(true);
-    const loadingId = toast.loading("Processing ... ");
+  //     if (!walletPublicKey) {
+  //       throw new Error("Please connect your wallet!");
+  //     }
+  //     const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+  //     const tokenAmount =
+  //       +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+  //     const tokenName = pairData.baseToken.symbol;
+  //     const tokenMint = pairData.baseToken.address;
+  //     const buyNow = await buy(
+  //       Xdegen_mint,
+  //       +orderAmount,
+  //       walletPublicKey,
+  //       tokenName,
+  //       tokenMint,
+  //       tokenAmount,
+  //       sendTransaction
+  //     );
+
+  //     const { signature, confirmation } = buyNow;
+
+  //     if (confirmation){
+  //       console.log(
+  //         'Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}'
+  //       );
+  //       toast.success(
+  //         `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `,
+  //         {
+  //           action: {
+  //             label: "View Transaction",
+  //             onClick: () => window.open("https://solscan.io/tx/${signature}?cluster=devnet", "_blank")
+  //           }
+  //         }
+  //       );
+  //     } else {
+  //       toast.success(`
+  //         Transaction not confirmed,
+  //         {
+  //           action: {
+  //             label: "View Transaction",
+  //             onClick: () => window.open(https://solscan.io/tx/${signature}?cluster=devnet, "_blank")
+  //           }
+  //         }
+  //         `
+  //       );
+  //     }
+  //   } catch (error) {
+  //     toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
+  //     console.log(error);
+  //   } finally {
+  //     if (updateBal) {
+  //       setUpdateBal(false);
+  //     } else {
+  //       setUpdateBal(true);
+  //     }
+  //     setLoading(false);
+  //     toast.dismiss(loadingId);
+  //   }
+  // };
+
+  const handleBuy =  async () => {
+    // setLoading(true);
+    const loadingId = toast.loading("Processing... ");
     try {
       const walletPublicKey = publicKey ? publicKey : address ? new PublicKey(address) : undefined;
 
       if (!walletPublicKey) {
         throw new Error("Please connect your wallet!");
       }
-      console.log(pairData.baseToken);
+      
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const tokenAmount =
-        +orderAmount / parseFloat(parseFloat(pairData.priceNative).toFixed(9));
-      const tokenName = pairData.baseToken.symbol;
-      const tokenMint = pairData.baseToken.address;
-      const buyNow = await buy(
-        Xdegen_mint,
-        +orderAmount,
-        walletPublicKey,
-        tokenName,
-        tokenMint,
-        tokenAmount,
-        sendTransaction
-      );
-
-      const { signature, confirmation } = buyNow;
-
-      if (confirmation){
-        console.log(
-          'Buying ${orderAmount} ${pairData?.baseToken.symbol} at ${price}'
-        );
-        toast.success(
-          `Swapped ${orderAmount} XSol to ${tokenAmount} ${pairData?.baseToken.symbol} `,
-          {
-            action: {
-              label: "View Transaction",
-              onClick: () => window.open("https://solscan.io/tx/${signature}?cluster=devnet", "_blank")
-            }
-          }
-        );
-      } else {
-        toast.success(`
-          Transaction not confirmed,
-          {
-            action: {
-              label: "View Transaction",
-              onClick: () => window.open(https://solscan.io/tx/${signature}?cluster=devnet, "_blank")
-            }
-          }
-          `
-        );
+        +orderAmount / price;
+    
+      const tokenToBuy: TokenParams = {
+        name: pairData.baseToken.name,
+        symbol: pairData.baseToken.symbol,
+        supply: tokenAmount,
+        mint: new PublicKey(pairData.baseToken.address)
       }
+
+      // console.log(await fetchMintMetadata(pairData.baseToken.address))
+      
+      await buyToken.mutateAsync({
+        buyAmount: +orderAmount,
+        tokenParams: tokenToBuy
+      });
     } catch (error) {
       toast.warning(error instanceof Error ? error.message : "Transaction might have failed");
-      console.log(error);
+      console.log('error', error);
     } finally {
       if (updateBal) {
         setUpdateBal(false);
@@ -732,7 +768,7 @@ export default function TokenView() {
       setLoading(false);
       toast.dismiss(loadingId);
     }
-  };
+  }
 
   const handleSell = async () => {
     setLoading(true);
