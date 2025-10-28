@@ -20,6 +20,8 @@ const SendAcademyMessage = () => {
       register,
       formState: { errors, isValid, isSubmitting },
     },
+    isLoadingEnrollments,
+    enrollmentError,
     onSubmit,
   } = useSendAcademyNotification();
 
@@ -27,7 +29,10 @@ const SendAcademyMessage = () => {
     <div className="flex justify-center">
       <Dialog>
         <DialogTrigger asChild>
-          <Button className="gap-x-2">
+          <Button
+            className="gap-x-2"
+            disabled={isLoadingEnrollments || enrollmentError}
+          >
             <MessageSquare className="size-4" />
             Send Message to Students
           </Button>

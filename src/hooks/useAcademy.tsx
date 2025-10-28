@@ -82,34 +82,41 @@ export const useAcademy = () => {
         fee: payload.fee ? new BN(payload.fee * LAMPORTS_PER_SOL) : null,
       };
 
-            const transaction = new Transaction();
-            const createAcademyTx = await program.methods.createAcademy(academyData).accountsPartial({
-                signer: provider.wallet.publicKey,
-                config: getConfigPDA(),
-                academy: getAcademyPDA(provider.wallet.publicKey)
-            }).transaction();
+      const transaction = new Transaction();
+      const createAcademyTx = await program.methods
+        .createAcademy(academyData)
+        .accountsPartial({
+          signer: provider.wallet.publicKey,
+          config: getConfigPDA(),
+          academy: getAcademyPDA(provider.wallet.publicKey),
+        })
+        .transaction();
 
-            transaction.add(createAcademyTx);
-            transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-            transaction.feePayer = provider.wallet.publicKey;
+      transaction.add(createAcademyTx);
+      transaction.recentBlockhash = (
+        await provider.connection.getLatestBlockhash()
+      ).blockhash;
+      transaction.feePayer = provider.wallet.publicKey;
 
-            // Sign and send transaction
-            const signedTransaction = await provider.wallet.signTransaction(transaction);
-            const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
-            await provider.connection.confirmTransaction(txId);
+      // Sign and send transaction
+      const signedTransaction = await provider.wallet.signTransaction(
+        transaction
+      );
+      const txId = await provider.connection.sendRawTransaction(
+        signedTransaction.serialize()
+      );
+      await provider.connection.confirmTransaction(txId);
 
-          return {
-            academyPDA: getAcademyPDA(provider.wallet.publicKey),
-            tx: txId,
-          };
-        },
-      onSuccess: async (data) => {
-        console.log(data.academyPDA);
-
-        const response = await axiosAsync.post("/academies", {
-          contractAddress: data.academyPDA,
-        });
-        const dataResponse = response.data as AcademyResponse<Academy>;
+      return {
+        academyPDA: getAcademyPDA(provider.wallet.publicKey),
+        tx: txId,
+      };
+    },
+    onSuccess: async (data) => {
+      const response = await axiosAsync.post("/academies", {
+        contractAddress: data.academyPDA,
+      });
+      const dataResponse = response.data as APIResponse<Academy>;
 
       if (dataResponse.status) {
         // Invalidate and refetch all academies to show the new one
@@ -152,21 +159,28 @@ export const useAcademy = () => {
         .accountsPartial({
           config: getConfigPDA(),
           student: getStudentPDA(provider.wallet.publicKey),
-        }).transaction();
+        })
+        .transaction();
 
-        transaction.add(createStudentTx);
-        transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-        transaction.feePayer = provider.wallet.publicKey;
+      transaction.add(createStudentTx);
+      transaction.recentBlockhash = (
+        await provider.connection.getLatestBlockhash()
+      ).blockhash;
+      transaction.feePayer = provider.wallet.publicKey;
 
-        // Sign and send transaction
-        const signedTransaction = await provider.wallet.signTransaction(transaction);
-        const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
-        await provider.connection.confirmTransaction(txId);
+      // Sign and send transaction
+      const signedTransaction = await provider.wallet.signTransaction(
+        transaction
+      );
+      const txId = await provider.connection.sendRawTransaction(
+        signedTransaction.serialize()
+      );
+      await provider.connection.confirmTransaction(txId);
 
       return {
         tx: txId,
-        twitter: payload.twitterHandle
-      }
+        twitter: payload.twitterHandle,
+      };
     },
     onSuccess: async (data) => {
       if (!provider || !provider.wallet?.publicKey || !program) {
@@ -175,13 +189,13 @@ export const useAcademy = () => {
         );
       }
 
-      const pda = getStudentPDA(provider.wallet.publicKey); 
+      const pda = getStudentPDA(provider.wallet.publicKey);
       try {
         const response = await axiosAsync.post("/students", {
           twitterHandle: data.twitter,
           contractAddress: pda,
         });
-        
+
         const dataResponse = response.data;
         if (dataResponse.status) {
           await queryClient.invalidateQueries({
@@ -214,6 +228,8 @@ export const useAcademy = () => {
         payload.academyPDA,
         payload.studentPDA
       );
+      console.log(enrollmentPDA.toString());
+      console.log(await program.account.studentEnrollment.fetch(enrollmentPDA));
 
       const transaction = new Transaction();
       const enrollStudentTx = await program.methods
@@ -223,17 +239,32 @@ export const useAcademy = () => {
           student: payload.studentPDA,
           academy: payload.academyPDA,
           enrollment: getEnrollmentPDA(payload.academyPDA, payload.studentPDA),
-        }).transaction();
+        })
+        .transaction();
 
       transaction.add(enrollStudentTx);
-      transaction.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+      const { blockhash, lastValidBlockHeight } =
+        await provider.connection.getLatestBlockhash("finalized");
+      transaction.recentBlockhash = blockhash;
       transaction.feePayer = provider.wallet.publicKey;
 
       // Sign and send transaction
-      const signedTransaction = await provider.wallet.signTransaction(transaction);
-      const txId = await provider.connection.sendRawTransaction(signedTransaction.serialize());
-      await provider.connection.confirmTransaction(txId);
-      
+      const signedTransaction = await provider.wallet.signTransaction(
+        transaction
+      );
+      const txId = await provider.connection.sendRawTransaction(
+        signedTransaction.serialize(),
+        {
+          skipPreflight: false,
+          preflightCommitment: "confirmed",
+        }
+      );
+      await provider.connection.confirmTransaction({
+        signature: txId,
+        blockhash: blockhash,
+        lastValidBlockHeight: lastValidBlockHeight,
+      });
+
       return {
         tx: txId,
         enrollmentPDA,

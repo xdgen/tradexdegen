@@ -39,15 +39,6 @@ export const createAcademySchema = z
         value: z.string().min(1, "Item cannot be empty"),
       })
     ),
-    // payoutWallet: z
-    //   .string({ required_error: "Add a payout wallet" })
-    //   .min(10, "Wallet address is too short")
-    //   .max(100, "Wallet address is too long")
-    //   .optional(),
-  })
-  .refine((data) => data.endDate.getTime() > data.startDate.getTime(), {
-    message: "End date must be after start date",
-    path: ["endDate"],
   })
   .refine(
     (data) =>
@@ -58,6 +49,10 @@ export const createAcademySchema = z
       path: ["endDate"],
     }
   )
+  .refine((data) => data.endDate.getTime() > data.startDate.getTime(), {
+    message: "End date must be after start date",
+    path: ["endDate"],
+  })
   .refine(
     (data) => {
       if (data.plan === "paid") {

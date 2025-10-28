@@ -25,8 +25,6 @@ const AcademyStats: React.FC = () => {
     totalEarnings: 0,
   });
   const [academyName, setAcademyName] = useState("");
-  const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [topStudents, setTopStudents] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
 
   const walletKey = useMemo(() => publicKey ?? null, [publicKey]);
@@ -45,7 +43,6 @@ const AcademyStats: React.FC = () => {
       const studentsCount = academy.totalStudents?.toNumber?.() || 0;
       const accumulatedFees = academy.totalEnrollmentAmount?.toNumber?.() || 0;
       const totalEarnings = accumulatedFees * 0.98;
-      console.log(academyQuery.data);
 
       setAcademyName(academy.title);
       setStats({
@@ -143,36 +140,6 @@ const AcademyStats: React.FC = () => {
               <div className="text-sm text-green-500">+10%</div>
             </div>
           </div>
-
-          {/* <div className="bg-[#111] rounded-lg p-4 h-[114px]">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h1 className="text-sm font-medium">Active Students</h1>
-              <Users className="size-5 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.activeStudents}</div>
-            </div>
-          </div> */}
-
-          {/* <div className="bg-[#111] rounded-lg p-4 h-[114px]">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h1 className="text-sm font-medium">Average Rating</h1>
-              <Star className="size-5 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.averageRating}/5</div>
-            </div>
-          </div> */}
-
-          {/* <div className="bg-[#111] rounded-lg p-4 h-[114px]">
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h1 className="text-sm font-medium">Retention Rate</h1>
-              <Award className="size-5 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{stats.retentionRate}%</div>
-            </div>
-          </div> */}
         </div>
 
         <div className="bg-[#111] rounded-lg p-6 mb-6">

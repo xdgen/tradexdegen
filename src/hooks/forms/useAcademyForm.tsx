@@ -1,6 +1,7 @@
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   createAcademySchema,
@@ -15,6 +16,8 @@ import { toast } from "sonner";
 import { dapp } from "../../lib/services/dialect.ts";
 import { Plan, useAcademy } from "../useAcademy.tsx";
 import { useCheckUserRole } from "../../provider/UserRoleProvider.tsx";
+import { axiosAsync } from "../../lib/axios.ts";
+import { useMemo } from "react";
 
 export function useCreateAcademyForm() {
   const { authData } = useCheckUserRole();
@@ -130,6 +133,29 @@ export function useStudentRegistration() {
 }
 
 export function useSendAcademyNotification() {
+  const { authData } = useCheckUserRole();
+  const {
+    data: enrollments,
+    isLoading,
+    error,
+  } = useQuery<APIResponse<EnrollmentWithRelations[]>>({
+    queryKey: ["academy-enrollments", authData?.user.id],
+    queryFn: async () => {
+      try {
+        if (!authData?.user.id) return null;
+
+        const response = await axiosAsync(
+          `/academies/${authData?.user.id}/enrollments`
+        );
+        return response.data;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!authData?.user.id,
+    retry: 2,
+  });
+
   const form = useForm<SendAcademyNotificationType>({
     resolver: zodResolver(sendAcademyNotificationSchema),
     mode: "all",
@@ -138,9 +164,23 @@ export function useSendAcademyNotification() {
       message: "",
     },
   });
-  const recipients = ["6eYUsVivEeKAsf9xb3QeN9MDUP54dgZuyKLk176WbwDM"];
+
+  const recipients = useMemo(
+    () =>
+      enrollments?.data
+        ? (enrollments.data
+            .map((data) => data.student?.user?.wallet)
+            .filter(Boolean) as string[])
+        : ["6eYUsVivEeKAsf9xb3QeN9MDUP54dgZuyKLk176WbwDM"],
+    [enrollments]
+  );
 
   const onSubmit: SubmitHandler<SendAcademyNotificationType> = async (data) => {
+    if (!recipients.length) {
+      toast.error("No students enrolled to receive notifications");
+      return;
+    }
+
     try {
       dapp?.messages.send({
         ...data,
@@ -155,6 +195,8 @@ export function useSendAcademyNotification() {
 
   return {
     form,
+    isLoadingEnrollments: isLoading,
+    enrollmentError: !!error,
     onSubmit,
   };
 }
