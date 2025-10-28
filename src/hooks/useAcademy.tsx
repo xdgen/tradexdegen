@@ -74,6 +74,16 @@ export const useAcademy = () => {
         );
       }
 
+      const pdaInfo = await provider.connection.getAccountInfo(
+        getAcademyPDA(provider.wallet.publicKey)
+      );
+      if (pdaInfo) {
+        return {
+          tx: null,
+          academyPDA: getAcademyPDA(provider.wallet.publicKey),
+        };
+      }
+
       const academyData = {
         ...payload,
         owner: provider.wallet.publicKey,
@@ -113,12 +123,14 @@ export const useAcademy = () => {
       };
     },
     onSuccess: async (data) => {
+      console.log(data.academyPDA);
+
       const response = await axiosAsync.post("/academies", {
         contractAddress: data.academyPDA,
       });
-      const dataResponse = response.data as APIResponse<Academy>;
+      const dataResponse = response.data;
 
-      if (dataResponse.status) {
+      if (dataResponse?.status) {
         // Invalidate and refetch all academies to show the new one
         await queryClient.invalidateQueries({ queryKey: ["academy"] });
         toast.success(
@@ -151,6 +163,16 @@ export const useAcademy = () => {
         throw new Error(
           "Wallet not connected. Please connect your wallet to use trading features."
         );
+      }
+
+      const pdaInfo = await provider.connection.getAccountInfo(
+        getStudentPDA(provider.wallet.publicKey)
+      );
+      if (pdaInfo) {
+        return {
+          tx: null,
+          twitter: payload.twitterHandle,
+        };
       }
 
       const transaction = new Transaction();
@@ -228,8 +250,15 @@ export const useAcademy = () => {
         payload.academyPDA,
         payload.studentPDA
       );
-      console.log(enrollmentPDA.toString());
-      console.log(await program.account.studentEnrollment.fetch(enrollmentPDA));
+
+      const pdaInfo = await provider.connection.getAccountInfo(enrollmentPDA);
+      if (pdaInfo) {
+        return {
+          tx: null,
+          enrollmentPDA,
+          academyPDA: payload.academyPDA,
+        };
+      }
 
       const transaction = new Transaction();
       const enrollStudentTx = await program.methods

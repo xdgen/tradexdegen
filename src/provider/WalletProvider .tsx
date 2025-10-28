@@ -15,10 +15,11 @@ interface SolanaWalletProps {
 
 const SolanaWalletProvider: FC<SolanaWalletProps> = ({ children }) => {
     // Network configuration
-    const network = WalletAdapterNetwork.Devnet; // Use Devnet for testing, switch to Mainnet when needed.
-
+    // const network = WalletAdapterNetwork.Devnet; // Use Devnet for testing, switch to Mainnet when needed.
+    
     // Solana endpoint to connect
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    // const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    const endpoint = 'https://rpc.magicblock.app/devnet';
 
     // Available wallets for Solana
     const wallets = useMemo(
