@@ -74,6 +74,14 @@ export const useAcademy = () => {
         );
       }
 
+      const pdaInfo = await provider.connection.getAccountInfo(getAcademyPDA(provider.wallet.publicKey))
+      if (pdaInfo) {
+        return {
+          tx: null,
+          academyPDA: getAcademyPDA(provider.wallet.publicKey)
+        }
+      }
+
       const academyData = {
         ...payload,
         owner: provider.wallet.publicKey,
@@ -146,6 +154,14 @@ export const useAcademy = () => {
         );
       }
 
+      const pdaInfo = await provider.connection.getAccountInfo(getStudentPDA(provider.wallet.publicKey))
+      if (pdaInfo) {
+        return {
+          tx: null,
+          twitter: payload.twitterHandle
+        }
+      }
+
       const transaction = new Transaction();
       const createStudentTx = await program.methods
         .createStudent(payload.twitterHandle)
@@ -214,6 +230,15 @@ export const useAcademy = () => {
         payload.academyPDA,
         payload.studentPDA
       );
+
+      const pdaInfo = await provider.connection.getAccountInfo(enrollmentPDA)
+      if (pdaInfo) {
+        return {
+          tx: null,
+          enrollmentPDA,
+          academyPDA: payload.academyPDA,
+        }
+      }
 
       const transaction = new Transaction();
       const enrollStudentTx = await program.methods
