@@ -23,23 +23,15 @@ interface AcademySidebarProps {
   onClose: () => void;
 }
 
-const apiKey =
-  "qhh94cd4jpww57wd3y8ygfzz4bs3gp8ageumb7nbgjx59bmgjh9gtqt8u44bv8ve";
-const userId = "user-id";
-const token = "authentication-tokenafun28vnpbqp";
-
-const filters = { members: { $in: [userId] }, type: "messaging" };
-const options = { presence: true, state: true };
-
 export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
-  const client = useCreateChatClient({
-    apiKey,
-    tokenOrProvider: token,
-    userData: { id: userId },
-  });
+  // const client = useCreateChatClient({
+  //   apiKey,
+  //   tokenOrProvider: token,
+  //   userData: { id: userId },
+  // });
 
   const [selectedAcademy, setSelectedAcademy] = useState<string | null>(null);
-  const { academies, getUnreadCount, markAsRead } = useChatContext();
+  const { academies } = useChatContext();
 
   const handleBack = () => {
     setSelectedAcademy(null);
@@ -47,12 +39,9 @@ export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
 
   const handleSelectAcademy = (academyId: string) => {
     setSelectedAcademy(academyId);
-    markAsRead(academyId);
   };
 
   const selectedAcademyData = academies.find((a) => a.id === selectedAcademy);
-
-  if (!client) return <div>Loading...</div>;
 
   return (
     <div
@@ -81,7 +70,7 @@ export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
 
           {/* Academy list */}
           <ScrollArea className="flex-1">
-            <div className="p-4 space-y-2">
+            {/* <div className="p-4 space-y-2">
               {academies.map((academy) => {
                 const unreadCount = getUnreadCount(academy.id);
 
@@ -129,7 +118,7 @@ export function AcademySidebar({ isOpen, onClose }: AcademySidebarProps) {
                 <MessageList />
                 <MessageInput />
               </Channel>
-            </Chat>
+            </Chat> */}
           </ScrollArea>
         </div>
       )}

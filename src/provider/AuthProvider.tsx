@@ -7,12 +7,13 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { axios } from "../lib/axios";
+import { axios, axiosAsync } from "../lib/axios";
 import { toast } from "sonner";
 import { PublicKey } from "@solana/web3.js";
 import useLocalStorageSubscription, {
   triggerLocalStorageChange,
 } from "../hooks/useLocalStorageSubscription";
+import { useQuery } from "@tanstack/react-query";
 
 interface IAuthContext {
   isCheckingUserRole: boolean;
@@ -20,10 +21,13 @@ interface IAuthContext {
   closeRoleDialog: () => void;
   isStudentDialogOpen: boolean;
   closeStudentDialog: () => void;
+  userProfile: UserProfile | null;
   role: Role | null;
   authData: AuthResponse | null;
   registerUserRole: (role: Role) => void;
   isAuthenticated: boolean;
+  refetchUserProfile: () => void;
+  isLoadingProfile: boolean;
 }
 
 interface IAuthProvider {
@@ -38,6 +42,7 @@ export const AuthProvider = ({ children }: IAuthProvider) => {
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
   const [authData, setAuthData] = useState<AuthResponse | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const key =
     connected && publicKey ? `userRole:${publicKey.toString()}` : null;
   const [role, setRole, roleRef] = useLocalStorageSubscription<Role>(
@@ -53,6 +58,39 @@ export const AuthProvider = ({ children }: IAuthProvider) => {
     () => (connected && publicKey && role ? true : false),
     [connected, publicKey, role]
   );
+
+  // Fetch user profile
+  const {
+    isLoading: isLoadingProfile,
+    refetch: refetchUserProfile,
+    data: profileResponse,
+    error: profileError,
+  } = useQuery<APIResponse<UserProfile>>({
+    queryKey: ["user-profile", authData?.user?.id],
+    queryFn: async () => {
+      if (!authData?.token?.accessToken) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await axiosAsync.get("/user/profile");
+      return response.data;
+    },
+    enabled: !!authData?.token?.accessToken,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
+  });
+
+  useEffect(() => {
+    if (profileResponse?.success) {
+      setUserProfile(profileResponse.data);
+    }
+  }, [profileResponse]);
+
+  useEffect(() => {
+    if (profileError) {
+      toast.error(`Failed to fetch user profile: ${profileError}`);
+    }
+  }, [profileError]);
 
   const updateAuthData = (data: AuthResponse, publicKey: PublicKey) => {
     setAuthData({
@@ -200,11 +238,14 @@ export const AuthProvider = ({ children }: IAuthProvider) => {
         isRoleDialogOpen,
         closeStudentDialog,
         authData,
+        userProfile,
         closeRoleDialog,
         isAuthenticated,
         role,
         isStudentDialogOpen,
         registerUserRole,
+        refetchUserProfile,
+        isLoadingProfile,
       }}
     >
       {children}

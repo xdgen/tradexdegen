@@ -46,7 +46,7 @@ interface Academy {
 
 type StudentWithUser = Student & { user?: User };
 
-interface Enrollments {
+interface Enrollment {
   id: string;
   academyId: string;
   studentId: string;
@@ -55,7 +55,7 @@ interface Enrollments {
   updated_at: Date;
 }
 
-interface EnrollmentWithRelations extends Enrollments {
+interface EnrollmentWithRelations extends Enrollment {
   student?: StudentWithUser;
   academy?: Academy;
 }
@@ -71,7 +71,21 @@ interface CheckUserResponse {
   wallet: string;
 }
 
-interface APIResponse<T> extends Omit<CheckUserResponse, "wallet" | status> {
+interface APIResponse<T> extends Omit<CheckUserResponse, "wallet" | "status"> {
   success: boolean;
   data: T;
+}
+
+interface UserProfile {
+  id: string;
+  wallet: string;
+  role: "STUDENT" | "ACADEMY";
+  academy: any | null;
+  student: Student | null;
+  streamToken: string;
+}
+
+interface StudentAcademies {
+  id: string;
+  enrollments: EnrollmentWithRelations[];
 }
