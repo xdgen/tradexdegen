@@ -1,142 +1,97 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MessageCircle, X, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { AcademySidebar } from "../AcademySidebar";
 import { cn } from "../../lib/utils";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useAuth } from "../../provider/AuthProvider";
-import { useAcademy } from "../../hooks/useAcademy";
-import { useQueries } from "@tanstack/react-query";
-import { axiosAsync } from "../../lib/axios";
-
-interface AcademyDetails {
-  id: string;
-  title: string;
-  description: string;
-  banner: string;
-  contractAddress: string;
-  // Add other academy fields as needed
-}
-
-interface EnrollmentWithAcademy {
-  enrollment: any;
-  academyDetails: AcademyDetails | null;
-}
+import { useChatContext } from "../../provider/ChatProvider";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [shouldShowWidget, setShouldShowWidget] = useState(false);
-  const [isCheckingEnrollments, setIsCheckingEnrollments] = useState(false);
 
   const { connected } = useWallet();
-  const { role } = useAuth();
-  const { getStudentPDA, getStudentEnrollments } = useAcademy();
-  const { publicKey } = useWallet();
+  const { role, isAuthenticated, userProfile } = useAuth();
+  const {
+    isConnected,
+    academies,
+    loading: chatLoading,
+    isFetchingAcademies,
+    refreshAcademies,
+  } = useChatContext();
 
-  // Get student PDA if wallet is connected
-  const studentPDA = publicKey ? getStudentPDA(publicKey) : null;
+  // Check widget visibility - removed from dependencies to break circular loop
+  useEffect(() => {
+    if (!isAuthenticated || !userProfile) {
+      setShouldShowWidget(false);
+      return;
+    }
 
-  // Fetch student enrollments
-  // const { data: enrollments, isLoading } = getStudentEnrollments(studentPDA);
+    // For students: show if enrolled in any academies AND Stream is connected
+    if (role === "STUDENT") {
+      const hasEnrollments = academies.length > 0;
+      setShouldShowWidget(hasEnrollments && isConnected);
+    }
+    // For academies: show if they have academies AND Stream is connected
+    else if (role === "ACADEMY") {
+      const hasAcademies = academies.length > 0;
+      setShouldShowWidget(hasAcademies && isConnected);
+    } else {
+      setShouldShowWidget(false);
+    }
+  }, [isAuthenticated, userProfile, role, academies.length, isConnected]);
 
-  // Fetch academy details for each enrollment individually
-  // const academyQueries = useQueries({
-  //   queries: (enrollments || []).map((enrollment) => ({
-  //     queryKey: ["academy", enrollment.account.academy.toBase58()],
-  //     queryFn: async (): Promise<AcademyDetails | null> => {
-  //       try {
-  //         const contractAddress = enrollment.account.academy.toBase58();
-  //         const response = await axiosAsync.get(
-  //           `/academies/${contractAddress}`
-  //         );
+  // Refresh academies when widget opens - simplified to avoid callback dependency
+  useEffect(() => {
+    if (isOpen && isConnected) {
+      refreshAcademies();
+    }
+  }, [isOpen, isConnected, refreshAcademies]);
 
-  //         return response.data.data;
-  //       } catch (error) {
-  //         console.error(
-  //           `Failed to fetch academy ${enrollment.account.academy.toBase58()}:`,
-  //           error
-  //         );
-  //         return null;
-  //       }
-  //     },
-  //     enabled: !!enrollments && enrollments.length > 0,
-  //     staleTime: 1000 * 60 * 5, // 5 minutes cache
-  //   })),
-  // });
+  // Close widget if it should no longer be shown
+  useEffect(() => {
+    if (!shouldShowWidget && isOpen) {
+      setIsOpen(false);
+    }
+  }, [shouldShowWidget, isOpen]);
 
-  // Combine enrollments with academy details
-  // const enrollmentsWithAcademies: EnrollmentWithAcademy[] = (
-  //   enrollments || []
-  // ).map((enrollment, index) => ({
-  //   enrollment,
-  //   academyDetails: academyQueries[index]?.data || null,
-  // }));
+  // Show loading spinner while connecting to Stream or loading academies
+  const showLoadingSpinner =
+    chatLoading || isFetchingAcademies || (isAuthenticated && !isConnected);
 
-  // const isLoadingAcademies = academyQueries.some((query) => query.isLoading);
+  if (showLoadingSpinner) {
+    return (
+      <Button
+        className={cn(
+          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg",
+          "bg-gray-600 text-white cursor-not-allowed",
+          "z-40"
+        )}
+        size="icon"
+        disabled
+      >
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </Button>
+    );
+  }
 
-  // Check if widget should be shown
-  // useEffect(() => {
-  //   const checkEnrollments = async () => {
-  //     if (!connected || role !== "STUDENT" || !studentPDA) {
-  //       setShouldShowWidget(false);
-  //       setIsCheckingEnrollments(false);
-  //       return;
-  //     }
+  if (!shouldShowWidget) {
+    return null;
+  }
 
-  //     setIsCheckingEnrollments(true);
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
 
-  //     if (enrollments && enrollments.length > 0) {
-  //       setShouldShowWidget(true);
-  //     } else {
-  //       setShouldShowWidget(false);
-  //     }
-
-  //     setIsCheckingEnrollments(false);
-  //   };
-
-  //   checkEnrollments();
-  // }, [connected, role, enrollments, studentPDA]);
-
-  // useEffect(() => {
-  //   if (!shouldShowWidget && isOpen) {
-  //     setIsOpen(false);
-  //   }
-  // }, [shouldShowWidget, isOpen]);
-
-  // Show loading spinner while checking enrollments or fetching academy details
-  // const showLoadingSpinner =
-  //   isCheckingEnrollments ||
-  //   (connected && role === "STUDENT" && studentPDA && isLoading) ||
-  //   (connected &&
-  //     role === "STUDENT" &&
-  //     enrollments &&
-  //     enrollments.length > 0 &&
-  //     isLoadingAcademies);
-
-  // if (showLoadingSpinner) {
-  //   return (
-  //     <Button
-  //       className={cn(
-  //         "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg",
-  //         "bg-gray-600 text-white cursor-not-allowed",
-  //         "z-40"
-  //       )}
-  //       size="icon"
-  //       disabled
-  //     >
-  //       <Loader2 className="h-6 w-6 animate-spin" />
-  //     </Button>
-  //   );
-  // }
-
-  // if (!shouldShowWidget) {
-  //   return null;
-  // }
+  const handleClose = () => {
+    setIsOpen(false);
+  };
 
   return (
     <>
       <Button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className={cn(
           "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg transition-all",
           "bg-emerald-600 hover:bg-emerald-700 text-white",
@@ -151,11 +106,7 @@ export function ChatWidget() {
         )}
       </Button>
 
-      <AcademySidebar
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        // enrollmentsWithAcademies={enrollmentsWithAcademies}
-      />
+      <AcademySidebar isOpen={isOpen} onClose={handleClose} />
     </>
   );
 }

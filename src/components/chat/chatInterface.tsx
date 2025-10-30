@@ -1,180 +1,82 @@
-import type React from "react";
-
-import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Send, Play, Pause } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowLeft, Play, Pause } from "lucide-react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { ScrollArea } from "../ui/scroll-area";
-import { cn } from "../../lib/utils";
-import { useChatContext, type Academy } from "../../provider/ChatProvider";
-import { EmojiPicker } from "./emojiPicker";
-// import { MediaRecorder } from "./mediaRecorder";
+import { useChatContext } from "../../provider/ChatProvider";
+import {
+  Channel,
+  Window,
+  ChannelHeader,
+  MessageList,
+  MessageInput,
+  useChatContext as useStreamChatContext,
+} from "stream-chat-react";
+import "stream-chat-react/dist/css/v2/index.css";
 
 interface ChatInterfaceProps {
-  academy: Academy;
+  academy: any; // Using any since it's EnhancedAcademy from ChatProvider
+  channel: any; // Stream Chat Channel object
   onBack: () => void;
 }
 
-export function ChatInterface({ academy, onBack }: ChatInterfaceProps) {
-  const { getMessagesForAcademy, sendMessage } = useChatContext();
-  const messages = getMessagesForAcademy(academy.id);
+export function ChatInterface({
+  academy,
+  channel,
+  onBack,
+}: ChatInterfaceProps) {
+  const { setCurrentChannel } = useChatContext();
+  const { setActiveChannel } = useStreamChatContext();
 
-  const [newMessage, setNewMessage] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newMessage.trim()) return;
-
-    sendMessage(academy.id, newMessage);
-    setNewMessage("");
+  // Handle back navigation properly
+  const handleBack = () => {
+    setCurrentChannel(null);
+    setActiveChannel(undefined);
+    onBack();
   };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setNewMessage((prev) => prev + emoji);
-  };
-
-  //   const handleRecordingComplete = (
-  //     blob: Blob,
-  //     type: "audio" | "video",
-  //     duration: number
-  //   ) => {
-  //     const url = URL.createObjectURL(blob);
-  //     sendMessage(academy.id, url, type, duration);
-  //   };
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    }).format(date);
-  };
-
-  //   const formatDuration = (seconds: number) => {
-  //     const mins = Math.floor(seconds / 60);
-  //     const secs = seconds % 60;
-  //     return `${mins}:${secs.toString().padStart(2, "0")}`;
-  //   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat header */}
+    <div className="flex flex-col h-full bg-black">
+      {/* Custom Header */}
       <div className="flex items-center gap-3 p-4 border-b border-zinc-800">
         <Button
           variant="ghost"
           size="icon"
-          onClick={onBack}
-          className="text-zinc-400 hover:text-white"
+          onClick={handleBack}
+          className="text-zinc-400 hover:text-white flex-shrink-0"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="text-2xl">{academy.avatar}</div>
+
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <span className="text-white font-bold text-sm">
+            {academy.name?.charAt(0).toUpperCase() || "A"}
+          </span>
+        </div>
+
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white truncate">{academy.name}</h3>
-          <p className="text-sm text-zinc-400">{academy.memberCount} members</p>
+          <h2 className="font-semibold text-white truncate">
+            {academy.name || `Academy ${academy.contract_address?.slice(0, 8)}`}
+          </h2>
+          <p className="text-sm text-zinc-400 truncate">
+            {academy.memberCount || 0} members
+          </p>
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex flex-col",
-                message.isCurrentUser ? "items-end" : "items-start"
-              )}
-            >
-              {!message.isCurrentUser && (
-                <span className="text-xs text-emerald-400 font-medium mb-1 px-1">
-                  {message.userName}
-                </span>
-              )}
-              <div
-                className={cn(
-                  "max-w-[80%] rounded-lg px-4 py-2",
-                  message.isCurrentUser
-                    ? "bg-emerald-600 text-white"
-                    : "bg-zinc-800 text-white"
-                )}
-              >
-                {message.type === "text" && (
-                  <p className="text-sm leading-relaxed">{message.content}</p>
-                )}
-
-                {message.type === "audio" && (
-                  <AudioMessage
-                    url={message.content}
-                    duration={message.duration || 0}
-                  />
-                )}
-
-                {message.type === "video" && (
-                  <VideoMessage
-                    url={message.content}
-                    duration={message.duration || 0}
-                  />
-                )}
-
-                <span className="text-xs opacity-70 mt-1 block">
-                  {formatTime(message.timestamp)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
-
-      {/* Message input */}
-      <form
-        onSubmit={handleSendMessage}
-        className="px-2.5 py-4 border-t border-zinc-800"
-      >
-        <div className="flex gap-2 items-center">
-          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-
-          {/* <MediaRecorder
-            onRecordingComplete={handleRecordingComplete}
-            type="audio"
-          />
-
-          <MediaRecorder
-            onRecordingComplete={handleRecordingComplete}
-            type="video"
-          /> */}
-
-          <div className="grid grid-cols-[1fr_max-content] items-center gap-x-2 flex-1">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="bg-zinc-900 w-full border-zinc-800 text-white placeholder:text-zinc-500 text-base"
-            />
-
-            <Button
-              type="submit"
-              size="icon"
-              className="size-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </form>
+      {/* Stream Chat Components */}
+      <div className="flex-1">
+        <Channel channel={channel}>
+          <Window>
+            <ChannelHeader />
+            <MessageList />
+            <MessageInput />
+          </Window>
+        </Channel>
+      </div>
     </div>
   );
 }
 
+// Keep these components for future use if you want custom audio/video messages
 function AudioMessage({ url, duration }: { url: string; duration: number }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);

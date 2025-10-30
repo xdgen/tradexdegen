@@ -178,7 +178,6 @@ export const AuthProvider = ({ children }: IAuthProvider) => {
       const data = response.data as CheckUserResponse;
 
       if (data.status) {
-        console.log("logging in");
         // Login exisiting user
         await loginUser(publicKey);
       } else {
