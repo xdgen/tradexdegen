@@ -3,11 +3,13 @@ import { useAnchor } from "./useAnchor";
 import { Program, BN, AnchorProvider } from "@coral-xyz/anchor";
 import TradeIDL from "../lib/contracts/trade/trade.json"
 import type { XdegenDemo as XdegenTrade } from "@/lib/contracts/trade/trade";
-import { Connection, Keypair, PublicKey, sendAndConfirmTransaction, Transaction } from "@solana/web3.js";
+import { Connection, Keypair,  PublicKey, Transaction } from "@solana/web3.js";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import supabase from "../components/testToken/database";
+import useEphemeral from "./useEphemeral";
+import { GetCommitmentSignature } from "@magicblock-labs/ephemeral-rollups-sdk"
 
 const network = import.meta.env.VITE_SOLANA_RPC_URL_ARRAY.split(',')[1];
 const mainnetConnection = new Connection(network)
@@ -23,6 +25,7 @@ export type TokenParams = {
 
 export const useTrade = () => {
     const provider = useAnchor();
+    const magicProvider = useEphemeral();
     const program = useMemo(() => {
         if (!provider) return null;
         return new Program(
@@ -30,10 +33,9 @@ export const useTrade = () => {
             provider
         ) as Program<XdegenTrade>;
     }, [provider]);
-
+   
     const programId = useMemo(() => new PublicKey(TradeIDL.address), []);
-
-    const XdegentMint = new PublicKey("3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce");
+    const mainMint = new PublicKey("3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce");
     
     const getMintInfo = async (mint: PublicKey) => {
         if (!provider) throw new Error("Wallet not connected");
@@ -52,8 +54,17 @@ export const useTrade = () => {
             .accountsPartial({
                 admin: provider.wallet.publicKey,
                 config: getConfigPDA(),
-                xdegenMint: XdegentMint
-            }).transaction();
+                xdegenMint: mainMint, 
+                tokenProgram: TOKEN_PROGRAM_ID
+            })
+            .remainingAccounts([
+                {
+                    pubkey: new PublicKey('mAGicPQYBMvcYveUZA5F5UNNwyHvfYh5xkLS2Fr1mev'),
+                    isSigner: false,
+                    isWritable: false
+                }
+            ])
+            .transaction();
 
             transaction.add(initializeTx)
             const { blockhash, lastValidBlockHeight } = await provider.connection.getLatestBlockhash('finalized');
@@ -85,14 +96,41 @@ export const useTrade = () => {
     const delegateConfig = useMutation({
         mutationKey: ['delegate', 'config'],
         mutationFn: async () => {
-            const delegateTx = await program?.methods
+            if (!provider || !provider.wallet.publicKey || !program) {
+                throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
+            }
+
+            let delegateTx = await program.methods
                 .delegateConfig()
                 .accounts({
-                    admin: provider?.wallet.publicKey,
+                    admin: provider.wallet.publicKey,
                     config: getConfigPDA()
                 }).transaction();
 
-            
+            const {
+                value: { blockhash, lastValidBlockHeight }
+            } = await provider.connection.getLatestBlockhashAndContext();
+
+            delegateTx.recentBlockhash = blockhash;
+            delegateTx.feePayer = provider.wallet.publicKey;
+
+            console.log('publickey', provider.wallet.publicKey.toBase58())
+
+            const signedTx = await provider.wallet.signTransaction(delegateTx);
+            const txHash = await provider.connection.sendRawTransaction(
+                signedTx.serialize(),
+                {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed'
+                }
+            );
+            await provider.connection.confirmTransaction({
+                signature: txHash,
+                blockhash: blockhash,
+                lastValidBlockHeight: lastValidBlockHeight
+            }, 'confirmed');
+            console.log(txHash);
+            return txHash
         }
     })
 
@@ -103,12 +141,12 @@ export const useTrade = () => {
                 throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
             }
 
-            const xdegenInfo = await getMintInfo(XdegentMint);
+            const xdegenInfo = await getMintInfo(mainMint);
             amount = amount * Math.pow(10, xdegenInfo.decimals);
 
             const configAccount = await program.account.config.fetch(getConfigPDA());
             const adminTokenAccount = await getAssociatedTokenAddress(
-                XdegentMint,
+                mainMint,
                 configAccount.admin,
             );
             if (!adminTokenAccount) {
@@ -132,7 +170,7 @@ export const useTrade = () => {
             .accountsPartial({
                 admin: configAccount.admin,
                 config: getConfigPDA(),
-                mint: XdegentMint,
+                mint: mainMint,
                 adminTokenAccount,
                 vault: configAccount.vault,
                 tokenProgram: TOKEN_PROGRAM_ID
@@ -162,11 +200,11 @@ export const useTrade = () => {
             buyAmount: number;
             tokenParams: TokenParams;
         }) => {
-            if (!provider || !provider.wallet?.publicKey || !program) {
+            if (!provider || !provider.wallet?.publicKey || !program || !magicProvider) {
                 throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
             }
 
-            const xdegenMintInfo = await getMintInfo(XdegentMint);
+            const xdegenMintInfo = await getMintInfo(mainMint);
             if (!xdegenMintInfo) {
                 throw new Error(`Mint info not found for mint: ${tokenParams.mint}`)
             }
@@ -180,7 +218,7 @@ export const useTrade = () => {
             tokenParams.uri = "https://random.ipfs"
 
             const walletXdegenAta = await getAssociatedTokenAddress(
-                XdegentMint,
+                mainMint,
                 provider.wallet.publicKey
             );
             const adjustedBuyAmount = buyAmount * Math.pow(10, xdegenMintInfo.decimals);
@@ -218,11 +256,11 @@ export const useTrade = () => {
                     tokenParams.supply
                 )
                 .accountsPartial({
-                    buyer: provider.wallet.publicKey,
+                    buyer: magicProvider.wallet.publicKey,
                     admin: configAccount.admin,
                     config: getConfigPDA(),
                     mint: existingMint,
-                    xdegenMint: XdegentMint,
+                    xdegenMint: mainMint,
                     vault: configAccount.vault,
                     buyerXdegenAta: walletXdegenAta,
                     buyerMintAta: buyerMintAta,
@@ -230,13 +268,13 @@ export const useTrade = () => {
                 }).transaction();
 
                 transaction.add(mintTokenTx);
-                const { blockhash, lastValidBlockHeight } = await provider.connection.getLatestBlockhash('finalized');
+                const { blockhash, lastValidBlockHeight } = await magicProvider.connection.getLatestBlockhash('finalized');
                 transaction.recentBlockhash = blockhash;
-                transaction.feePayer = provider.wallet.publicKey;
+                transaction.feePayer = magicProvider.wallet.publicKey;
 
                 // Sign and send transaction
-                const signedTransaction = await provider.wallet.signTransaction(transaction);
-                const txId = await provider.connection.sendRawTransaction(
+                const signedTransaction = await magicProvider.wallet.signTransaction(transaction);
+                const txId = await magicProvider.connection.sendRawTransaction(
                     signedTransaction.serialize(),
                     {
                         skipPreflight: false,
@@ -257,7 +295,6 @@ export const useTrade = () => {
                 const userMintAta = await getAssociatedTokenAddress(newMint.publicKey, provider.wallet.publicKey);
 
                 // Add buy instruction to the same transaction
-                const transaction = new Transaction();
                 const buyTx = await program.methods.buy(tokenParams, new BN(adjustedBuyAmount))
                 .accountsPartial({
                     trader: provider.wallet.publicKey,
@@ -267,32 +304,35 @@ export const useTrade = () => {
                     mint: newMint.publicKey,
                     traderMintAta: userMintAta,
                     metadata: getMetadataPDA(newMint.publicKey),
-                    xdegenMint: XdegentMint,
+                    xdegenMint: mainMint,
                     traderXdegenAta: walletXdegenAta,
                     tokenProgram: TOKEN_PROGRAM_ID
                 }).transaction();
 
-                transaction.add(buyTx);
-                const { blockhash, lastValidBlockHeight } = await provider.connection.getLatestBlockhash('finalized');
-                transaction.recentBlockhash = blockhash;
-                transaction.feePayer = provider.wallet.publicKey;
+                const { blockhash, lastValidBlockHeight } = await provider.connection.getLatestBlockhash();
+                buyTx.recentBlockhash = blockhash;
+                buyTx.feePayer = provider.wallet.publicKey;
 
                 // Sign and send transaction
-                transaction.partialSign(newMint);
-                const signedTransaction = await provider.wallet.signTransaction(transaction);
+                buyTx.partialSign(newMint);
+                const signedTransaction = await magicProvider.wallet.signTransaction(buyTx);
                 const txId = await provider.connection.sendRawTransaction(
-                    signedTransaction.serialize(),
-                    {
-                        skipPreflight: false,
-                        preflightCommitment: 'confirmed'
-                    }
-                );
-                await provider.connection.confirmTransaction({
-                    signature: txId,
-                    blockhash: blockhash,
-                    lastValidBlockHeight: lastValidBlockHeight
-                }, 'confirmed');
-                console.log('your signature', txId)
+                signedTransaction.serialize(),
+                {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed'
+                }
+            );
+            await provider.connection.confirmTransaction({
+                signature: txId,
+                blockhash: blockhash,
+                lastValidBlockHeight: lastValidBlockHeight
+            }, 'confirmed');
+                const txCommitSgn = await GetCommitmentSignature(
+                    txId,
+                    magicProvider.connection
+                )
+                console.log('your signature', txId, txCommitSgn)
 
                 // save to supabase
                 const { error } = await supabase.from('meme')
@@ -300,7 +340,7 @@ export const useTrade = () => {
                     mainMint: tokenParams.mint.toBase58(),
                     mint: newMint.publicKey.toBase58(),
                     name: tokenParams.name,
-                    wallet: provider.wallet.publicKey.toBase58()
+                    wallet: magicProvider.wallet.publicKey.toBase58()
                 });
 
                 if (error) {
@@ -332,7 +372,7 @@ export const useTrade = () => {
             const adjustedBurnAmount = burnAmount * Math.pow(10, 9); // Assuming 9 decimals for Xdegen
 
             const userMintAta = await getAssociatedTokenAddress(mint, provider.wallet.publicKey);
-            const userXdegenAta = await getAssociatedTokenAddress(XdegentMint, provider.wallet.publicKey);
+            const userXdegenAta = await getAssociatedTokenAddress(mainMint, provider.wallet.publicKey);
 
             const transaction = new Transaction();
             const sellTx = await program.methods.sell(
@@ -346,7 +386,7 @@ export const useTrade = () => {
                 vault: configAccount.vault,
                 mint: mint,
                 traderMint: userMintAta,
-                xdegenMint: XdegentMint,
+                xdegenMint: mainMint,
                 traderXdegenAta: userXdegenAta,
                 tokenProgram: TOKEN_PROGRAM_ID
             }).transaction();
@@ -389,17 +429,17 @@ export const useTrade = () => {
             }
 
             const configAccount = await program.account.config.fetch(getConfigPDA());
-            const mintInfo = await getMintInfo(XdegentMint);
+            const mintInfo = await getMintInfo(mainMint);
             const adjustedAmount = amount * Math.pow(10, mintInfo.decimals);
 
-            const adminXdegenAta = await getAssociatedTokenAddress(XdegentMint, configAccount.admin);
+            const adminXdegenAta = await getAssociatedTokenAddress(mainMint, configAccount.admin);
 
             const transaction = new Transaction();
             const withdrawTx = await program.methods.withdraw(new BN(adjustedAmount))
             .accountsPartial({
                 admin: configAccount.admin,
                 config: getConfigPDA(),
-                xdegenMint: XdegentMint,
+                xdegenMint: mainMint,
                 vault: configAccount.vault,
                 adminXdegenAta: adminXdegenAta
             }).instruction();
@@ -430,7 +470,7 @@ export const useTrade = () => {
             }
 
             const configAccount = await program.account.config.fetch(getConfigPDA());
-            const userXdegenAtaOrInstruction = await getOrCreateTokenAccount(provider, XdegentMint, provider.wallet.publicKey);
+            const userXdegenAtaOrInstruction = await getOrCreateTokenAccount(provider, mainMint, provider.wallet.publicKey);
 
             // Build transaction with potential ATA creation + claim
             const transaction = new Transaction();
@@ -442,7 +482,7 @@ export const useTrade = () => {
             } else {
                 // ATA needs to be created, add creation instruction to transaction
                 transaction.add(userXdegenAtaOrInstruction);
-                userXdegenAta = await getAssociatedTokenAddress(XdegentMint, provider.wallet.publicKey);
+                userXdegenAta = await getAssociatedTokenAddress(mainMint, provider.wallet.publicKey);
             }
 
             // Add claim instruction to the same transaction
@@ -450,7 +490,7 @@ export const useTrade = () => {
             .accountsPartial({
                 claimer: provider.wallet.publicKey,
                 config: getConfigPDA(),
-                xdegenMint: XdegentMint,
+                xdegenMint: mainMint,
                 vault: configAccount.vault,
                 claimerXdegenAta: userXdegenAta,
                 tokenProgram: TOKEN_PROGRAM_ID
@@ -497,7 +537,7 @@ export const useTrade = () => {
         return PublicKey.findProgramAddressSync(
             [
                 Buffer.from("vault"),
-                XdegentMint.toBuffer()
+                mainMint.toBuffer()
             ],
             programId
         )[0];
@@ -527,6 +567,7 @@ export const useTrade = () => {
     }
 
     return {
+        delegateConfig,
         initialize,
         deposit,
         buy,

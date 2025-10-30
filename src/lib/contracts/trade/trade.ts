@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/xdegen_demo.json`.
  */
 export type XdegenDemo = {
-  "address": "6hB6CiM1kT9vk58LJbgrBDVQdh47QSH3tq8HxaksguUq",
+  "address": "78FByh4yjYKC1K7DifjJAgefhCJb9t99EwC3wG6C3dwJ",
   "metadata": {
     "name": "xdegenDemo",
     "version": "0.1.0",
@@ -332,7 +332,6 @@ export type XdegenDemo = {
       "accounts": [
         {
           "name": "admin",
-          "writable": true,
           "signer": true,
           "relations": [
             "config"
@@ -362,38 +361,38 @@ export type XdegenDemo = {
             "program": {
               "kind": "const",
               "value": [
-                84,
-                149,
-                19,
-                80,
-                45,
-                136,
-                143,
-                75,
-                148,
-                224,
-                218,
-                211,
-                38,
-                227,
-                24,
+                91,
+                1,
+                59,
+                39,
+                201,
+                153,
+                82,
+                225,
+                107,
+                48,
+                240,
+                25,
+                255,
+                205,
+                117,
+                32,
+                110,
                 6,
+                35,
+                230,
+                3,
+                238,
+                110,
+                177,
                 245,
-                54,
-                188,
-                199,
-                193,
-                45,
-                37,
-                172,
-                119,
-                239,
-                101,
-                115,
-                86,
-                141,
-                42,
-                118
+                15,
+                243,
+                98,
+                27,
+                51,
+                234,
+                61
               ]
             }
           }
@@ -490,7 +489,7 @@ export type XdegenDemo = {
         },
         {
           "name": "ownerProgram",
-          "address": "6hB6CiM1kT9vk58LJbgrBDVQdh47QSH3tq8HxaksguUq"
+          "address": "78FByh4yjYKC1K7DifjJAgefhCJb9t99EwC3wG6C3dwJ"
         },
         {
           "name": "delegationProgram",
