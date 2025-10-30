@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+const STORAGE_CHANGE_EVENT = "localStorageChange";
+
 function useLocalStorageSubscription<T>(
   key: string | null,
   parse?: (value: string) => T,
@@ -22,6 +24,9 @@ function useLocalStorageSubscription<T>(
         valueRef.current = null;
         setValue(null);
       }
+    } else {
+      valueRef.current = null;
+      setValue(null);
     }
   }, [key, parse]);
 
@@ -30,31 +35,36 @@ function useLocalStorageSubscription<T>(
 
     updateValueFromStorage();
 
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === key) {
-        if (event.newValue) {
-          try {
-            const parsed = parse
-              ? parse(event.newValue)
-              : (event.newValue as unknown as T);
-            valueRef.current = parsed;
-            setValue(parsed);
-          } catch {
-            valueRef.current = null;
-            setValue(null);
-          }
-        } else {
-          valueRef.current = null;
-          setValue(null);
-        }
+    const onStorage = (event: StorageEvent | CustomEvent<{ key: string }>) => {
+      const eventKey =
+        event instanceof StorageEvent ? event.key : event.detail.key;
+
+      if (eventKey === key) {
+        updateValueFromStorage();
       }
     };
 
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [key, parse, updateValueFromStorage]);
+    window.addEventListener(STORAGE_CHANGE_EVENT, onStorage as EventListener);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(
+        STORAGE_CHANGE_EVENT,
+        onStorage as EventListener
+      );
+    };
+  }, [key, updateValueFromStorage]);
 
   return [value, setValue, valueRef] as const;
+}
+
+export function triggerLocalStorageChange(key: string) {
+  window.dispatchEvent(
+    new CustomEvent(STORAGE_CHANGE_EVENT, {
+      detail: { key },
+    })
+  );
 }
 
 export default useLocalStorageSubscription;

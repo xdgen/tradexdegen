@@ -1,7 +1,4 @@
-import come1 from '../public/images/com1.jpg'
-import come2 from '../public/images/com2.jpg'
 export type ClassStatus = "Ongoing" | "Upcoming" | "Ended";
-
 
 export interface AcademyClass {
   id?: string;
@@ -20,7 +17,7 @@ export interface AcademyClass {
   mentors: string[] | null;
 }
 
-export const placeholderBanner = 
+export const placeholderBanner =
   "https://ipfs.io/ipfs/bafkreihdwdce7qk7n2z5t2x5lq5p4tq5n2zzzzplaceholder";
 
 export const classes: AcademyClass[] = [];
@@ -28,5 +25,3 @@ export const classes: AcademyClass[] = [];
 export function getClassById(id: string): AcademyClass | undefined {
   return classes.find((c) => c.id === id);
 }
-
-

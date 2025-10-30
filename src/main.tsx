@@ -9,7 +9,7 @@ import SolanaWalletProvider from "./provider/WalletProvider ";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { UserRoleProvider } from "./provider/UserRoleProvider";
+import { AuthProvider } from "./provider/AuthProvider";
 
 const router = createBrowserRouter(appRoutes);
 
@@ -45,7 +45,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <SolanaWalletProvider>
-        <UserRoleProvider>
+        <AuthProvider>
           <RouterProvider router={router} />
           <Toaster position="top-right" />
           {isSmallScreen && (
@@ -73,7 +73,7 @@ const App = () => {
               experience.
             </div>
           )}
-        </UserRoleProvider>
+        </AuthProvider>
       </SolanaWalletProvider>
     </QueryClientProvider>
   );

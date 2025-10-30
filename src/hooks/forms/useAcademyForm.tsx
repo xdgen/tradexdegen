@@ -1,7 +1,6 @@
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useQuery } from "@tanstack/react-query";
 
 import {
   createAcademySchema,
@@ -13,14 +12,16 @@ import {
 } from "../../lib/schemas/community.schema.ts";
 import { sendSol } from "../../lib/services/solana.ts";
 import { toast } from "sonner";
-import { dapp } from "../../lib/services/dialect.ts";
+import { dapp, initializeDapp } from "../../lib/services/dialect.ts";
 import { Plan, useAcademy } from "../useAcademy.tsx";
-import { useCheckUserRole } from "../../provider/UserRoleProvider.tsx";
-import { axiosAsync } from "../../lib/axios.ts";
+import { useAuth } from "../../provider/AuthProvider.tsx";
 import { useMemo } from "react";
+import { triggerLocalStorageChange } from "../useLocalStorageSubscription.tsx";
+import { PublicKey } from "@solana/web3.js";
+import { useQueries } from "@tanstack/react-query";
 
 export function useCreateAcademyForm() {
-  const { authData } = useCheckUserRole();
+  const { authData } = useAuth();
   const form = useForm<CreateAcademyInput>({
     resolver: zodResolver(createAcademySchema),
     mode: "all",
@@ -64,6 +65,7 @@ export function useCreateAcademyForm() {
       callback();
 
       localStorage.setItem(`academy-${authData?.user.id}`, "true");
+      triggerLocalStorageChange(`academy-${authData?.user.id}`);
       toast.success(`${data.title} Academy created successfully`);
       form.reset();
     } catch (err) {
@@ -102,7 +104,6 @@ export function useAcademyApplication() {
         payload.recipientAddress,
         payload.amount
       );
-      console.log(data);
 
       toast.success(`Payment confirmed! Signature: ${signature}`);
 
@@ -133,28 +134,84 @@ export function useStudentRegistration() {
 }
 
 export function useSendAcademyNotification() {
-  const { authData } = useCheckUserRole();
+  const { publicKey } = useWallet();
+  const { getAcademyEnrollments, getAcademyPDA, program, provider } =
+    useAcademy();
+
+  // Get Academy PDA from the authenticated user's wallet
+  const academyPDA = useMemo(() => {
+    if (!publicKey) return null;
+
+    try {
+      return getAcademyPDA(new PublicKey(publicKey));
+    } catch (error) {
+      console.error("Error creating academy PDA:", error);
+      return null;
+    }
+  }, [publicKey]);
+
+  // Fetch enrollments directly from the contract
   const {
     data: enrollments,
-    isLoading,
+    isLoading: isLoadingEnrollments,
     error,
-  } = useQuery<APIResponse<EnrollmentWithRelations[]>>({
-    queryKey: ["academy-enrollments", authData?.user.id],
-    queryFn: async () => {
-      try {
-        if (!authData?.user.id) return null;
+  } = getAcademyEnrollments(academyPDA!);
 
-        const response = await axiosAsync(
-          `/academies/${authData?.user.id}/enrollments`
-        );
-        return response.data;
-      } catch {
-        return null;
+  const studentPDAs = useMemo(() => {
+    if (!enrollments || enrollments.length === 0) return [];
+
+    const uniquePDAs = new Set<string>();
+    const pdas: PublicKey[] = [];
+
+    enrollments.forEach((enrollment) => {
+      if (enrollment.account.student) {
+        const pdaString = enrollment.account.student.toBase58();
+        if (!uniquePDAs.has(pdaString)) {
+          uniquePDAs.add(pdaString);
+          pdas.push(enrollment.account.student);
+        }
       }
-    },
-    enabled: !!authData?.user.id,
-    retry: 2,
+    });
+    return pdas;
+  }, [enrollments]);
+
+  // Fetch student accounts directly using program (not the hook)
+  const studentQueries = useQueries({
+    queries: studentPDAs.map((pda) => ({
+      queryKey: ["student-account", pda.toBase58()],
+      queryFn: async () => {
+        if (!program || !provider?.wallet?.publicKey) {
+          throw new Error("Program not initialized or wallet not connected");
+        }
+
+        try {
+          const studentAccount = await program.account.student.fetch(pda);
+
+          return {
+            pda: pda.toBase58(),
+            studentAccount,
+          };
+        } catch (error) {
+          console.error(
+            `Error fetching student account for ${pda.toBase58()}:`,
+            error
+          );
+          return {
+            pda: pda.toBase58(),
+            studentAccount: null,
+            wallet: pda.toBase58(),
+            error,
+          };
+        }
+      },
+      enabled:
+        !!program && !!provider?.wallet?.publicKey && studentPDAs.length > 0,
+      staleTime: 1000 * 60 * 5, // 5 minutes cache
+    })),
   });
+
+  const isLoadingStudents = studentQueries.some((query) => query.isLoading);
+  const isLoading = isLoadingEnrollments || isLoadingStudents;
 
   const form = useForm<SendAcademyNotificationType>({
     resolver: zodResolver(sendAcademyNotificationSchema),
@@ -165,15 +222,26 @@ export function useSendAcademyNotification() {
     },
   });
 
-  const recipients = useMemo(
-    () =>
-      enrollments?.data
-        ? (enrollments.data
-            .map((data) => data.student?.user?.wallet)
-            .filter(Boolean) as string[])
-        : ["6eYUsVivEeKAsf9xb3QeN9MDUP54dgZuyKLk176WbwDM"],
-    [enrollments]
-  );
+  // Extract valid wallet addresses from enrollments
+  const recipients = useMemo(() => {
+    if (!enrollments || enrollments.length === 0) {
+      return [];
+    }
+
+    const validWallets = studentQueries
+      .map((query) => {
+        if (query.data?.studentAccount?.owner.toBase58()) {
+          return query.data?.studentAccount?.owner.toBase58();
+        }
+        return null;
+      })
+      .filter((wallet): wallet is string => !!wallet);
+
+    // Remove duplicates
+    const uniqueWallets = Array.from(new Set(validWallets));
+
+    return uniqueWallets;
+  }, [enrollments]);
 
   const onSubmit: SubmitHandler<SendAcademyNotificationType> = async (data) => {
     if (!recipients.length) {
@@ -181,12 +249,25 @@ export function useSendAcademyNotification() {
       return;
     }
 
+    if (!dapp) {
+      await initializeDapp();
+    }
+
+    if (!dapp) {
+      toast.error("Failed to initialize Dialect. Please try again.");
+      return;
+    }
+
     try {
-      dapp?.messages.send({
+      await dapp?.messages.send({
         ...data,
         recipients,
       });
-      toast.success("Notification sent to students");
+      toast.success(
+        `Notification sent to ${recipients.length} student${
+          recipients.length !== 1 ? "s" : ""
+        }`
+      );
       form.reset();
     } catch (err: any) {
       toast.error(err);
@@ -196,7 +277,8 @@ export function useSendAcademyNotification() {
   return {
     form,
     isLoadingEnrollments: isLoading,
-    enrollmentError: !!error,
+    enrollmentError: error,
+    recipients,
     onSubmit,
   };
 }

@@ -71,6 +71,7 @@ interface CheckUserResponse {
   wallet: string;
 }
 
-interface APIResponse<T> extends Omit<CheckUserResponse, "wallet"> {
+interface APIResponse<T> extends Omit<CheckUserResponse, "wallet" | status> {
+  success: boolean;
   data: T;
 }

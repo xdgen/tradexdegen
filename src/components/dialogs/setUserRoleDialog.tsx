@@ -1,6 +1,6 @@
 import { cn } from "../../lib/utils";
 import { useUserRole } from "../../hooks/forms/useUserRole";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { useAuth } from "../../provider/AuthProvider";
 import {
   Dialog,
   DialogContent,
@@ -30,12 +30,12 @@ const SetUserRoleDialog = ({
   isOpen: boolean;
   closeDialog: () => void;
 }) => {
-  const { updateUserRole } = useCheckUserRole();
+  const { registerUserRole } = useAuth();
   const { form, onSubmit } = useUserRole();
   const role = form.watch("role");
 
   const handleSumbit = () => {
-    updateUserRole(role.toUpperCase() as Role);
+    registerUserRole(role.toUpperCase() as Role);
     closeDialog();
   };
 

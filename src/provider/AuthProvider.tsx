@@ -10,9 +10,11 @@ import React, {
 import { axios } from "../lib/axios";
 import { toast } from "sonner";
 import { PublicKey } from "@solana/web3.js";
-import useLocalStorageSubscription from "../hooks/useLocalStorageSubscription";
+import useLocalStorageSubscription, {
+  triggerLocalStorageChange,
+} from "../hooks/useLocalStorageSubscription";
 
-interface IUserRoleContext {
+interface IAuthContext {
   isCheckingUserRole: boolean;
   isRoleDialogOpen: boolean;
   closeRoleDialog: () => void;
@@ -20,17 +22,17 @@ interface IUserRoleContext {
   closeStudentDialog: () => void;
   role: Role | null;
   authData: AuthResponse | null;
-  updateUserRole: (role: Role) => void;
+  registerUserRole: (role: Role) => void;
   isAuthenticated: boolean;
 }
 
-interface IUserRoleProvider {
+interface IAuthProvider {
   children: React.ReactNode;
 }
 
-const UserRoleContext = createContext<IUserRoleContext | undefined>(undefined);
+const AuthContext = createContext<IAuthContext | undefined>(undefined);
 
-export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
+export const AuthProvider = ({ children }: IAuthProvider) => {
   const [isCheckingUserRole, setIsCheckingUserRole] = useState(false);
   const { publicKey, connected } = useWallet();
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -70,8 +72,8 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
     localStorage.setItem("authData", JSON.stringify(data));
   };
 
-  // Update User Role
-  const updateUserRole = async (newRole: Role) => {
+  // Register User Role
+  const registerUserRole = async (newRole: Role) => {
     if (!publicKey || !newRole) return;
 
     try {
@@ -94,6 +96,35 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
     }
   };
 
+  // Login for existing users
+  const loginUser = async (publicKey: PublicKey) => {
+    try {
+      const response = await axios.post("/auth/login", {
+        wallet: publicKey.toString(),
+      });
+
+      const data = response.data as APIResponse<AuthResponse>;
+
+      if (data.success) {
+        updateAuthData(data.data, publicKey);
+        setRole(data.data.user.role as Role);
+        roleRef.current = data.data.user.role as Role;
+
+        if (data.data.user.role === "ACADEMY") {
+          localStorage.setItem(`academy-${data.data.user.id}`, "true");
+          triggerLocalStorageChange(`academy-${data.data.user.id}`);
+        }
+
+        toast.success(data.message || "Login successful");
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      return false;
+    }
+  };
+
   const checkIfWalletExist = useCallback(async () => {
     if (!connected || !publicKey) return;
 
@@ -108,7 +139,11 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
       const response = await axios(`/auth/check-wallet/${publicKey}`);
       const data = response.data as CheckUserResponse;
 
-      if (!data.status) {
+      if (data.status) {
+        console.log("logging in");
+        // Login exisiting user
+        await loginUser(publicKey);
+      } else {
         setIsRoleDialogOpen(true);
       }
     } catch (err) {
@@ -159,7 +194,7 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
   const closeStudentDialog = () => setIsStudentDialogOpen(false);
 
   return (
-    <UserRoleContext.Provider
+    <AuthContext.Provider
       value={{
         isCheckingUserRole,
         isRoleDialogOpen,
@@ -169,18 +204,18 @@ export const UserRoleProvider = ({ children }: IUserRoleProvider) => {
         isAuthenticated,
         role,
         isStudentDialogOpen,
-        updateUserRole,
+        registerUserRole,
       }}
     >
       {children}
-    </UserRoleContext.Provider>
+    </AuthContext.Provider>
   );
 };
 
-export const useCheckUserRole = () => {
-  const context = useContext(UserRoleContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useCheckUserRole must be used within a UserRoleProvider");
+    throw new Error("useAuth must be used within a UserRoleProvider");
   }
   return context;
 };

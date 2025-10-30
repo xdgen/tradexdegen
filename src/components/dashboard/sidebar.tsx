@@ -11,7 +11,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 import WalletIcon from "@mui/icons-material/Wallet";
 import InsightsIcon from "@mui/icons-material/Insights";
 import AnalyticsIcon from "@mui/icons-material/Analytics";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { useAuth } from "../../provider/AuthProvider";
 
 // Define the route type
 type Route = {
@@ -82,7 +82,7 @@ const routes: Route[] = [
 ];
 
 const Sidebar: React.FC = () => {
-  const { isAuthenticated, role } = useCheckUserRole();
+  const { isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const modifiedRoutes = useMemo(() => {

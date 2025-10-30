@@ -1,8 +1,8 @@
 import React, { Suspense } from "react";
 import Sidebar from "./sidebar";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { useAuth } from "../../provider/AuthProvider";
 import { ChatProvider } from "../../provider/ChatProvider";
-// import { ChatWidget } from "../chat/chatWidget";
+import { ChatWidget } from "../chat/chatWidget";
 import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
 import StudentAcademyRegisterDialog from "../dialogs/studentAcademyRegistrationDialog";
 
@@ -16,7 +16,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
     closeRoleDialog,
     isStudentDialogOpen,
     closeStudentDialog,
-  } = useCheckUserRole();
+  } = useAuth();
 
   return (
     <ChatProvider>
@@ -31,7 +31,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
         </main>
       </div>
 
-      {/* <ChatWidget /> */}
+      <ChatWidget />
 
       {/* User Role Form */}
       <SetUserRoleDialog
