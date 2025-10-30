@@ -396,6 +396,7 @@ export const useAcademy = () => {
       };
     },
     onSuccess: async (data) => {
+      console.log(data);
       try {
         const response = await axiosAsync.post("/students/enroll", {
           academyContract: data.academyPDA.toBase58(),
