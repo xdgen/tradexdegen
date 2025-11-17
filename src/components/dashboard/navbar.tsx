@@ -4,21 +4,23 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletBar } from "./walletBar";
 import CommunityRegisterDialog from "../dialogs/communityRegisterDialog";
 import { DialectSolanaNotificationsButton } from "../Dialect";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { useAuth } from "../../provider/AuthProvider";
 import useLocalStorageSubscription from "../../hooks/useLocalStorageSubscription";
 import { Loader2 } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const Navbar: React.FC = () => {
-  const { role, authData, isCheckingUserRole } = useCheckUserRole();
+  const { connected } = useWallet();
+  const { role, authData, isCheckingUserRole } = useAuth();
   const [academyCreated] = useLocalStorageSubscription(
     `academy-${authData?.user.id}`
   );
 
   const isAcademy = useMemo(() => {
-    if (!role) null;
+    if (!role || !connected) null;
 
     return role === "ACADEMY";
-  }, [role]);
+  }, [role, connected]);
 
   return (
     <nav className="text-white w-full flex items-center justify-between p-4 shadow-md bg-secondary border-b border-gray-100/10">

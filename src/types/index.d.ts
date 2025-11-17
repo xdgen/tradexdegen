@@ -11,13 +11,12 @@ interface AcademyStats {
   totalEarnings: number;
 }
 
-interface Academy {
+interface User {
   id: string;
-  academyStreamId: string;
-  contract_address: string;
+  wallet: string;
+  role: Role;
   created_at: Date;
   updated_at: Date;
-  userId: string;
 }
 
 interface Token {
@@ -27,12 +26,38 @@ interface Token {
   refreshTokenExpiresAt: Date;
 }
 
-interface User {
+interface Student {
   id: string;
-  wallet: string;
-  role: Role;
+  userId: string;
+  contract_address: string;
+  streamId: string | null;
   created_at: Date;
   updated_at: Date;
+}
+
+interface Academy {
+  id: string;
+  streamId: string;
+  contract_address: string;
+  created_at: Date;
+  updated_at: Date;
+  userId: string;
+}
+
+type StudentWithUser = Student & { user?: User };
+
+interface Enrollment {
+  id: string;
+  academyId: string;
+  studentId: string;
+  contract_address: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface EnrollmentWithRelations extends Enrollment {
+  student?: StudentWithUser;
+  academy?: Academy;
 }
 
 interface AuthResponse {
@@ -46,6 +71,21 @@ interface CheckUserResponse {
   wallet: string;
 }
 
-interface APIResponse<T> extends Omit<CheckUserResponse, "wallet"> {
+interface APIResponse<T> extends Omit<CheckUserResponse, "wallet" | "status"> {
+  success: boolean;
   data: T;
+}
+
+interface UserProfile {
+  id: string;
+  wallet: string;
+  role: "STUDENT" | "ACADEMY";
+  academy: any | null;
+  student: Student | null;
+  streamToken: string;
+}
+
+interface StudentAcademies {
+  id: string;
+  enrollments: EnrollmentWithRelations[];
 }

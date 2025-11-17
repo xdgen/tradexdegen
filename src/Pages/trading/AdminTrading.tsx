@@ -45,7 +45,7 @@ const AdminTrading: React.FC = () => {
         );
     }
 
-    const { initialize, deposit, withdraw, delegateConfig } = tradeHook;
+    const { initialize, deposit, withdraw } = tradeHook;
 
     const handleInitialize = async () => {
         try {
@@ -70,13 +70,6 @@ const AdminTrading: React.FC = () => {
         }
     };
 
-    const handleDelegation = async () => {
-        try {
-            await delegateConfig.mutateAsync();
-        } catch (error) {
-            console.error('Delegation error:', error)
-        }
-    }
 
     const handleWithdraw = async () => {
         const amount = parseFloat(withdrawAmount);
@@ -161,32 +154,6 @@ const AdminTrading: React.FC = () => {
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            Delegate Config
-                        </CardTitle>
-                        <CardDescription>
-                            Deposit to ER
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button
-                            onClick={handleDelegation}
-                            disabled={delegateConfig.isPending}
-                            className="w-full"
-                        >
-                            {delegateConfig.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Delegating...
-                                </>
-                            ) : (
-                                "Deposit Tokens"
-                            )}
-                        </Button>
-                    </CardContent>
-                </Card>
 
                 {/* Deposit Card */}
                 <Card className="xl:col-span-1">

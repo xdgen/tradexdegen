@@ -1,38 +1,70 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
-
-import { ClassStatus, AcademyClass } from "../../data";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
-import { useAcademy } from "../../hooks/useAcademy";
+import { useCallback } from "react";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { useEffect, useState } from "react";
 
-function markdownToHtml(md: string): string {
-  let html = md.trim();
-  html = html.replace(
-    /^>\s?(.*)$/gm,
-    '<blockquote class="border-l-2 border-fuchsia-400/40 pl-3 text-gray-300">$1</blockquote>'
+import { AcademyClass } from "../../data";
+import { useAuth } from "../../provider/AuthProvider";
+import { useAcademy } from "../../hooks/useAcademy";
+import { compareDate, markdownToHtml } from "../../lib/utils";
+
+function DetailsSkeleton() {
+  return (
+    <div className="min-h-screen bg-background text-white">
+      {/* Banner Skeleton */}
+      <div className="w-full h-56 sm:h-72 md:h-80 lg:h-96 bg-zinc-800 animate-pulse" />
+
+      {/* Content Skeleton */}
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mt-10 relative">
+        <div className="rounded-xl border border-white/10 bg-secondary/60 backdrop-blur p-4 sm:p-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="h-8 bg-zinc-700 rounded w-3/4 animate-pulse" />
+            <div className="flex gap-2">
+              <div className="h-6 bg-zinc-700 rounded w-20 animate-pulse" />
+              <div className="h-6 bg-zinc-700 rounded w-20 animate-pulse" />
+            </div>
+          </div>
+
+          {/* Facilitator Skeleton */}
+          <div className="mt-2 h-4 bg-zinc-700 rounded w-1/2 animate-pulse" />
+
+          {/* Description Skeleton */}
+          <div className="mt-4 space-y-2">
+            <div className="h-4 bg-zinc-700 rounded w-full animate-pulse" />
+            <div className="h-4 bg-zinc-700 rounded w-5/6 animate-pulse" />
+            <div className="h-4 bg-zinc-700 rounded w-4/6 animate-pulse" />
+          </div>
+
+          {/* Stats Skeleton */}
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-lg border border-white/10 p-3">
+                <div className="h-4 bg-zinc-700 rounded w-3/4 mx-auto animate-pulse mb-2" />
+                <div className="h-6 bg-zinc-700 rounded w-1/2 mx-auto animate-pulse" />
+              </div>
+            ))}
+          </div>
+
+          {/* Button Skeleton */}
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="h-10 bg-zinc-700 rounded w-24 animate-pulse" />
+            <div className="h-10 bg-zinc-700 rounded w-40 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
-  html = html.replace(/^\-\s(.*)$/gm, "<li>$1</li>");
-  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
-  html = html.replace(/\n\n/g, "</p><p>");
-  html = `<p>${html}</p>`;
-  html = html.replace(
-    /(<li>.*<\/li>\s*)+/gs,
-    (m) => `<ul class="list-disc list-inside space-y-1">${m}</ul>`
-  );
-  return html;
 }
 
 export default function DetailsPage() {
   const { connected, publicKey } = useWallet();
-  const { role } = useCheckUserRole();
+  const { role } = useAuth();
   const params = useParams();
   const navigate = useNavigate();
-  const [item, setItem] = useState<AcademyClass | null>(null);
-  const { getAcademyByPDA, enroll, getStudentPDA } = useAcademy();
+  const { getAcademyByPDA, enroll, getStudentPDA, getIsStudentEnrolled } =
+    useAcademy();
 
   // Early return if no valid ID
   if (!params.id || params.id === "undefined") {
@@ -51,149 +83,139 @@ export default function DetailsPage() {
     );
   }
 
-  // Get academy data by PDA - simplified approach
   const academyPDA = new PublicKey(params.id);
+  const studentPDA = publicKey ? getStudentPDA(publicKey) : null;
+
   const { data: academyData, isLoading: isFetchingAcademyData } =
     getAcademyByPDA(academyPDA);
 
-  useEffect(() => {
-    if (academyData) {
-      const data = {
-        id: academyPDA!.toBase58(),
-        pda: academyPDA!.toBase58(),
-        owner: academyData.owner.toBase58(),
-        title: academyData.title,
-        description: academyData.description,
-        banner: academyData.banner,
-        facilitator: academyData.tutors[0] || "Unknown",
-        isPaid: academyData.fee ? true : false,
-        price: academyData.fee
-          ? academyData.fee.toNumber() / LAMPORTS_PER_SOL
-          : undefined,
-        startDate: new Date(
-          academyData.startDate.toNumber() * 1000
-        ).toISOString(),
-        endDate: new Date(academyData.endDate.toNumber() * 1000).toISOString(),
-        status: compareDate(
-          academyData.startDate.toNumber(),
-          academyData.endDate.toNumber()
-        ),
-        students: academyData.totalStudents.toNumber(),
-        mentors: academyData.tutors.length > 0 ? academyData.tutors : null,
-      };
-      setItem(data);
-    }
-  }, [academyData]);
+  // Check if student is already enrolled - only enable if connected as student
+  const { data: isEnrolled, isLoading: isCheckingEnrollment } =
+    getIsStudentEnrolled(academyPDA, studentPDA!);
 
-  function compareDate(startTime: number, endTime: number): ClassStatus {
-    const currentDate = new Date();
-    const startDate = new Date(startTime * 1000);
-    const endDate = new Date(endTime * 1000);
+  // Memoize the item creation to prevent unnecessary re-renders
+  const item = useCallback((): AcademyClass | null => {
+    if (!academyData) return null;
 
-    if (currentDate < startDate) {
-      return "Upcoming";
-    } else if (currentDate >= startDate && currentDate <= endDate) {
-      return "Ongoing";
-    } else {
-      return "Ended";
-    }
+    return {
+      id: academyPDA.toBase58(),
+      pda: academyPDA.toBase58(),
+      owner: academyData.owner.toBase58(),
+      title: academyData.title,
+      description: academyData.description,
+      banner: academyData.banner,
+      facilitator: academyData.tutors[0] || "Unknown",
+      isPaid: !!academyData.fee,
+      price: academyData.fee
+        ? academyData.fee.toNumber() / LAMPORTS_PER_SOL
+        : undefined,
+      startDate: new Date(
+        academyData.startDate.toNumber() * 1000
+      ).toISOString(),
+      endDate: new Date(academyData.endDate.toNumber() * 1000).toISOString(),
+      status: compareDate(
+        academyData.startDate.toNumber(),
+        academyData.endDate.toNumber()
+      ),
+      students: academyData.totalStudents.toNumber(),
+      mentors: academyData.tutors.length > 0 ? academyData.tutors : null,
+    };
+  }, [academyData, academyPDA]);
+
+  const currentItem = item();
+
+  // Show skeleton while loading
+  if (isFetchingAcademyData || !currentItem) {
+    return <DetailsSkeleton />;
   }
 
-  let content;
+  const isEnded = currentItem.status === "Ended";
+  const isOngoing = currentItem.status === "Ongoing";
 
-  if (!item || !params.id) {
-    return (
-      <div className="min-h-screen bg-background text-white flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-gray-400">
-            {params.id
-              ? "Academy not found or still loading..."
-              : "Invalid academy ID."}
-          </p>
-          <Link
-            to="/explorer"
-            className="mt-3 inline-block text-fuchsia-300 hover:text-fuchsia-200 underline"
-          >
-            Back to Explorer
-          </Link>
+  const handleEnroll = () => {
+    if (!publicKey) return;
+
+    enroll.mutate({
+      studentPDA: getStudentPDA(publicKey),
+      academyPDA: academyPDA,
+    });
+  };
+
+  const renderActionButton = () => {
+    if (!connected) {
+      return (
+        <div className="flex flex-col items-center">
+          <WalletMultiButton
+            style={{
+              margin: "1px 0",
+              padding: "2px 15px",
+              borderRadius: "0.5rem",
+              backgroundColor: "#0E0E0F",
+              fontSize: "14px",
+              color: "white",
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+            }}
+          />
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  const isEnded = item.status === "Ended";
-  const isOngoing = item.status === "Ongoing";
-
-  if (isFetchingAcademyData) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="w-full h-56 sm:h-72 md:h-80 lg:h-96 bg-zinc-900 animate-pulse" />
-
-        <div className="mx-auto h-80 max-w-5xl px-4 sm:px-6 lg:px-8 bg-zinc-900 animate-pulse" />
-      </div>
-    );
-  }
-
-  if (connected) {
     if (role === "STUDENT") {
-      if (isEnded) {
-        content = (
+      // Show loading state while checking enrollment
+      if (isCheckingEnrollment) {
+        return (
           <button
-            className="px-4 py-2 rounded-lg font-semibold transition bg-gray-700 text-gray-400 cursor-not-allowed hover:brightness-110"
-            aria-label="Register for class"
-            disabled={true}
+            className="px-4 py-2 rounded-lg font-semibold transition bg-gray-600 text-gray-300 cursor-not-allowed"
+            disabled
+          >
+            Checking enrollment...
+          </button>
+        );
+      }
+
+      // If already enrolled, show enrolled status
+      if (isEnrolled) {
+        return (
+          <button
+            className="px-4 h-9 rounded-lg font-semibold transition bg-emerald-600 text-white cursor-default"
+            disabled
+          >
+            ✓ Enrolled
+          </button>
+        );
+      }
+
+      if (isEnded) {
+        return (
+          <button
+            className="px-4 py-2 rounded-lg font-semibold transition bg-gray-700 text-gray-400 cursor-not-allowed"
+            disabled
           >
             Class Ended
           </button>
         );
-      } else if (isOngoing) {
-        content = null;
-      } else {
-        content = (
+      } else if (!isOngoing) {
+        return (
           <button
-            onClick={() => {
-              if (academyPDA) {
-                enroll.mutate({
-                  studentPDA: getStudentPDA(publicKey!),
-                  academyPDA: academyPDA,
-                });
-              }
-            }}
+            onClick={handleEnroll}
             disabled={enroll.isPending}
-            className="px-4 py-2 rounded-lg font-semibold transition bg-fuchsia-600 hover:bg-fuchsia-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Register for class"
+            className="px-4 py-2 rounded-lg font-semibold transition bg-fuchsia-600 hover:bg-fuchsia-700 text-white disabled:opacity-50"
           >
             {enroll.isPending ? "Registering..." : "Register for Class"}
           </button>
         );
       }
-    } else {
-      content = null;
     }
-  } else {
-    content = (
-      <div className="flex flex-col items-center">
-        <WalletMultiButton
-          style={{
-            margin: "1px 0",
-            padding: "2px 15px",
-            borderRadius: "0.5rem",
-            backgroundColor: "#0E0E0F",
-            fontSize: "14px",
-            color: "white",
-            border: "1px solid rgba(255, 255, 255, 0.4)",
-          }}
-        />
-      </div>
-    );
-  }
+
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-background text-white">
+      {/* Banner */}
       <div className="w-full h-56 sm:h-72 md:h-80 lg:h-96 relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.banner}
+          src={currentItem.banner}
           alt="class banner"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src =
@@ -204,83 +226,89 @@ export default function DetailsPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
       </div>
 
+      {/* Content */}
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mt-10 relative">
         <div className="rounded-xl border border-white/10 bg-secondary/60 backdrop-blur p-4 sm:p-6">
+          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold">
-              {item.title}
+              {currentItem.title}
             </h1>
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs px-2 py-0.5 rounded-full border ${
-                  item.isPaid
+                  currentItem.isPaid
                     ? "text-amber-300 border-amber-400/40"
                     : "text-emerald-300 border-emerald-400/40"
                 }`}
               >
-                {item.isPaid ? `Paid • ${item.price} SOL` : "Free"}
+                {currentItem.isPaid
+                  ? `Paid • ${currentItem.price} SOL`
+                  : "Free"}
               </span>
               <span
                 className={`text-xs px-2 py-0.5 rounded-full border ${
-                  item.status === "Ongoing"
+                  currentItem.status === "Ongoing"
                     ? "text-emerald-400 border-emerald-500/30"
-                    : item.status === "Upcoming"
+                    : currentItem.status === "Upcoming"
                     ? "text-fuchsia-300 border-fuchsia-500/30"
                     : "text-gray-400 border-gray-500/20"
                 }`}
               >
-                {item.status}
+                {currentItem.status}
               </span>
             </div>
           </div>
 
           <p className="mt-2 text-sm text-gray-400">
-            Facilitator: {item.facilitator}
+            Facilitator: {currentItem.facilitator}
           </p>
 
+          {/* Description */}
           <div
             className="mt-4 prose prose-invert max-w-none text-gray-200"
             dangerouslySetInnerHTML={{
-              __html: markdownToHtml(item.description),
+              __html: markdownToHtml(currentItem.description),
             }}
           />
 
+          {/* Stats */}
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="rounded-lg border border-white/10 p-3">
               <div className="text-xs text-gray-400">Students</div>
               <div className="text-lg font-bold">
-                {item.students.toLocaleString()}
+                {currentItem.students.toLocaleString()}
               </div>
             </div>
             <div className="rounded-lg border border-white/10 p-3">
               <div className="text-xs text-gray-400">Mentors</div>
               <div className="text-lg font-bold">
-                {item.mentors ? item.mentors.length : 0}
+                {currentItem.mentors ? currentItem.mentors.length : 0}
               </div>
             </div>
             <div className="rounded-lg border border-white/10 p-3">
               <div className="text-xs text-gray-400">Starts</div>
               <div className="text-lg font-bold">
-                {new Date(item.startDate).toLocaleDateString()}
+                {new Date(currentItem.startDate).toLocaleDateString()}
               </div>
             </div>
             <div className="rounded-lg border border-white/10 p-3">
               <div className="text-xs text-gray-400">Ends</div>
               <div className="text-lg font-bold">
-                {new Date(item.endDate).toLocaleDateString()}
+                {new Date(currentItem.endDate).toLocaleDateString()}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          {/* Actions */}
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
             <button
               onClick={() => navigate(-1)}
               className="px-4 py-2 rounded-lg border border-white/10 text-gray-200 hover:bg-white/5 transition"
-              aria-label="Go back"
             >
               ← Back
             </button>
-            {content}
+            {renderActionButton()}
           </div>
         </div>
       </div>

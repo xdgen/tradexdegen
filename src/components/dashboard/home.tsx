@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import Failed from "../../../public/images/fail.svg";
 import { supabase } from "../../lib/services/supabase";
 import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
-import { useCheckUserRole } from "../../provider/UserRoleProvider";
+import { useAuth } from "../../provider/AuthProvider";
 import StudentAcademyRegisterDialog from "../dialogs/studentAcademyRegistrationDialog";
 
 export default function HomeView() {

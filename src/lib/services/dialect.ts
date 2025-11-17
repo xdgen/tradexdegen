@@ -15,7 +15,7 @@ const keypair = decodeBase58Key(base58Key);
 
 const DAPP_ADDRESS: DialectCloudEnvironment =
   import.meta.env.VITE_DIALECT_DAPP_ADDRESS ??
-  "UK7UjLY4zfQKBLv2hsbZG1oFxQYgDcQPhFPz5SUKJBS";
+  "2nwjR37ZNUUD78rESvGXXV9QnMMBTDGQLTBKiBxepEdg";
 const environment = import.meta.env.VITE_PUBLIC_ENVIRONMENT ?? "production";
 
 const dialectSolanaSDK: DialectSdk<Solana> = Dialect.sdk(
@@ -45,4 +45,11 @@ const initializeDapp = async () => {
 // Initialize immediately
 initializeDapp();
 
-export { keypair, DAPP_ADDRESS, dapp, environment, dialectSolanaSDK, initializeDapp };
+export {
+  keypair,
+  DAPP_ADDRESS,
+  dapp,
+  environment,
+  dialectSolanaSDK,
+  initializeDapp,
+};

@@ -2,241 +2,362 @@ import {
   createContext,
   useContext,
   useState,
-  useCallback,
   type ReactNode,
+  useEffect,
+  useCallback,
+  useMemo,
 } from "react";
+import { Channel, LocalMessage, StreamChat } from "stream-chat";
+import { useAuth } from "./AuthProvider";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { axiosAsync } from "../lib/axios";
 
-export interface Message {
-  id: string;
-  academyId: string;
-  userId: string;
-  userName: string;
-  content: string;
-  type: "text" | "audio" | "video";
-  timestamp: Date;
-  isCurrentUser: boolean;
-  duration?: number; // For audio/video messages
-}
-
-export interface Academy {
-  id: string;
-  name: string;
-  memberCount: number;
-  avatar: string;
+interface EnhancedAcademy extends Academy {
+  memberCount?: number;
+  unreadCount?: number;
+  lastMessage?: LocalMessage;
+  messageCount?: number;
+  name?: string;
 }
 
 interface ChatContextType {
-  messages: Record<string, Message[]>;
-  academies: Academy[];
-  currentUser: { id: string; name: string };
-  sendMessage: (
-    academyId: string,
-    content: string,
-    type?: "text" | "audio" | "video",
-    duration?: number
-  ) => void;
-  getMessagesForAcademy: (academyId: string) => Message[];
-  getUnreadCount: (academyId: string) => number;
-  markAsRead: (academyId: string) => void;
+  client: StreamChat | null;
+  isConnected: boolean;
+  academies: EnhancedAcademy[];
+  currentChannel: Channel | null;
+  connectUser: () => Promise<void>;
+  disconnectUser: () => void;
+  setCurrentChannel: (channel: Channel | null) => void;
+  loading: boolean;
+  error: string | null;
+  refreshAcademies: () => void;
+  initializeAcademyChannel: (academyId: string) => Promise<Channel>;
+  isFetchingAcademies: boolean;
+  academiesError: Error | null;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-// Mock initial data
-const INITIAL_ACADEMIES: Academy[] = [
-  { id: "1", name: "DeFi Masters", memberCount: 234, avatar: "🚀" },
-  { id: "2", name: "NFT Degen Club", memberCount: 189, avatar: "🎨" },
-  { id: "3", name: "Crypto Trading Pro", memberCount: 456, avatar: "📈" },
-  { id: "4", name: "Web3 Builders", memberCount: 321, avatar: "⚡" },
-];
-
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "1",
-    academyId: "1",
-    userId: "2",
-    userName: "CryptoWhale",
-    content: "GM everyone! Ready for today's session?",
-    type: "text",
-    timestamp: new Date(Date.now() - 3600000),
-    isCurrentUser: false,
-  },
-  {
-    id: "2",
-    academyId: "1",
-    userId: "3",
-    userName: "DegenKing",
-    content: "LFG! Can't wait to learn more about yield farming",
-    type: "text",
-    timestamp: new Date(Date.now() - 3000000),
-    isCurrentUser: false,
-  },
-  {
-    id: "3",
-    academyId: "1",
-    userId: "1",
-    userName: "You",
-    content: "Hey guys! Excited to be here",
-    type: "text",
-    timestamp: new Date(Date.now() - 2400000),
-    isCurrentUser: true,
-  },
-  {
-    id: "4",
-    academyId: "2",
-    userId: "4",
-    userName: "NFTCollector",
-    content: "Just minted a new collection! Check it out",
-    type: "text",
-    timestamp: new Date(Date.now() - 7200000),
-    isCurrentUser: false,
-  },
-  {
-    id: "5",
-    academyId: "2",
-    userId: "5",
-    userName: "ArtistDegen",
-    content: "Looks fire! What's the floor price?",
-    type: "text",
-    timestamp: new Date(Date.now() - 6000000),
-    isCurrentUser: false,
-  },
-  {
-    id: "6",
-    academyId: "4",
-    userId: "6",
-    userName: "DevMaster",
-    content: "Anyone working on Solidity contracts today?",
-    type: "text",
-    timestamp: new Date(Date.now() - 1800000),
-    isCurrentUser: false,
-  },
-];
-
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const [messages, setMessages] = useState<Record<string, Message[]>>(() => {
-    // Group initial messages by academy
-    const grouped: Record<string, Message[]> = {};
-    INITIAL_MESSAGES.forEach((msg) => {
-      if (!grouped[msg.academyId]) {
-        grouped[msg.academyId] = [];
+  const [client, setClient] = useState<StreamChat | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [academies, setAcademies] = useState<EnhancedAcademy[]>([]);
+  const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { userProfile, role, isAuthenticated } = useAuth();
+  const { connected } = useWallet();
+
+  // Initialize Stream client
+  useEffect(() => {
+    const streamClient = StreamChat.getInstance(
+      import.meta.env.VITE_STREAM_API_KEY!
+    );
+    setClient(streamClient);
+
+    return () => {
+      streamClient.disconnectUser();
+    };
+  }, []);
+
+  // Fetch student enrolled academies
+  const {
+    data: studentAcademiesData,
+    isLoading: isFetchingStudentAcademies,
+    error: studentAcademiesError,
+    refetch: refetchStudentAcademies,
+  } = useQuery({
+    queryKey: ["student-academies", userProfile?.id],
+    queryFn: async (): Promise<StudentAcademies> => {
+      if (!userProfile?.id) {
+        throw new Error("User ID not available");
       }
-      grouped[msg.academyId].push(msg);
-    });
-    return grouped;
+
+      const response = await axiosAsync(
+        `/students/${userProfile.id}/get-academies`
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch academies");
+      }
+
+      return response.data.data;
+    },
+    enabled: !!userProfile?.id && role === "STUDENT",
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
   });
 
-  const [readStatus, setReadStatus] = useState<Record<string, number>>({});
-  const [academies] = useState<Academy[]>(INITIAL_ACADEMIES);
-  const currentUser = { id: "1", name: "You" };
+  // Extract academies from enrollments - use useMemo instead of useCallback
+  const basicAcademies = useMemo((): EnhancedAcademy[] => {
+    if (!studentAcademiesData?.enrollments) return [];
 
-  const sendMessage = useCallback(
-    (
-      academyId: string,
-      content: string,
-      type: "text" | "audio" | "video" = "text",
-      duration?: number
-    ) => {
-      const newMessage: Message = {
-        id: `${Date.now()}-${Math.random()}`,
-        academyId,
-        userId: currentUser.id,
-        userName: currentUser.name,
-        content,
-        type,
-        timestamp: new Date(),
-        isCurrentUser: true,
-        duration,
-      };
-
-      setMessages((prev) => ({
-        ...prev,
-        [academyId]: [...(prev[academyId] || []), newMessage],
+    return studentAcademiesData.enrollments
+      .map((enrollment) => enrollment.academy)
+      .filter((academy): academy is Academy => academy !== undefined)
+      .map((academy) => ({
+        ...academy,
+        name: `Academy ${academy.contract_address.slice(0, 8)}`,
+        memberCount: 0,
+        unreadCount: 0,
+        messageCount: 0,
       }));
+  }, [studentAcademiesData]);
 
-      // Simulate other users responding after a delay
-      setTimeout(() => {
-        const responses = [
-          "That's a great point!",
-          "Agreed! 💯",
-          "LFG! 🚀",
-          "Interesting perspective",
-          "Can you share more details?",
-          "This is the way",
-        ];
-        const randomResponse =
-          responses[Math.floor(Math.random() * responses.length)];
-        const randomUser = [
-          "CryptoWhale",
-          "DegenKing",
-          "NFTCollector",
-          "ArtistDegen",
-          "DevMaster",
-        ][Math.floor(Math.random() * 5)];
+  // TanStack Query: Enrich each academy with Stream Chat data
+  const academyChannelQueries = useQueries({
+    queries: (basicAcademies || []).map((academy) => ({
+      queryKey: ["academy-channel", academy.streamId, academy.id],
+      queryFn: async (): Promise<EnhancedAcademy> => {
+        if (!client || !isConnected) {
+          throw new Error("Stream client not connected");
+        }
 
-        const responseMessage: Message = {
-          id: `${Date.now()}-${Math.random()}`,
-          academyId,
-          userId: `user-${Math.random()}`,
-          userName: randomUser,
-          content: randomResponse,
-          type: "text",
-          timestamp: new Date(),
-          isCurrentUser: false,
-        };
+        if (!academy.streamId) {
+          throw new Error("Academy streamId not available");
+        }
 
-        setMessages((prev) => ({
-          ...prev,
-          [academyId]: [...(prev[academyId] || []), responseMessage],
-        }));
-      }, 2000 + Math.random() * 3000);
+        try {
+          // Get the channel for this academy
+          const channel = client.channel("messaging", academy.streamId);
+          await channel.watch(); // This fetches the channel state
+
+          // Get message count and unread count
+          const messageCount = channel.state.messages.length;
+          const unreadCount = channel.countUnread();
+          const memberCount = Object.keys(channel.state.members).length;
+          const lastMessage =
+            channel.state.messages[channel.state.messages.length - 1];
+
+          return {
+            ...academy,
+            memberCount,
+            unreadCount,
+            lastMessage,
+            messageCount,
+            name: `Academy ${academy.contract_address.slice(0, 8)}`,
+          };
+        } catch (channelError) {
+          console.error(
+            `Failed to fetch channel data for academy ${academy.id}:`,
+            channelError
+          );
+          // Return basic academy data if channel fetch fails
+          return {
+            ...academy,
+            memberCount: 0,
+            unreadCount: 0,
+            messageCount: 0,
+            name: `Academy ${academy.contract_address.slice(0, 8)}`,
+          };
+        }
+      },
+      enabled: !!client && isConnected && !!studentAcademiesData?.enrollments,
+      staleTime: 1000 * 30, // 30 seconds for real-time data
+      retry: 1,
+    })),
+  });
+
+  // Combine all academy data when queries complete
+  useEffect(() => {
+    if (academyChannelQueries.length > 0) {
+      const allQueriesLoaded = academyChannelQueries.every(
+        (query) => !query.isLoading
+      );
+
+      if (allQueriesLoaded) {
+        const enrichedAcademies: EnhancedAcademy[] = academyChannelQueries
+          .map((query, index) => {
+            if (query.data) {
+              return query.data;
+            }
+            // Fallback to basic academy data if query failed
+            return basicAcademies[index] || null;
+          })
+          .filter(Boolean) as EnhancedAcademy[];
+
+        // Only update if academies have actually changed
+        setAcademies((prev) => {
+          if (JSON.stringify(prev) === JSON.stringify(enrichedAcademies)) {
+            return prev;
+          }
+          return enrichedAcademies;
+        });
+
+        const hasErrors = academyChannelQueries.some((query) => query.error);
+        if (hasErrors) {
+          console.warn(
+            "Some academy channels failed to load, using basic academy data"
+          );
+        }
+      }
+    } else {
+      // If no channel queries (not connected), use basic academy data
+      setAcademies((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(basicAcademies)) {
+          return prev;
+        }
+        return basicAcademies;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    basicAcademies,
+    // Track individual query states instead of the whole array
+    academyChannelQueries.map((q) => q.isLoading).join(","),
+    academyChannelQueries.map((q) => q.data?.id).join(","),
+    academyChannelQueries.map((q) => q.error?.message).join(","),
+  ]);
+
+  // Connect user to Stream Chat using the streamToken from userProfile
+  const connectUser = useCallback(async () => {
+    if (!client || !userProfile?.streamToken || !userProfile?.id) {
+      console.log("Missing required connection data");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("🔄 Connecting to Stream Chat...");
+
+      await client.connectUser(
+        {
+          id: userProfile.id,
+          name: `User ${userProfile.wallet?.slice(0, 8)}...` || "Anonymous",
+          role: userProfile.role.toLowerCase(),
+        },
+        userProfile.streamToken
+      );
+
+      setIsConnected(true);
+      console.log("✅ Successfully connected to Stream Chat");
+    } catch (error) {
+      console.error("❌ Failed to connect to Stream Chat:", error);
+      setError("Failed to connect to chat service");
+      setIsConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [client, userProfile]);
+
+  /**
+   * Initialize academy channel when user clicks on an academy
+   */
+  const initializeAcademyChannel = useCallback(
+    async (academyId: string): Promise<Channel> => {
+      if (!client || !isConnected) {
+        throw new Error("Stream Chat not connected");
+      }
+
+      const academy = academies.find((a) => a.id === academyId);
+      if (!academy) {
+        throw new Error("Academy not found");
+      }
+
+      if (!academy.streamId) {
+        throw new Error("Academy streamId not available");
+      }
+
+      try {
+        // Create channel instance
+        const channel = client.channel("messaging", academy.streamId);
+
+        // Watch the channel to initialize it and get real-time updates
+        await channel.watch();
+
+        // Set as current channel
+        setCurrentChannel(channel);
+
+        return channel;
+      } catch (err) {
+        console.error("Failed to initialize academy channel:", err);
+        throw new Error("Failed to initialize chat channel");
+      }
     },
-    []
+    [client, isConnected, academies]
   );
 
-  const getMessagesForAcademy = useCallback(
-    (academyId: string) => {
-      return messages[academyId] || [];
-    },
-    [messages]
-  );
+  /**
+   * Refresh academies manually
+   */
+  const refreshAcademies = useCallback(() => {
+    refetchStudentAcademies();
+  }, [refetchStudentAcademies]);
 
-  const getUnreadCount = useCallback(
-    (academyId: string) => {
-      const academyMessages = messages[academyId] || [];
-      const lastReadIndex = readStatus[academyId] || 0;
-      const unreadMessages = academyMessages
-        .slice(lastReadIndex)
-        .filter((msg) => !msg.isCurrentUser);
-      return unreadMessages.length;
-    },
-    [messages, readStatus]
-  );
+  /**
+   * Disconnect user from Stream Chat
+   */
+  const disconnectUser = useCallback(() => {
+    if (client) {
+      client.disconnectUser();
+      setIsConnected(false);
+      setAcademies([]);
+      setCurrentChannel(null);
+      setError(null);
+      console.log("🔴 Disconnected from Stream Chat");
+    }
+  }, [client]);
 
-  const markAsRead = useCallback(
-    (academyId: string) => {
-      setReadStatus((prev) => ({
-        ...prev,
-        [academyId]: messages[academyId]?.length || 0,
-      }));
-    },
-    [messages]
-  );
+  // Auto-connect when conditions are met - removed connectUser from dependencies
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      client &&
+      !isConnected &&
+      !loading &&
+      userProfile?.streamToken &&
+      connected
+    ) {
+      connectUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isAuthenticated,
+    client,
+    isConnected,
+    loading,
+    userProfile?.streamToken,
+    connected,
+  ]);
+
+  // Auto-disconnect when authentication is lost - removed disconnectUser from dependencies
+  useEffect(() => {
+    if (!isAuthenticated && isConnected) {
+      disconnectUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isConnected]);
+
+  // Derived loading and error states
+  const isFetchingAcademies =
+    isFetchingStudentAcademies ||
+    academyChannelQueries.some((query) => query.isLoading);
+  const academiesError =
+    studentAcademiesError ||
+    academyChannelQueries.find((query) => query.error)?.error ||
+    null;
+
+  const contextValue: ChatContextType = {
+    client,
+    isConnected,
+    academies,
+    currentChannel,
+    connectUser,
+    disconnectUser,
+    setCurrentChannel,
+    loading,
+    error,
+    refreshAcademies,
+    initializeAcademyChannel,
+    isFetchingAcademies,
+    academiesError,
+  };
 
   return (
-    <ChatContext.Provider
-      value={{
-        messages,
-        academies,
-        currentUser,
-        sendMessage,
-        getMessagesForAcademy,
-        getUnreadCount,
-        markAsRead,
-      }}
-    >
-      {children}
-    </ChatContext.Provider>
+    <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>
   );
 }
 

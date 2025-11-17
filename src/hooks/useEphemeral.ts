@@ -10,11 +10,10 @@ const useEphemeral = () => {
     }
 
     const provider = new AnchorProvider(
-        new Connection("https://devnet-as.magicblock.app/",
-        {
-            wsEndpoint: "wss://devnet-as.magicblock.app/",
-            commitment: 'confirmed'
-        }),
+        new Connection(
+            "https://devnet.magicblock.app/",
+            { wsEndpoint: "wss://devnet.magicblock.app/" }
+        ),
         wallet
     );
     setProvider(provider);
