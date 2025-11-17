@@ -300,22 +300,37 @@ export const useTrade = () => {
           throw new Error("Failed to create session");
         }
 
+        console.log('Funding new session wallet with:', 0.1, 'SOL');
+        const fundTx = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: provider.wallet.publicKey,
+            toPubkey: sessionWallet.publicKey!,
+            lamports: 100000000, // 0.1 SOL - enough for multiple transactions
+          })
+        );
+        await provider.sendAndConfirm(fundTx);
+        console.log('Session wallet funded successfully');
+
         sessionToken = session?.sessionToken;
         needsDelegation = true;
       } else {
         sessionToken = sessionWallet?.sessionToken;
 
         const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
-        if (sessionBalance < 1000) {
-          console.log('Funding existing session with:', (10000000 - sessionBalance) / LAMPORTS_PER_SOL, 'SOL');
+        const MIN_SESSION_BALANCE = 50000000;
+        if (sessionBalance < MIN_SESSION_BALANCE) {
+          const topUpAmount = 100000000 - sessionBalance; // Top up to 0.1 SOL
+          console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
+          
           const topUpTx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: provider.wallet.publicKey,
               toPubkey: sessionWallet.publicKey!,
-              lamports: 10000000 - sessionBalance,
+              lamports: topUpAmount,
             })
           );
           await provider.sendAndConfirm(topUpTx);
+          console.log('Session wallet topped up successfully');
         }
 
         // Check if delegation exists for existing session
@@ -549,6 +564,22 @@ export const useTrade = () => {
           100000000,
           60
         );
+
+        if (!session || !session.sessionToken) {
+          throw new Error("Failed to create session");
+        }
+
+        console.log('Funding new session wallet with:', 0.1, 'SOL');
+        const fundTx = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: provider.wallet.publicKey,
+            toPubkey: sessionWallet.publicKey!,
+            lamports: 100000000, // 0.1 SOL - enough for multiple transactions
+          })
+        );
+        await provider.sendAndConfirm(fundTx);
+        console.log('Session wallet funded successfully');
+
         sessionToken = session?.sessionToken;
         needsDelegation = true;
         needsMintDelegation = true;
@@ -556,16 +587,20 @@ export const useTrade = () => {
         sessionToken = sessionWallet?.sessionToken;
 
         const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
-        if (sessionBalance < 1000) {
-          console.log('Funding existing session with:', (10000000 - sessionBalance) / LAMPORTS_PER_SOL, 'SOL');
+        const MIN_SESSION_BALANCE = 50000000;
+        if (sessionBalance < MIN_SESSION_BALANCE) {
+          const topUpAmount = 100000000 - sessionBalance; // Top up to 0.1 SOL
+          console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
+          
           const topUpTx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: provider.wallet.publicKey,
               toPubkey: sessionWallet.publicKey!,
-              lamports: 10000000 - sessionBalance,
+              lamports: topUpAmount,
             })
           );
           await provider.sendAndConfirm(topUpTx);
+          console.log('Session wallet topped up successfully');
         }
 
         // Check if delegation exists for existing session
@@ -573,18 +608,20 @@ export const useTrade = () => {
         if (accountInfo) {
           const accountData = AccountLayout.decode(accountInfo.data);
           const currentDelegate = accountData.delegate ? new PublicKey(accountData.delegate) : null;
-          const delegatedAmount = accountData.delegatedAmount;
           
-          if (!currentDelegate || 
-              !currentDelegate.equals(sessionWallet.publicKey!) || 
-              Number(delegatedAmount) < adjustedSellAmount) {
+          if (!currentDelegate || !currentDelegate.equals(sessionWallet.publicKey!)) {
             needsDelegation = true;
           }
         }
 
-        const mintAccountInfo = await getMint(provider.connection, mintPDA);
-        if (mintAccountInfo.mintAuthority && !mintAccountInfo.mintAuthority.equals(sessionWallet.publicKey!)) {
-          needsMintDelegation = true;
+        const mintTokenAccountInfo = await provider.connection.getAccountInfo(userMintAta);
+        if (mintTokenAccountInfo) {
+          const mintAccountData = AccountLayout.decode(mintTokenAccountInfo.data);
+          const currentMintDelegate = mintAccountData.delegate ? new PublicKey(mintAccountData.delegate) : null;
+          
+          if (!currentMintDelegate || !currentMintDelegate.equals(sessionWallet.publicKey!)) {
+            needsMintDelegation = true;
+          }
         }
       }
 
@@ -620,33 +657,29 @@ export const useTrade = () => {
       }
 
       if (needsMintDelegation) {
-        console.log('Approving session wallet as mint authority...');
+        console.log('Approving session wallet as mint token delegate for ALL tokens...');
         
         try {
-          const wholeBurnAmount = Math.floor(adjustedBurnAmount);
-          console.log('Burn amount:', {
-            original: adjustedBurnAmount,
-            whole: wholeBurnAmount,
-            decimals: mintInfo.decimals
-          });
-
-          const generousBurnAmount = Math.max(
-            wholeBurnAmount * 10,
-            1000 * Math.pow(10, mintInfo.decimals)
-          );
-
+          // Get current mint token balance
+          const mintBalanceInfo = await provider.connection.getTokenAccountBalance(userMintAta);
+          const currentMintBalance = mintBalanceInfo.value.amount;
+          
+          console.log('Current mint token balance:', currentMintBalance);
+          
           const approveMintIx = createApproveInstruction(
             userMintAta,
             sessionWallet.publicKey!,
             provider.wallet.publicKey,
-            generousBurnAmount
+            BigInt(currentMintBalance) // Delegate entire mint token balance
           );
 
           const approveMintTx = new Transaction().add(approveMintIx);
           const signature = await provider.sendAndConfirm(approveMintTx);
-          console.log('Mint authority delegated:', signature);
+          console.log('Full mint token balance delegated to session wallet:', signature);
+          
+          localStorage.setItem(`mint_delegated_${mintPDA.toBase58()}`, 'true');
         } catch (error) {
-          console.error('Mint authority delegation failed:', error);
+          console.error('Mint token delegation failed:', error);
           throw new Error(
             `Failed to delegate mint authority: ${
               error instanceof Error ? error.message : String(error)
