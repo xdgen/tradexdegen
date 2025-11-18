@@ -226,12 +226,26 @@ export const useTrade = () => {
         );
       }
 
-      const xdegenMintInfo = await getMintInfo(XdegentMint);
+      let xdegenMintInfo = await getMintInfo(XdegentMint);
       if (!xdegenMintInfo) {
         throw new Error(`Mint info not found for mint: ${tokenParams.mint}`);
       }
 
-      const tokenToBuyInfo = await getMint(mainnetConnection, tokenParams.mint);
+      let tokenToBuyInfo;
+      try {
+        console.log('Fetching mint info for:', tokenParams.mint.toBase58());
+        console.log('connection:', mainnetConnection.rpcEndpoint);
+        tokenToBuyInfo = await getMint(mainnetConnection, tokenParams.mint);
+      } catch (error) {
+        console.log('Primary RPC failed, retrying with Solana default mainnet RPC...');
+        try {
+          const fallbackConnection = new Connection("https://api.mainnet-beta.solana.com");
+          tokenToBuyInfo = await getMint(fallbackConnection, tokenParams.mint);
+        } catch (fallbackError) {
+          toast.error(`Invalid token mint: ${tokenParams.mint}`);
+          throw new Error(`Invalid token mint: ${tokenParams.mint}`);
+        }
+      }
       if (!tokenToBuyInfo) {
         toast.error(`Token mint info not found for mint: ${tokenParams.mint}`);
         throw new Error(`Mint info not found for mint: ${tokenParams.mint}`);
@@ -289,10 +303,10 @@ export const useTrade = () => {
 
       // Create or get existing session
       if (sessionWallet.sessionToken == null) {
-        console.log('Creating session and funding with:', 10000000 / LAMPORTS_PER_SOL, 'SOL');
+        console.log('Creating session and funding with:', 1000000 / LAMPORTS_PER_SOL, 'SOL');
         const session = await sessionWallet.createSession(
           program.programId,
-          100000000,
+          10000000,
           60
         );
         
@@ -300,16 +314,16 @@ export const useTrade = () => {
           throw new Error("Failed to create session");
         }
 
-        console.log('Funding new session wallet with:', 0.1, 'SOL');
-        const fundTx = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: provider.wallet.publicKey,
-            toPubkey: sessionWallet.publicKey!,
-            lamports: 100000000, // 0.1 SOL - enough for multiple transactions
-          })
-        );
-        await provider.sendAndConfirm(fundTx);
-        console.log('Session wallet funded successfully');
+        // console.log('Funding new session wallet with:', 0.1, 'SOL');
+        // const fundTx = new Transaction().add(
+        //   SystemProgram.transfer({
+        //     fromPubkey: provider.wallet.publicKey,
+        //     toPubkey: sessionWallet.publicKey!,
+        //     lamports: 10000000, // 0.01 SOL - enough for multiple transactions
+        //   })
+        // );
+        // await provider.sendAndConfirm(fundTx);
+        // console.log('Session wallet funded successfully');
 
         sessionToken = session?.sessionToken;
         needsDelegation = true;
@@ -438,6 +452,7 @@ export const useTrade = () => {
             metadata: getMetadataPDA(newMint),
             xdegenMint: XdegentMint,
             traderXdegenAta: walletXdegenAta,
+            tokenRecord: getTokenRecordPDA(provider.wallet.publicKey, newMint),
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
             tokenMetadataProgram: METADATA_PROGRAM_ID,
@@ -531,9 +546,10 @@ export const useTrade = () => {
         throw new Error("Meme data not found for the provided mint and name");
       }
 
-      const xdegenMintInfo = await getMintInfo(XdegentMint);
+      let xdegenMintInfo = await getMintInfo(XdegentMint);
       if (!xdegenMintInfo) {
-        throw new Error(`Mint info not found for mint: ${XdegentMint.toBase58()}`);
+        // throw new Error(`Mint info not found for mint: ${XdegentMint.toBase58()}`);
+        xdegenMintInfo = { decimals: 9 } as any;
       }
 
       const mintPDA = getMintPDA(provider.wallet.publicKey, tokenSymbol)

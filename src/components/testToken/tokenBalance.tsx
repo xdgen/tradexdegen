@@ -71,7 +71,7 @@ export const getTokenPrice = async (mintAddress: string) => {
         if (mintAddress === "So11111111111111111111111111111111111111112") {
             imageUrl = '/images/solana.svg'
         } else {
-            imageUrl = resJson.pairs ? resJson.pairs[0].info.imageUrl : ""
+            imageUrl = resJson.pairs && resJson.pairs[0] && resJson.pairs[0].info ? resJson.pairs[0].info.imageUrl : ""
         }
         return { price, priceChange24h, imageUrl };
     } catch (err) {
