@@ -307,23 +307,12 @@ export const useTrade = () => {
         const session = await sessionWallet.createSession(
           program.programId,
           10000000,
-          60
+          1440
         );
         
         if (!session || !session.sessionToken) {
           throw new Error("Failed to create session");
         }
-
-        // console.log('Funding new session wallet with:', 0.1, 'SOL');
-        // const fundTx = new Transaction().add(
-        //   SystemProgram.transfer({
-        //     fromPubkey: provider.wallet.publicKey,
-        //     toPubkey: sessionWallet.publicKey!,
-        //     lamports: 10000000, // 0.01 SOL - enough for multiple transactions
-        //   })
-        // );
-        // await provider.sendAndConfirm(fundTx);
-        // console.log('Session wallet funded successfully');
 
         sessionToken = session?.sessionToken;
         needsDelegation = true;
@@ -331,9 +320,9 @@ export const useTrade = () => {
         sessionToken = sessionWallet?.sessionToken;
 
         const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
-        const MIN_SESSION_BALANCE = 50000000;
+        const MIN_SESSION_BALANCE = 5000000;
         if (sessionBalance < MIN_SESSION_BALANCE) {
-          const topUpAmount = 100000000 - sessionBalance; // Top up to 0.1 SOL
+          const topUpAmount = 10000000 - sessionBalance; // Top up to 0.1 SOL
           console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
           
           const topUpTx = new Transaction().add(
@@ -423,13 +412,31 @@ export const useTrade = () => {
             tokenProgram: TOKEN_PROGRAM_ID,
           }).transaction();
 
-        const txIds = await sessionWallet.signAndSendTransaction!(mintTokenTx);
+        try {
+          const txIds = await sessionWallet.signAndSendTransaction!(mintTokenTx);
 
-        if (txIds && txIds.length > 0) {
-          console.log("Mint transaction sent:", txIds);
-          return txIds[0];
-        } else {
-          throw new Error("Failed to send buy transaction");
+          if (txIds && txIds.length > 0) {
+            console.log("Mint transaction sent:", txIds);
+            return txIds[0];
+          } else {
+            throw new Error("Failed to send buy transaction");
+          }
+        } catch (error) {
+          if (error && typeof error === 'object' && 'getLogs' in error) {
+            const logs = await (error as any).getLogs(provider.connection);
+            // Extract AnchorError details from logs
+            const anchorErrorLog = logs.find((log: string) => log.includes('AnchorError'));
+            if (anchorErrorLog) {
+              const errorMatch = anchorErrorLog.match(/Error Code: (\w+).*Error Message: (.+)\./);
+              if (errorMatch) {
+                const [, errorCode, errorMessage] = errorMatch;
+                throw new Error(`Buy transaction failed: ${errorCode} - ${errorMessage}`);
+              }
+            }
+            // Fallback to original error message
+            throw new Error(`Buy transaction failed: ${(error as any).message.split('. Catch')[0]}`);
+          }
+          throw error;
         }
       } else {
         console.log("Buying token initially");
@@ -460,26 +467,44 @@ export const useTrade = () => {
             rent: SYSVAR_RENT_PUBKEY,
           }).transaction();
           
-        const txIds = await sessionWallet.signAndSendTransaction!(buyTx);
+        try {
+          const txIds = await sessionWallet.signAndSendTransaction!(buyTx);
 
-        if (txIds && txIds.length > 0) {
-          console.log("Buy transaction sent:", txIds);
-          
-          // Save to supabase
-          const { error } = await supabase.from("meme").insert({
-            mainMint: tokenParams.mint.toBase58(),
-            mint: newMint.toBase58(),
-            name: tokenParams.name,
-            wallet: provider.wallet.publicKey.toBase58(),
-          });
+          if (txIds && txIds.length > 0) {
+            console.log("Buy transaction sent:", txIds);
 
-          if (error) {
-            console.error("Supabase error:", error);
+            // Save to supabase
+            const { error } = await supabase.from("meme").insert({
+              mainMint: tokenParams.mint.toBase58(),
+              mint: newMint.toBase58(),
+              name: tokenParams.name,
+              wallet: provider.wallet.publicKey.toBase58(),
+            });
+
+            if (error) {
+              console.error("Supabase error:", error);
+            }
+
+            return txIds[0];
+          } else {
+            throw new Error("Failed to send buy transaction");
           }
-
-          return txIds[0];
-        } else {
-          throw new Error("Failed to send buy transaction");
+        } catch (error) {
+          if (error && typeof error === 'object' && 'getLogs' in error) {
+            const logs = await (error as any).getLogs(provider.connection);
+            // Extract AnchorError details from logs
+            const anchorErrorLog = logs.find((log: string) => log.includes('AnchorError'));
+            if (anchorErrorLog) {
+              const errorMatch = anchorErrorLog.match(/Error Code: (\w+).*Error Message: (.+)\./);
+              if (errorMatch) {
+                const [, errorCode, errorMessage] = errorMatch;
+                throw new Error(`Buy transaction failed: ${errorCode} - ${errorMessage}`);
+              }
+            }
+            // Fallback to original error message
+            throw new Error(`Buy transaction failed: ${(error as any).message.split('. Catch')[0]}`);
+          }
+          throw error;
         }
       }
     },
@@ -574,27 +599,16 @@ export const useTrade = () => {
 
       // Create or get existing session
       if (sessionWallet.sessionToken == null) {
-        console.log('Creating session and funding with:', 10000000 / LAMPORTS_PER_SOL, 'SOL');
+        console.log('Creating session and funding with:', 1000000 / LAMPORTS_PER_SOL, 'SOL');
         const session = await sessionWallet.createSession(
           program.programId,
-          100000000,
-          60
+          10000000,
+          1440
         );
 
         if (!session || !session.sessionToken) {
           throw new Error("Failed to create session");
         }
-
-        console.log('Funding new session wallet with:', 0.1, 'SOL');
-        const fundTx = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: provider.wallet.publicKey,
-            toPubkey: sessionWallet.publicKey!,
-            lamports: 100000000, // 0.1 SOL - enough for multiple transactions
-          })
-        );
-        await provider.sendAndConfirm(fundTx);
-        console.log('Session wallet funded successfully');
 
         sessionToken = session?.sessionToken;
         needsDelegation = true;
@@ -603,9 +617,9 @@ export const useTrade = () => {
         sessionToken = sessionWallet?.sessionToken;
 
         const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
-        const MIN_SESSION_BALANCE = 50000000;
+        const MIN_SESSION_BALANCE = 5000000;
         if (sessionBalance < MIN_SESSION_BALANCE) {
-          const topUpAmount = 100000000 - sessionBalance; // Top up to 0.1 SOL
+          const topUpAmount = 10000000 - sessionBalance; // Top up to 0.1 SOL
           console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
           
           const topUpTx = new Transaction().add(
