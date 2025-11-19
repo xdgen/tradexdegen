@@ -5,7 +5,6 @@ import TradeIDL from "../lib/contracts/trade/trade.json";
 import type { XdegenDemo as XdegenTrade } from "@/lib/contracts/trade/trade";
 import {
   Connection,
-  Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
@@ -55,6 +54,51 @@ export const useTrade = () => {
   const XdegentMint = new PublicKey(
     "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce"
   );
+
+  // Helper function to clean up transaction errors for user-friendly display
+  const cleanTransactionError = (error: any): string => {
+    if (!error) return "Unknown transaction error";
+
+    // Handle insufficient funds errors
+    if (error.message?.includes("insufficient lamports")) {
+      return "Session wallet has insufficient SOL to complete the transaction. Please try again.";
+    }
+
+    // Handle Anchor program errors
+    if (error.message?.includes("AnchorError")) {
+      const anchorErrorMatch = error.message.match(/Error Code: (\w+).*Error Message: ([^.]+)/);
+      if (anchorErrorMatch) {
+        const [, errorCode, errorMessage] = anchorErrorMatch;
+        return `Transaction failed: ${errorMessage} (${errorCode})`;
+      }
+    }
+
+    // Handle simulation errors
+    if (error.message?.includes("Simulation failed")) {
+      // Extract key information from simulation logs
+      if (error.message.includes("insufficient lamports")) {
+        return "Insufficient SOL in session wallet for transaction fees. Please try again.";
+      }
+      if (error.message.includes("custom program error: 0x1")) {
+        return "Transaction failed due to insufficient funds or program constraints.";
+      }
+      return "Transaction simulation failed. Please check your wallet balance and try again.";
+    }
+
+    // Handle generic errors
+    if (error.message?.includes("Blockhash not found")) {
+      return "Network error. Please try again.";
+    }
+
+    if (error.message?.includes("Transaction was not confirmed")) {
+      return "Transaction timed out. Please check your transaction status.";
+    }
+
+    // Return a cleaned version of the original message
+    const message = error.message || String(error);
+    // Remove long hex strings and technical details
+    return message.split('.').slice(0, 2).join('.').substring(0, 200);
+  };
 
   const getMintInfo = async (mint: PublicKey) => {
     if (!provider) throw new Error("Wallet not connected");
@@ -301,16 +345,20 @@ export const useTrade = () => {
       let sessionToken;
       let needsDelegation = false;
 
+      console.log('session token', sessionWallet.sessionToken);
+
       // Create or get existing session
       if (sessionWallet.sessionToken == null) {
         // Check main wallet balance before creating session
         const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
-        const sessionFundingAmount = 10000000; // 0.01 SOL
+        const sessionFundingAmount = 100000000; // 0.1 SOL - increased to cover transaction fees
         const estimatedFee = 5000000; // 0.005 SOL buffer for fees
         const requiredAmount = sessionFundingAmount + estimatedFee;
 
         if (mainWalletBalance < requiredAmount) {
-          throw new Error(`Insufficient funds to create session. Need at least ${(requiredAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+          throw new Error(
+            `Insufficient funds to create session. Need at least ${(requiredAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`
+          );
         }
 
         console.log('Creating session and funding with:', sessionFundingAmount / LAMPORTS_PER_SOL, 'SOL');
@@ -333,11 +381,13 @@ export const useTrade = () => {
         }
       } else {
         sessionToken = sessionWallet?.sessionToken;
+        console.log('in here, session token exists');
 
         const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
-        const MIN_SESSION_BALANCE = 5000000;
+        const MIN_SESSION_BALANCE = 50000000;
         if (sessionBalance < MIN_SESSION_BALANCE) {
-          const topUpAmount = 10000000 - sessionBalance; // Top up to 0.1 SOL
+          console.log('session balance is low, topping up');
+          const topUpAmount = 100000000; // Top up to 0.1 SOL
           const estimatedFee = 5000000; // 0.005 SOL buffer for fees
 
           // Check main wallet balance before topping up
@@ -445,21 +495,7 @@ export const useTrade = () => {
             throw new Error("Failed to send buy transaction");
           }
         } catch (error) {
-          if (error && typeof error === 'object' && 'getLogs' in error) {
-            const logs = await (error as any).getLogs(provider.connection);
-            // Extract AnchorError details from logs
-            const anchorErrorLog = logs.find((log: string) => log.includes('AnchorError'));
-            if (anchorErrorLog) {
-              const errorMatch = anchorErrorLog.match(/Error Code: (\w+).*Error Message: (.+)\./);
-              if (errorMatch) {
-                const [, errorCode, errorMessage] = errorMatch;
-                throw new Error(`Buy transaction failed: ${errorCode} - ${errorMessage}`);
-              }
-            }
-            // Fallback to original error message
-            throw new Error(`Buy transaction failed: ${(error as any).message.split('. Catch')[0]}`);
-          }
-          throw error;
+          throw new Error(`Buy transaction failed: ${cleanTransactionError(error)}`);
         }
       } else {
         console.log("Buying token initially");
@@ -513,21 +549,7 @@ export const useTrade = () => {
             throw new Error("Failed to send buy transaction");
           }
         } catch (error) {
-          if (error && typeof error === 'object' && 'getLogs' in error) {
-            const logs = await (error as any).getLogs(provider.connection);
-            // Extract AnchorError details from logs
-            const anchorErrorLog = logs.find((log: string) => log.includes('AnchorError'));
-            if (anchorErrorLog) {
-              const errorMatch = anchorErrorLog.match(/Error Code: (\w+).*Error Message: (.+)\./);
-              if (errorMatch) {
-                const [, errorCode, errorMessage] = errorMatch;
-                throw new Error(`Buy transaction failed: ${errorCode} - ${errorMessage}`);
-              }
-            }
-            // Fallback to original error message
-            throw new Error(`Buy transaction failed: ${(error as any).message.split('. Catch')[0]}`);
-          }
-          throw error;
+          throw new Error(`Buy transaction failed: ${cleanTransactionError(error)}`);
         }
       }
     },
@@ -624,7 +646,7 @@ export const useTrade = () => {
       if (sessionWallet.sessionToken == null) {
         // Check main wallet balance before creating session
         const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
-        const sessionFundingAmount = 10000000; // 0.01 SOL
+        const sessionFundingAmount = 100000000; // 0.1 SOL - increased to cover transaction fees
         const estimatedFee = 5000000; // 0.005 SOL buffer for fees
         const requiredAmount = sessionFundingAmount + estimatedFee;
 
@@ -646,18 +668,25 @@ export const useTrade = () => {
         sessionToken = session?.sessionToken;
         needsDelegation = true;
 
-        // Verify session wallet is available after creation
+        // Wait for session wallet to be fully initialized with timeout
+        let attempts = 0;
+        const maxAttempts = 10;
+        while (!sessionWallet.publicKey && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+          attempts++;
+        }
+
         if (!sessionWallet.publicKey) {
-          throw new Error("Session wallet public key not available after session creation");
+          throw new Error("Session wallet public key not available after session creation. Please try again.");
         }
         needsMintDelegation = true;
       } else {
         sessionToken = sessionWallet?.sessionToken;
 
         const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
-        const MIN_SESSION_BALANCE = 5000000;
+        const MIN_SESSION_BALANCE = 50000000;
         if (sessionBalance < MIN_SESSION_BALANCE) {
-          const topUpAmount = 10000000 - sessionBalance; // Top up to 0.1 SOL
+          const topUpAmount = 100000000 - sessionBalance; // Top up to 0.1 SOL
           const estimatedFee = 5000000; // 0.005 SOL buffer for fees
 
           // Check main wallet balance before topping up
@@ -785,12 +814,16 @@ export const useTrade = () => {
           tokenProgram: TOKEN_PROGRAM_ID,
         }).transaction();
 
-      const txIds = await sessionWallet.signAndSendTransaction!(sellTx);
-      if (txIds && txIds.length > 0) {
-        console.log("Sell transaction sent:", txIds);
-        return txIds[0];
-      } else {
-        throw new Error("Failed to send sell transaction");
+      try {
+        const txIds = await sessionWallet.signAndSendTransaction!(sellTx);
+        if (txIds && txIds.length > 0) {
+          console.log("Sell transaction sent:", txIds);
+          return txIds[0];
+        } else {
+          throw new Error("Failed to send sell transaction");
+        }
+      } catch (error) {
+        throw new Error(`Sell transaction failed: ${cleanTransactionError(error)}`);
       }
     },
     onSuccess: async (tx) => {
