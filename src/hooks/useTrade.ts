@@ -303,19 +303,34 @@ export const useTrade = () => {
 
       // Create or get existing session
       if (sessionWallet.sessionToken == null) {
-        console.log('Creating session and funding with:', 1000000 / LAMPORTS_PER_SOL, 'SOL');
+        // Check main wallet balance before creating session
+        const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
+        const sessionFundingAmount = 10000000; // 0.01 SOL
+        const estimatedFee = 5000000; // 0.005 SOL buffer for fees
+        const requiredAmount = sessionFundingAmount + estimatedFee;
+
+        if (mainWalletBalance < requiredAmount) {
+          throw new Error(`Insufficient funds to create session. Need at least ${(requiredAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+        }
+
+        console.log('Creating session and funding with:', sessionFundingAmount / LAMPORTS_PER_SOL, 'SOL');
         const session = await sessionWallet.createSession(
           program.programId,
-          10000000,
+          sessionFundingAmount,
           1440
         );
-        
+
         if (!session || !session.sessionToken) {
           throw new Error("Failed to create session");
         }
 
         sessionToken = session?.sessionToken;
         needsDelegation = true;
+
+        // Verify session wallet is available after creation
+        if (!sessionWallet.publicKey) {
+          throw new Error("Session wallet public key not available after session creation");
+        }
       } else {
         sessionToken = sessionWallet?.sessionToken;
 
@@ -323,8 +338,16 @@ export const useTrade = () => {
         const MIN_SESSION_BALANCE = 5000000;
         if (sessionBalance < MIN_SESSION_BALANCE) {
           const topUpAmount = 10000000 - sessionBalance; // Top up to 0.1 SOL
+          const estimatedFee = 5000000; // 0.005 SOL buffer for fees
+
+          // Check main wallet balance before topping up
+          const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
+          if (mainWalletBalance < topUpAmount + estimatedFee) {
+            throw new Error(`Insufficient funds to top up session wallet. Need at least ${((topUpAmount + estimatedFee) / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+          }
+
           console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
-          
+
           const topUpTx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: provider.wallet.publicKey,
@@ -599,10 +622,20 @@ export const useTrade = () => {
 
       // Create or get existing session
       if (sessionWallet.sessionToken == null) {
-        console.log('Creating session and funding with:', 1000000 / LAMPORTS_PER_SOL, 'SOL');
+        // Check main wallet balance before creating session
+        const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
+        const sessionFundingAmount = 10000000; // 0.01 SOL
+        const estimatedFee = 5000000; // 0.005 SOL buffer for fees
+        const requiredAmount = sessionFundingAmount + estimatedFee;
+
+        if (mainWalletBalance < requiredAmount) {
+          throw new Error(`Insufficient funds to create session. Need at least ${(requiredAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+        }
+
+        console.log('Creating session and funding with:', sessionFundingAmount / LAMPORTS_PER_SOL, 'SOL');
         const session = await sessionWallet.createSession(
           program.programId,
-          10000000,
+          sessionFundingAmount,
           1440
         );
 
@@ -612,6 +645,11 @@ export const useTrade = () => {
 
         sessionToken = session?.sessionToken;
         needsDelegation = true;
+
+        // Verify session wallet is available after creation
+        if (!sessionWallet.publicKey) {
+          throw new Error("Session wallet public key not available after session creation");
+        }
         needsMintDelegation = true;
       } else {
         sessionToken = sessionWallet?.sessionToken;
@@ -620,8 +658,16 @@ export const useTrade = () => {
         const MIN_SESSION_BALANCE = 5000000;
         if (sessionBalance < MIN_SESSION_BALANCE) {
           const topUpAmount = 10000000 - sessionBalance; // Top up to 0.1 SOL
+          const estimatedFee = 5000000; // 0.005 SOL buffer for fees
+
+          // Check main wallet balance before topping up
+          const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
+          if (mainWalletBalance < topUpAmount + estimatedFee) {
+            throw new Error(`Insufficient funds to top up session wallet. Need at least ${((topUpAmount + estimatedFee) / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+          }
+
           console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
-          
+
           const topUpTx = new Transaction().add(
             SystemProgram.transfer({
               fromPubkey: provider.wallet.publicKey,
@@ -657,6 +703,10 @@ export const useTrade = () => {
 
       if (needsDelegation) {
         console.log('Approving session wallet as token delegate...');
+
+        if (!sessionWallet.publicKey) {
+          throw new Error("Session wallet public key is not available");
+        }
         
         // Approve a generous amount (e.g., 1000 tokens or calculate based on expected usage)
         const delegateAmount = Math.max(
@@ -693,8 +743,6 @@ export const useTrade = () => {
           // Get current mint token balance
           const mintBalanceInfo = await provider.connection.getTokenAccountBalance(userMintAta);
           const currentMintBalance = mintBalanceInfo.value.amount;
-          
-          console.log('Current mint token balance:', currentMintBalance);
           
           const approveMintIx = createApproveInstruction(
             userMintAta,
