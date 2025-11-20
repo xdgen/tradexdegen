@@ -277,6 +277,7 @@ export default function TokenView() {
   const [priceChange, setPriceChange] = useState<number | null>(null);
   const [showVolume, setShowVolume] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
+  const [tokenPrice, setTokenPrice] = useState(0)
   const [indicators, setIndicators] = useState<string[]>([]);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -431,7 +432,6 @@ export default function TokenView() {
     };
   }, [pairData, timeframe]);
 
-  // const currentPrice = price || (pairData ? parseFloat(pairData.priceUsd) : 0);
 
   // Initialize TradingView chart
   // useEffect(() => {
@@ -663,6 +663,14 @@ export default function TokenView() {
   const setOption = (option: "Buy" | "Sell") => {
     setSwap(option);
   };
+
+  useEffect(() => {
+    if (orderAmount) {
+      const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
+      const tokenAmount = +orderAmount / price;
+      setTokenPrice(tokenAmount)
+    }
+  }, [orderAmount, pairData])
 
   const handleBuy =  async () => {
     setLoading(true);
@@ -1166,6 +1174,7 @@ export default function TokenView() {
                   className="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg border border-gray-700 focus:border-yellow-400 focus:outline-none"
                 />
               </div>
+              <span className="text-xs mt-2 flex justify-end text-gray-300">{tokenPrice == 0 ? 0 : tokenPrice.toFixed(7)} {pairData.baseToken.symbol.toUpperCase()}</span>
             </div>
 
             {/* Slippage */}
