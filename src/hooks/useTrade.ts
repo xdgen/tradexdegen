@@ -375,6 +375,13 @@ export const useTrade = () => {
         sessionToken = session?.sessionToken;
         needsDelegation = true;
 
+        let attempts = 0;
+        const maxAttempts = 10;
+        while (!sessionWallet.publicKey && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+          attempts++;
+        }
+
         // Verify session wallet is available after creation
         if (!sessionWallet.publicKey) {
           throw new Error("Session wallet public key not available after session creation");
