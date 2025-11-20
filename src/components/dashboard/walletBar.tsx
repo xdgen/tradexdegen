@@ -9,7 +9,9 @@ import {
 } from "../ui/sheet";
 import { useEffect, useState } from "react";
 import { getTokens } from "../testToken/tokenBalance";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { PublicKey } from "@solana/web3.js";
 
 interface Token {
   name: string;
@@ -23,13 +25,32 @@ interface Token {
 
 export const WalletBar = () => {
   const { publicKey, connected } = useWallet();
+  const { connection } = useConnection();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [xsolBalance, setXsolBalance] = useState(0);
   const [total, setTotal] = useState<{
     amountTotal: number;
     solTotal: number;
     totalPercentage: string;
   }>();
+
+  useEffect(() => {
+    if (publicKey) {
+      (async () => {
+        const mint = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
+        const mint_address = new PublicKey(mint);
+
+        const xsolAta = await getAssociatedTokenAddress(
+          mint_address,
+          publicKey
+        );
+
+        const balance = await connection.getTokenAccountBalance(xsolAta);
+        setXsolBalance(Number(balance.value.uiAmount))
+      })()
+    }
+  }, [publicKey])
 
   const fetchTokenBalances = async () => {
     if (!publicKey) return;
@@ -72,7 +93,7 @@ export const WalletBar = () => {
 
     const interval = setInterval(() => {
       reloadBalances();
-    }, 5000); // Reload every 5 seconds (adjust as needed)
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -85,36 +106,42 @@ export const WalletBar = () => {
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            <div className="flex flex-col justify-start items-start mt-6">
-              <span className="text-xl text-white">
-                $
-                {total?.amountTotal
-                  ? total?.amountTotal.toFixed(2).toLocaleString()
-                  : 0}
-              </span>
-              <span
-                className={
-                  total?.totalPercentage
-                    ? String(total?.totalPercentage).startsWith("-")
-                      ? "text-red-500 text-[12px]"
-                      : "text-green-500 text-[12px]"
-                    : "text-[12px] text-white/80"
-                }
-              >
-                {total?.totalPercentage
-                  ? total?.totalPercentage +
-                    "%" +
-                    (String(total?.totalPercentage).startsWith("-")
-                      ? "▼"
-                      : "▲") +
-                    " ($" +
-                    (
-                      (+total?.totalPercentage * +total?.amountTotal) /
-                      100
-                    ).toFixed(2) +
-                    ")"
-                  : "0%"}
-              </span>
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col justify-start items-start mt-6">
+                <span className="text-xl text-white">
+                  $
+                  {total?.amountTotal
+                    ? total?.amountTotal.toFixed(2).toLocaleString()
+                    : 0}
+                </span>
+                <span
+                  className={
+                    total?.totalPercentage
+                      ? String(total?.totalPercentage).startsWith("-")
+                        ? "text-red-500 text-[12px]"
+                        : "text-green-500 text-[12px]"
+                      : "text-[12px] text-white/80"
+                  }
+                >
+                  {total?.totalPercentage
+                    ? total?.totalPercentage +
+                      "%" +
+                      (String(total?.totalPercentage).startsWith("-")
+                        ? "▼"
+                        : "▲") +
+                      " ($" +
+                      (
+                        (+total?.totalPercentage * +total?.amountTotal) /
+                        100
+                      ).toFixed(2) +
+                      ")"
+                    : "0%"}
+                </span>
+              </div>
+              <div className="text-white flex flex-col justify-start">
+                <span className="text-sm font-extrabold">XSOL</span>
+                <h1 className="text-lg lg:text-2xl">{xsolBalance.toFixed(3)}</h1>
+              </div>
             </div>
           </SheetTitle>
           <SheetDescription>

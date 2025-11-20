@@ -277,7 +277,8 @@ export default function TokenView() {
   const [priceChange, setPriceChange] = useState<number | null>(null);
   const [showVolume, setShowVolume] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
-  const [tokenPrice, setTokenPrice] = useState(0)
+  const [tokenPrice, setTokenPrice] = useState(0);
+  const [tokenPriceInUSD, setTokenPriceInUSD] = useState(0);
   const [indicators, setIndicators] = useState<string[]>([]);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -666,9 +667,14 @@ export default function TokenView() {
 
   useEffect(() => {
     if (orderAmount) {
+      const priceInUSD = pairData.priceUsd * +orderAmount;
       const price = parseFloat(parseFloat(pairData.priceNative).toFixed(9));
       const tokenAmount = +orderAmount / price;
-      setTokenPrice(tokenAmount)
+      setTokenPriceInUSD(priceInUSD );
+      setTokenPrice(tokenAmount);
+    } else {
+      setTokenPrice(0);
+      setTokenPriceInUSD(0)
     }
   }, [orderAmount, pairData])
 
@@ -1174,7 +1180,7 @@ export default function TokenView() {
                   className="w-full pl-10 pr-4 py-3 bg-gray-800 rounded-lg border border-gray-700 focus:border-yellow-400 focus:outline-none"
                 />
               </div>
-              <span className="text-xs mt-2 flex justify-end text-gray-300">{tokenPrice == 0 ? 0 : tokenPrice.toFixed(7)} {pairData.baseToken.symbol.toUpperCase()}</span>
+              <span className="text-xs mt-2 flex justify-end text-gray-300">{tokenPrice == 0 ? 0 : tokenPrice.toFixed(3)} {pairData.baseToken.symbol.toUpperCase()} (${tokenPrice == 0 ? 0 : tokenPriceInUSD.toFixed(5)})</span>
             </div>
 
             {/* Slippage */}
