@@ -694,17 +694,6 @@ export type XdegenDemo = {
           "writable": true
         },
         {
-          "name": "xdegenMint",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "traderXdegenAta",
-          "writable": true
-        },
-        {
           "name": "tokenRecord",
           "writable": true,
           "pda": {
@@ -750,10 +739,6 @@ export type XdegenDemo = {
         }
       ],
       "args": [
-        {
-          "name": "sellAmount",
-          "type": "u64"
-        },
         {
           "name": "burnAmount",
           "type": "u64"

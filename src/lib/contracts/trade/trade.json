@@ -688,17 +688,6 @@
           "writable": true
         },
         {
-          "name": "xdegen_mint",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "trader_xdegen_ata",
-          "writable": true
-        },
-        {
           "name": "token_record",
           "writable": true,
           "pda": {
@@ -744,10 +733,6 @@
         }
       ],
       "args": [
-        {
-          "name": "sell_amount",
-          "type": "u64"
-        },
         {
           "name": "burn_amount",
           "type": "u64"
