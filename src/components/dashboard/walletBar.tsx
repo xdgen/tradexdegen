@@ -12,6 +12,9 @@ import { getTokens } from "../testToken/tokenBalance";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
+import supabase from "../testToken/database";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface Token {
   name: string;
@@ -59,6 +62,7 @@ export const WalletBar = () => {
   const [xsolBalance, setXsolBalance] = useState(0);
   const [solPrice, setSolPrice] = useState<number | null>(null);
   const [total, setTotal] = useState<TotalData>();
+  const [open, setOpen] = useState(false);
 
   // Memoized public key string
   const walletAddress = useMemo(() => publicKey?.toBase58(), [publicKey]);
@@ -71,7 +75,6 @@ export const WalletBar = () => {
       setSolPrice(data.solana.usd);
     } catch (error) {
       console.error("Failed to fetch SOL price:", error);
-      // Fallback price if API fails
       setSolPrice(100); // Default to $100 SOL
     }
   }, []);
@@ -167,7 +170,7 @@ export const WalletBar = () => {
   );
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className="p-2 border border-gray-700/40 rounded-full hover:border-primary hover:bg-primary/30 transition-all duration-300 ease-in-out">
         <KeyboardArrowDownIcon />
       </SheetTrigger>
@@ -214,7 +217,12 @@ export const WalletBar = () => {
                   </div>
                 ) : (
                   tokens.map((token) => (
-                    <TokenItem key={token.mintAddress} token={token} />
+                    <TokenItem
+                      key={token.mintAddress}
+                      token={token}
+                      wallet={walletAddress}
+                      onClose={() => setOpen(false)}
+                    />
                   ))
                 )}
               </div>
@@ -227,21 +235,54 @@ export const WalletBar = () => {
 };
 
 // Separate component for token items for better performance
-const TokenItem = ({ token }: { token: Token }) => {
+const TokenItem = ({ token, wallet, onClose }: { token: Token, wallet: string | undefined, onClose: () => void }) => {
+  const navigate = useNavigate();
   const tokenValue = useMemo(() => parseFloat(token.value) || 0, [token.value]);
-  
-  const tokenChangeDisplay = useMemo(() => 
+
+  const tokenChangeDisplay = useMemo(() =>
     formatPercentage(token.h24, tokenValue),
     [token.h24, tokenValue]
   );
 
-  const tokenChangeColor = useMemo(() => 
+  const tokenChangeColor = useMemo(() =>
     getPercentageColor(token.h24),
     [token.h24]
   );
 
+  async function navigateToPage(token: Token) {
+    const memeData = await supabase
+        .from('meme')
+        .select()
+        .eq('mint', token.mintAddress)
+        .eq('name', token.name)
+        .eq('wallet', wallet)
+        .maybeSingle();
+
+    if (!memeData.data) {
+      toast.error("The record for this mint was not found in the database.");
+      return;
+    }
+
+    const response = await fetch(`https://api.dexscreener.com/token-pairs/v1/solana/${memeData.data.mainMint}`, {
+      method: 'GET',
+      headers: {
+        'Accept': '*/*'
+      }
+    });
+    const data = await response.json();
+
+    if (data && data.length > 0) {
+      // Find the pair matching the mint address
+      const pair = data.find((p: any) => p.baseToken.address === memeData.data.mainMint);
+      if (pair) {
+        navigate(`/trading/${pair.pairAddress}`, { state: { pairData: pair } });
+        onClose();
+      }
+    }
+  }
+
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between hover:bg-gray-900 rounded-md py-2 px-1 duration-300 cursor-pointer" onClick={async () => await navigateToPage(token)}>
       <div className="flex justify-start items-start space-x-3">
         <img
           src={token.imageUrl}
