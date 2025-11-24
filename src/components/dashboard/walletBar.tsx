@@ -15,6 +15,17 @@ import { PublicKey } from "@solana/web3.js";
 import supabase from "../testToken/database";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Button } from "../ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "../ui/drawer"
 
 interface Token {
   name: string;
@@ -199,11 +210,16 @@ export const WalletBar = () => {
           </SheetTitle>
           <SheetDescription>
             <div className="bg-secondary text-white p-6 rounded-lg max-w-md">
-              <div className="mb-6 pb-6 border-white/10 border-b">
-                <h2 className="text-xl font-semibold">Holdings</h2>
-                <p className="text-sm text-gray-400">
-                  {isLoading ? "Loading..." : `${tokenCount} token${tokenCount !== 1 ? 's' : ''}`}
-                </p>
+              <div className="mb-6 pb-6 border-white/10 border-b flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold">Holdings</h2>
+                  <p className="text-sm text-gray-400">
+                    {isLoading ? "Loading..." : `${tokenCount} token${tokenCount !== 1 ? 's' : ''}`}
+                  </p>
+                </div>
+                <div>
+                  <Button className="text-xs">View Transactions</Button>
+                </div>
               </div>
 
               <div className="space-y-4 overflow-y-auto h-[70vh] pr-2 py-2">
