@@ -15,17 +15,6 @@ import { PublicKey } from "@solana/web3.js";
 import supabase from "../testToken/database";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Button } from "../ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "../ui/drawer"
 
 interface Token {
   name: string;
@@ -43,9 +32,52 @@ interface TotalData {
   totalPercentage: string | number; // Fixed: can be number or string
 }
 
+type WalletTab = "tokens" | "transactions";
+
+interface WalletTransaction {
+  signature: string;
+  timestamp: number;
+  tokenSymbol: string;
+  mint: string;
+  amount: number;
+  usdValue?: number;
+  direction: "buy" | "sell";
+}
+
 // Constants
 const XDEGEN_MINT = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
+const SOL_MINT = 'So11111111111111111111111111111111111111112';
 const REFRESH_INTERVAL = 30000; // 30 seconds instead of 5 seconds
+
+const sampleTransactions: WalletTransaction[] = [
+  {
+    signature: "sample-buy-sol",
+    timestamp: Date.now(),
+    tokenSymbol: "SOL",
+    mint: SOL_MINT,
+    amount: 0.058,
+    usdValue: 6.54,
+    direction: "buy",
+  },
+  {
+    signature: "sample-buy-adns",
+    timestamp: Date.now() - 45 * 60 * 1000,
+    tokenSymbol: "ADNS",
+    mint: "adns-mint",
+    amount: 8243,
+    usdValue: 2.71,
+    direction: "buy",
+  },
+  {
+    signature: "sample-sell-usdc",
+    timestamp: Date.now() - 90 * 60 * 1000,
+    tokenSymbol: "USDC",
+    mint: "usdc-mint",
+    amount: 24.7875,
+    usdValue: 24.79,
+    direction: "sell",
+  },
+];
 
 // Utility functions
 const formatCurrency = (amount: number) => amount.toFixed(2);
@@ -70,6 +102,7 @@ export const WalletBar = () => {
   const { connection } = useConnection();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<WalletTab>("tokens");
   const [xsolBalance, setXsolBalance] = useState(0);
   const [solPrice, setSolPrice] = useState<number | null>(null);
   const [total, setTotal] = useState<TotalData>();
@@ -109,7 +142,6 @@ export const WalletBar = () => {
   const fetchTokenBalances = useCallback(async () => {
     if (!walletAddress) return;
 
-    console.log("Fetching token balances...");
     setIsLoading(true);
 
     try {
@@ -140,7 +172,7 @@ export const WalletBar = () => {
     await Promise.all([
       fetchXsolBalance(),
       fetchTokenBalances(),
-      fetchSolPrice()
+      fetchSolPrice(),
     ]);
   }, [connected, fetchXsolBalance, fetchTokenBalances, fetchSolPrice]);
 
@@ -180,12 +212,32 @@ export const WalletBar = () => {
     [totalPercentage]
   );
 
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+      }),
+    []
+  );
+
+  const timeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    []
+  );
+
+  const transactionList = useMemo(() => sampleTransactions, []);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className="p-2 border border-gray-700/40 rounded-full hover:border-primary hover:bg-primary/30 transition-all duration-300 ease-in-out">
         <KeyboardArrowDownIcon />
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="w-full sm:max-w-xl">
         <SheetHeader>
           <SheetTitle>
             <div className="flex justify-between items-center">
@@ -209,35 +261,60 @@ export const WalletBar = () => {
             </div>
           </SheetTitle>
           <SheetDescription>
-            <div className="bg-secondary text-white p-6 rounded-lg max-w-md">
-              <div className="mb-6 pb-6 border-white/10 border-b flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-semibold">Holdings</h2>
+            <div className="bg-secondary text-white p-6 rounded-lg max-w-xl w-full">
+              <div className="mb-6 pb-6 border-white/10 border-b flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-semibold">Wallet</h2>
                   <p className="text-sm text-gray-400">
-                    {isLoading ? "Loading..." : `${tokenCount} token${tokenCount !== 1 ? 's' : ''}`}
+                    {activeTab === "tokens"
+                      ? isLoading
+                        ? "Loading balances..."
+                        : `${tokenCount} token${tokenCount !== 1 ? "s" : ""}`
+                      : `${transactionList.length} recent activity`}
                   </p>
                 </div>
-                <div>
-                  <Button className="text-xs">View Transactions</Button>
+                <div className="flex w-full sm:w-auto bg-black/30 rounded-full p-1">
+                  {(["tokens", "transactions"] as WalletTab[]).map((tab) => (
+                    <button
+                      key={tab}
+                      className={`flex-1 px-4 py-1 text-xs font-semibold rounded-full capitalize transition-all ${
+                        activeTab === tab
+                          ? "bg-white text-black"
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                      onClick={() => setActiveTab(tab)}
+                    >
+                      {tab}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div className="space-y-4 overflow-y-auto h-[70vh] pr-2 py-2">
                 {!publicKey ? (
-                  <div className="text-center text-gray-400 py-8">
-                    Connect Wallet
-                  </div>
-                ) : tokens.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                    {isLoading ? "Loading tokens..." : "No tokens found"}
-                  </div>
+                  <div className="text-center text-gray-400 py-8">Connect Wallet</div>
+                ) : activeTab === "tokens" ? (
+                  tokens.length === 0 ? (
+                    <div className="text-center text-gray-400 py-8">
+                      {isLoading ? "Loading tokens..." : "No tokens found"}
+                    </div>
+                  ) : (
+                    tokens.map((token) => (
+                      <TokenItem
+                        key={token.mintAddress}
+                        token={token}
+                        wallet={walletAddress}
+                        onClose={() => setOpen(false)}
+                      />
+                    ))
+                  )
                 ) : (
-                  tokens.map((token) => (
-                    <TokenItem
-                      key={token.mintAddress}
-                      token={token}
-                      wallet={walletAddress}
-                      onClose={() => setOpen(false)}
+                  transactionList.map((tx) => (
+                    <TransactionItem
+                      key={`${tx.signature}-${tx.timestamp}`}
+                      transaction={tx}
+                      dateFormatter={dateFormatter}
+                      timeFormatter={timeFormatter}
                     />
                   ))
                 )}
@@ -248,6 +325,11 @@ export const WalletBar = () => {
       </SheetContent>
     </Sheet>
   );
+};
+
+const shortenAddress = (address?: string) => {
+  if (!address) return "Unknown";
+  return `${address.slice(0, 4)}...${address.slice(-4)}`;
 };
 
 // Separate component for token items for better performance
@@ -321,6 +403,65 @@ const TokenItem = ({ token, wallet, onClose }: { token: Token, wallet: string | 
         <p className={`text-sm ${tokenChangeColor} truncate`}>
           {tokenChangeDisplay}
         </p>
+      </div>
+    </div>
+  );
+};
+
+const TransactionItem = ({
+  transaction,
+  dateFormatter,
+  timeFormatter,
+}: {
+  transaction: WalletTransaction;
+  dateFormatter: Intl.DateTimeFormat;
+  timeFormatter: Intl.DateTimeFormat;
+}) => {
+  const amountDisplay = transaction.amount >= 1
+    ? transaction.amount.toFixed(4)
+    : transaction.amount.toFixed(6);
+
+  const chipStyles =
+    transaction.direction === "buy"
+      ? "bg-emerald-500/10 text-emerald-300"
+      : "bg-rose-500/10 text-rose-300";
+
+  return (
+    <div className="rounded-xl border border-white/5 bg-black/30 px-4 py-3 shadow-sm backdrop-blur">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`h-10 w-10 flex items-center justify-center rounded-full ${chipStyles}`}>
+            {transaction.tokenSymbol.charAt(0)}
+          </div>
+          <div>
+            <p className="text-sm font-semibold">
+              {amountDisplay} {transaction.tokenSymbol}
+            </p>
+            <p className="text-xs text-gray-400">
+              {transaction.usdValue
+                ? `≈ $${transaction.usdValue.toFixed(2)} USD`
+                : `Mint ${shortenAddress(transaction.mint)}`}
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${chipStyles}`}>
+            {transaction.direction}
+          </span>
+          <p className="text-xs text-gray-400">{dateFormatter.format(transaction.timestamp)}</p>
+          <p className="text-xs text-gray-500">{timeFormatter.format(transaction.timestamp)}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+        <span>Hash: {shortenAddress(transaction.signature)}</span>
+        <a
+          href={`https://explorer.solana.com/tx/${transaction.signature}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline-offset-2 hover:underline"
+        >
+          View
+        </a>
       </div>
     </div>
   );
