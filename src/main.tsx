@@ -10,6 +10,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./provider/AuthProvider";
+import SessionProvider from "./provider/SessionProvider";
 
 const router = createBrowserRouter(appRoutes);
 
@@ -45,35 +46,37 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <SolanaWalletProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-          <Toaster position="top-right" />
-          {isSmallScreen && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: "100%",
-                backgroundColor: "rgba(10, 30, 10, 0.8)",
-                opacity: "0.7",
-                color: "white",
-                textAlign: "center",
-                padding: "10px",
-                fontWeight: "900",
-                zIndex: 1000,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: "30px",
-              }}
-            >
-              Screen size too small. Please use a larger screen for the best
-              experience.
-            </div>
-          )}
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <RouterProvider router={router} />
+            <Toaster position="top-right" />
+            {isSmallScreen && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: "rgba(10, 30, 10, 0.8)",
+                  opacity: "0.7",
+                  color: "white",
+                  textAlign: "center",
+                  padding: "10px",
+                  fontWeight: "900",
+                  zIndex: 1000,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  fontSize: "30px",
+                }}
+              >
+                Screen size too small. Please use a larger screen for the best
+                experience.
+              </div>
+            )}
+          </AuthProvider>
+        </SessionProvider>
       </SolanaWalletProvider>
     </QueryClientProvider>
   );

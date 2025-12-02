@@ -70,6 +70,7 @@ const AdminTrading: React.FC = () => {
         }
     };
 
+
     const handleWithdraw = async () => {
         const amount = parseFloat(withdrawAmount);
         if (!amount || amount <= 0) {
@@ -152,6 +153,7 @@ const AdminTrading: React.FC = () => {
                         </div>
                     </CardContent>
                 </Card>
+
 
                 {/* Deposit Card */}
                 <Card className="xl:col-span-1">

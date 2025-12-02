@@ -64,14 +64,14 @@ export const getTokenPrice = async (mintAddress: string) => {
         const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mintAddress}`);
         const resJson = await res.json();
         // console.log(data, "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
-        const price = resJson.pairs[0].priceUsd;
-        const priceChange24h = resJson.pairs[0].priceChange.h24
+        const price = resJson.pairs ? resJson.pairs[0].priceUsd : 0;
+        const priceChange24h = resJson.pairs ? resJson.pairs[0].priceChange.h24 : 0
         let imageUrl = "";
         // console.log(`Price for ${mintAddress}: ${resJson.pairs[0].priceUsd}`);
         if (mintAddress === "So11111111111111111111111111111111111111112") {
             imageUrl = '/images/solana.svg'
         } else {
-            imageUrl = resJson.pairs[0].info.imageUrl || ""
+            imageUrl = resJson.pairs && resJson.pairs[0] && resJson.pairs[0].info ? resJson.pairs[0].info.imageUrl : ""
         }
         return { price, priceChange24h, imageUrl };
     } catch (err) {

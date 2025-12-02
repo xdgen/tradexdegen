@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/xdegen_demo.json`.
  */
 export type XdegenDemo = {
-  "address": "6hB6CiM1kT9vk58LJbgrBDVQdh47QSH3tq8HxaksguUq",
+  "address": "5eGtLMK9TktGR2sSFbnHarxhqio5Nh4ob9KfS8Tru7fF",
   "metadata": {
     "name": "xdegenDemo",
     "version": "0.1.0",
@@ -27,33 +27,61 @@ export type XdegenDemo = {
       ],
       "accounts": [
         {
-          "name": "trader",
+          "name": "sessionToken",
+          "optional": true
+        },
+        {
+          "name": "sessionSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "admin",
-          "writable": true,
-          "signer": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "config",
+          "name": "trader",
           "writable": true
         },
         {
-          "name": "vault",
+          "name": "config",
           "writable": true,
-          "relations": [
-            "config"
-          ]
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "mint",
           "writable": true,
-          "signer": true
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trader"
+              },
+              {
+                "kind": "arg",
+                "path": "data.symbol"
+              }
+            ]
+          }
         },
         {
           "name": "traderMintAta",
@@ -113,11 +141,13 @@ export type XdegenDemo = {
           }
         },
         {
-          "name": "metadata",
-          "writable": true
+          "name": "xdegenMint",
+          "relations": [
+            "config"
+          ]
         },
         {
-          "name": "xdegenMint",
+          "name": "vault",
           "writable": true,
           "relations": [
             "config"
@@ -125,6 +155,43 @@ export type XdegenDemo = {
         },
         {
           "name": "traderXdegenAta",
+          "writable": true
+        },
+        {
+          "name": "tokenRecord",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  114,
+                  101,
+                  99,
+                  111,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trader"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "metadata",
           "writable": true
         },
         {
@@ -145,15 +212,6 @@ export type XdegenDemo = {
         {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
         }
       ],
       "args": [
@@ -185,13 +243,35 @@ export type XdegenDemo = {
       ],
       "accounts": [
         {
+          "name": "sessionToken",
+          "optional": true
+        },
+        {
           "name": "claimer",
           "writable": true,
           "signer": true
         },
         {
+          "name": "claimerAccount"
+        },
+        {
           "name": "config",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "xdegenMint",
@@ -211,7 +291,7 @@ export type XdegenDemo = {
             "seeds": [
               {
                 "kind": "account",
-                "path": "claimer"
+                "path": "claimerAccount"
               },
               {
                 "kind": "const",
@@ -300,201 +380,6 @@ export type XdegenDemo = {
         },
         {
           "name": "tokenProgram"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "delegateConfig",
-      "discriminator": [
-        11,
-        27,
-        17,
-        32,
-        94,
-        173,
-        196,
-        237
-      ],
-      "accounts": [
-        {
-          "name": "admin",
-          "writable": true,
-          "signer": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "bufferConfig",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  98,
-                  117,
-                  102,
-                  102,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "config"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                84,
-                149,
-                19,
-                80,
-                45,
-                136,
-                143,
-                75,
-                148,
-                224,
-                218,
-                211,
-                38,
-                227,
-                24,
-                6,
-                245,
-                54,
-                188,
-                199,
-                193,
-                45,
-                37,
-                172,
-                119,
-                239,
-                101,
-                115,
-                86,
-                141,
-                42,
-                118
-              ]
-            }
-          }
-        },
-        {
-          "name": "delegationRecordConfig",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  101,
-                  108,
-                  101,
-                  103,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "config"
-              }
-            ],
-            "program": {
-              "kind": "account",
-              "path": "delegationProgram"
-            }
-          }
-        },
-        {
-          "name": "delegationMetadataConfig",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  101,
-                  108,
-                  101,
-                  103,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  45,
-                  109,
-                  101,
-                  116,
-                  97,
-                  100,
-                  97,
-                  116,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "config"
-              }
-            ],
-            "program": {
-              "kind": "account",
-              "path": "delegationProgram"
-            }
-          }
-        },
-        {
-          "name": "config",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "ownerProgram",
-          "address": "6hB6CiM1kT9vk58LJbgrBDVQdh47QSH3tq8HxaksguUq"
-        },
-        {
-          "name": "delegationProgram",
-          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
         },
         {
           "name": "systemProgram",
@@ -638,379 +523,16 @@ export type XdegenDemo = {
       ],
       "accounts": [
         {
-          "name": "buyer",
+          "name": "sessionToken",
+          "optional": true
+        },
+        {
+          "name": "sessionSigner",
           "writable": true,
           "signer": true
         },
         {
-          "name": "admin",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "config",
-          "writable": true
-        },
-        {
-          "name": "mint",
-          "writable": true
-        },
-        {
-          "name": "xdegenMint",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "vault",
-          "writable": true
-        },
-        {
-          "name": "buyerXdegenAta",
-          "writable": true
-        },
-        {
-          "name": "buyerMintAta",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "buyAmount",
-          "type": "u64"
-        },
-        {
-          "name": "mintAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "processUndelegation",
-      "discriminator": [
-        196,
-        28,
-        41,
-        206,
-        48,
-        37,
-        51,
-        167
-      ],
-      "accounts": [
-        {
-          "name": "baseAccount",
-          "writable": true
-        },
-        {
-          "name": "buffer"
-        },
-        {
-          "name": "payer",
-          "writable": true
-        },
-        {
-          "name": "systemProgram"
-        }
-      ],
-      "args": [
-        {
-          "name": "accountSeeds",
-          "type": {
-            "vec": "bytes"
-          }
-        }
-      ]
-    },
-    {
-      "name": "sell",
-      "discriminator": [
-        51,
-        230,
-        133,
-        164,
-        1,
-        127,
-        131,
-        173
-      ],
-      "accounts": [
-        {
-          "name": "trader",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "admin",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "config",
-          "writable": true
-        },
-        {
-          "name": "vault",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "mint",
-          "writable": true
-        },
-        {
-          "name": "traderMint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "trader"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "mint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "xdegenMint",
-          "writable": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "traderXdegenAta",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "path": "trader"
-              },
-              {
-                "kind": "const",
-                "value": [
-                  6,
-                  221,
-                  246,
-                  225,
-                  215,
-                  101,
-                  161,
-                  147,
-                  217,
-                  203,
-                  225,
-                  70,
-                  206,
-                  235,
-                  121,
-                  172,
-                  28,
-                  180,
-                  133,
-                  237,
-                  95,
-                  91,
-                  55,
-                  145,
-                  58,
-                  140,
-                  245,
-                  133,
-                  126,
-                  255,
-                  0,
-                  169
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "xdegenMint"
-              }
-            ],
-            "program": {
-              "kind": "const",
-              "value": [
-                140,
-                151,
-                37,
-                143,
-                78,
-                36,
-                137,
-                241,
-                187,
-                61,
-                16,
-                41,
-                20,
-                142,
-                13,
-                131,
-                11,
-                90,
-                19,
-                153,
-                218,
-                255,
-                16,
-                132,
-                4,
-                142,
-                123,
-                216,
-                219,
-                233,
-                248,
-                89
-              ]
-            }
-          }
-        },
-        {
-          "name": "associatedTokenProgram",
-          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "systemProgram",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
-        },
-        {
-          "name": "magicContext",
-          "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "sellAmount",
-          "type": "u64"
-        },
-        {
-          "name": "burnAmount",
-          "type": "u64"
-        }
-      ]
-    },
-    {
-      "name": "undelegateConfig",
-      "discriminator": [
-        161,
-        116,
-        28,
-        44,
-        36,
-        95,
-        134,
-        227
-      ],
-      "accounts": [
-        {
-          "name": "admin",
-          "writable": true,
-          "signer": true,
-          "relations": [
-            "config"
-          ]
+          "name": "trader"
         },
         {
           "name": "config",
@@ -1032,16 +554,196 @@ export type XdegenDemo = {
           }
         },
         {
-          "name": "magicProgram",
-          "address": "Magic11111111111111111111111111111111111111"
+          "name": "mint",
+          "writable": true,
+          "relations": [
+            "tokenRecord"
+          ]
         },
         {
-          "name": "magicContext",
+          "name": "xdegenMint",
           "writable": true,
-          "address": "MagicContext1111111111111111111111111111111"
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true
+        },
+        {
+          "name": "traderXdegenAta",
+          "writable": true
+        },
+        {
+          "name": "traderMintAta",
+          "writable": true
+        },
+        {
+          "name": "tokenRecord",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  114,
+                  101,
+                  99,
+                  111,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trader"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "buyAmount",
+          "type": "u64"
+        },
+        {
+          "name": "mintAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "sell",
+      "discriminator": [
+        51,
+        230,
+        133,
+        164,
+        1,
+        127,
+        131,
+        173
+      ],
+      "accounts": [
+        {
+          "name": "sessionToken",
+          "optional": true
+        },
+        {
+          "name": "sessionSigner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "trader"
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "relations": [
+            "tokenRecord"
+          ]
+        },
+        {
+          "name": "traderMintAta",
+          "writable": true
+        },
+        {
+          "name": "tokenRecord",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  114,
+                  101,
+                  99,
+                  111,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trader"
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "burnAmount",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "withdraw",
@@ -1169,6 +871,32 @@ export type XdegenDemo = {
         204,
         130
       ]
+    },
+    {
+      "name": "sessionToken",
+      "discriminator": [
+        233,
+        4,
+        115,
+        14,
+        46,
+        21,
+        1,
+        15
+      ]
+    },
+    {
+      "name": "tokenRecord",
+      "discriminator": [
+        27,
+        187,
+        32,
+        100,
+        137,
+        253,
+        104,
+        242
+      ]
     }
   ],
   "errors": [
@@ -1221,6 +949,11 @@ export type XdegenDemo = {
       "code": 6009,
       "name": "mathOverflow",
       "msg": "Math Overflow"
+    },
+    {
+      "code": 6010,
+      "name": "invalidTokenAccountOwner",
+      "msg": "Invalid Token Account Owner"
     }
   ],
   "types": [
@@ -1273,6 +1006,54 @@ export type XdegenDemo = {
       }
     },
     {
+      "name": "sessionToken",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "targetProgram",
+            "type": "pubkey"
+          },
+          {
+            "name": "sessionSigner",
+            "type": "pubkey"
+          },
+          {
+            "name": "validUntil",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tokenMetadata",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "decimals",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "tokenParams",
       "type": {
         "kind": "struct",
@@ -1296,6 +1077,42 @@ export type XdegenDemo = {
           {
             "name": "supply",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tokenRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "balance",
+            "type": "u64"
+          },
+          {
+            "name": "metadata",
+            "type": {
+              "defined": {
+                "name": "tokenMetadata"
+              }
+            }
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }

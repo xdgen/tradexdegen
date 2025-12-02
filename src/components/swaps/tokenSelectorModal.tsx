@@ -21,7 +21,7 @@ export interface Tokenn {
   volume: {
     h24: number
   }
-  info: {
+  info?: {
     imageUrl: string
   }
 }
@@ -131,7 +131,7 @@ export function TokenSelector({ isOpen, onClose, onSelect }: TokenSelectorProps)
                 onClick={() => onSelect(token)}
               >
                 <img
-                  src={token.info.imageUrl || `/placeholder.svg?height=16&width=16`}
+                  src={token.info?.imageUrl || `/placeholder.svg?height=16&width=16`}
                   alt={token.baseToken.symbol}
                   className="w-4 h-4 rounded-full border border-primary/30"
                 />
@@ -158,7 +158,7 @@ export function TokenSelector({ isOpen, onClose, onSelect }: TokenSelectorProps)
               >
                 <div className="flex items-center gap-3">
                   <img
-                    src={token.info.imageUrl || `/placeholder.svg?height=32&width=32`}
+                    src={token.info?.imageUrl || `/placeholder.svg?height=32&width=32`}
                     alt={token.baseToken.symbol}
                     className="w-8 h-8 rounded-full border border-primary/30"
                     onError={(e) => {

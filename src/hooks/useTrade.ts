@@ -5,20 +5,25 @@ import TradeIDL from "../lib/contracts/trade/trade.json";
 import type { XdegenDemo as XdegenTrade } from "@/lib/contracts/trade/trade";
 import {
   Connection,
-  Keypair,
+  LAMPORTS_PER_SOL,
   PublicKey,
-  sendAndConfirmTransaction,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
   Transaction,
 } from "@solana/web3.js";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  AccountLayout,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  createApproveInstruction,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddress,
   getMint,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import supabase from "../components/testToken/database";
+import { useSessionWallet } from "@magicblock-labs/gum-react-sdk";
 
 const network = import.meta.env.VITE_SOLANA_RPC_URL_ARRAY.split(",")[1];
 const mainnetConnection = new Connection(network);
@@ -32,6 +37,14 @@ export type TokenParams = {
   supply: number | BN;
 };
 
+// Session management constants
+const SESSION_FUNDING_AMOUNT = 100000000; // 0.1 SOL
+const MIN_SESSION_BALANCE = 50000000; // 0.05 SOL
+const ESTIMATED_FEE = 5000000; // 0.005 SOL
+const SESSION_DURATION = 1440; // 24 hours in minutes
+const SESSION_INIT_TIMEOUT_MS = 5000; // 5 seconds max wait time
+const SESSION_INIT_RETRY_DELAY_MS = 800; // 500ms between retries
+
 export const useTrade = () => {
   const provider = useAnchor();
   const program = useMemo(() => {
@@ -43,10 +56,214 @@ export const useTrade = () => {
   }, [provider]);
 
   const programId = useMemo(() => new PublicKey(TradeIDL.address), []);
+  const METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+  const sessionWallet = useSessionWallet();
 
   const XdegentMint = new PublicKey(
     "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce"
   );
+
+  // Optimized session management
+  const manageSession = async (requiredDelegationAmount?: number) => {
+    if (!provider || !provider.wallet?.publicKey || !program || !sessionWallet) {
+      throw new Error("Wallet not connected. Please connect your wallet to use trading features.");
+    }
+
+    let sessionToken: string;
+    let needsDelegation = false;
+    let needsMintDelegation = false;
+
+    // Check if we need to create a new session or use existing one
+    if (!sessionWallet.sessionToken) {
+      // Validate main wallet balance before creating session
+      const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
+      const requiredAmount = SESSION_FUNDING_AMOUNT + ESTIMATED_FEE;
+
+      if (mainWalletBalance < requiredAmount) {
+        throw new Error(
+          `Insufficient funds to create session. Need at least ${(requiredAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`
+        );
+      }
+
+      console.log('Creating session and funding with:', SESSION_FUNDING_AMOUNT / LAMPORTS_PER_SOL, 'SOL');
+      
+      const session = await sessionWallet.createSession(
+        program.programId,
+        SESSION_FUNDING_AMOUNT,
+        SESSION_DURATION
+      );
+
+      if (!session?.sessionToken) {
+        throw new Error("Failed to create session");
+      }
+
+      sessionToken = session.sessionToken;
+      needsDelegation = true;
+      needsMintDelegation = true;
+
+      // Wait for session wallet initialization with timeout
+      const maxAttempts = Math.floor(SESSION_INIT_TIMEOUT_MS / SESSION_INIT_RETRY_DELAY_MS);
+      let attempts = 0;
+      
+      while (!sessionWallet.publicKey && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, SESSION_INIT_RETRY_DELAY_MS));
+        attempts++;
+      }
+
+      if (!sessionWallet.publicKey) {
+        throw new Error("Session wallet public key not available after session creation");
+      }
+    } else {
+      // Use existing session
+      sessionToken = sessionWallet.sessionToken;
+      
+      // Check and top up session balance if needed
+      const sessionBalance = await provider.connection.getBalance(sessionWallet.publicKey!);
+      if (sessionBalance < MIN_SESSION_BALANCE) {
+        const topUpAmount = SESSION_FUNDING_AMOUNT - sessionBalance;
+        const mainWalletBalance = await provider.connection.getBalance(provider.wallet.publicKey);
+        
+        if (mainWalletBalance < topUpAmount + ESTIMATED_FEE) {
+          throw new Error(`Insufficient funds to top up session wallet. Need at least ${((topUpAmount + ESTIMATED_FEE) / LAMPORTS_PER_SOL).toFixed(4)} SOL, have ${(mainWalletBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+        }
+
+        console.log('Funding existing session with:', topUpAmount / LAMPORTS_PER_SOL, 'SOL');
+
+        const topUpTx = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: provider.wallet.publicKey,
+            toPubkey: sessionWallet.publicKey!,
+            lamports: topUpAmount,
+          })
+        );
+        await provider.sendAndConfirm(topUpTx);
+      }
+
+      // Check delegation status
+      needsDelegation = await checkDelegationStatus(requiredDelegationAmount);
+    }
+
+    return {
+      sessionToken,
+      needsDelegation,
+      needsMintDelegation,
+      sessionPublicKey: sessionWallet.publicKey!
+    };
+  };
+
+  // Check delegation status for existing sessions
+  const checkDelegationStatus = async (requiredAmount?: number): Promise<boolean> => {
+    if (!provider || !sessionWallet.publicKey) return true;
+
+    const walletXdegenAta = await getAssociatedTokenAddress(
+      XdegentMint,
+      provider.wallet.publicKey
+    );
+
+    const accountInfo = await provider.connection.getAccountInfo(walletXdegenAta);
+    if (!accountInfo) return true;
+
+    const accountData = AccountLayout.decode(accountInfo.data);
+    const currentDelegate = accountData.delegate ? new PublicKey(accountData.delegate) : null;
+    const delegatedAmount = accountData.delegatedAmount;
+    
+    // Check if there's no delegate
+    if (!currentDelegate) return true;
+    
+    // Check if delegate doesn't match session wallet
+    if (!currentDelegate.equals(sessionWallet.publicKey)) return true;
+    
+    // Check if delegated amount is insufficient (only if requiredAmount is provided)
+    if (requiredAmount && Number(delegatedAmount) < requiredAmount) return true;
+    
+    // All checks passed, no delegation needed
+    return false;
+  };
+
+  // Handle token delegation to session wallet
+  const handleTokenDelegation = async (sessionPublicKey: PublicKey, requiredAmount?: number) => {
+    if (!provider) throw new Error("Provider not available");
+
+    const walletXdegenAta = await getAssociatedTokenAddress(
+      XdegentMint,
+      provider.wallet.publicKey
+    );
+
+    const xdegenMintInfo = await getMintInfo(XdegentMint);
+    
+    // Calculate delegate amount - use required amount or a generous default
+    const delegateAmount = requiredAmount 
+      ? Math.max(requiredAmount, 1000 * Math.pow(10, xdegenMintInfo.decimals))
+      : 1000 * Math.pow(10, xdegenMintInfo.decimals);
+
+    console.log('Approving session wallet as token delegate for amount:', delegateAmount);
+
+    const approveIx = createApproveInstruction(
+      walletXdegenAta,
+      sessionPublicKey,
+      provider.wallet.publicKey,
+      delegateAmount
+    );
+
+    const approveTx = new Transaction().add(approveIx);
+    
+    try {
+      const signature = await provider.sendAndConfirm(approveTx);
+      console.log('Delegation approved:', signature);
+    } catch (error) {
+      console.error('Delegation failed:', error);
+      throw new Error(
+        `Failed to approve delegation: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  };
+
+  // Helper function to clean up transaction errors for user-friendly display
+  const cleanTransactionError = (error: any): string => {
+    if (!error) return "Unknown transaction error";
+
+    // Handle insufficient funds errors
+    if (error.message?.includes("insufficient lamports")) {
+      return "Session wallet has insufficient SOL to complete the transaction. Please try again.";
+    }
+
+    // Handle Anchor program errors
+    if (error.message?.includes("AnchorError")) {
+      const anchorErrorMatch = error.message.match(/Error Code: (\w+).*Error Message: ([^.]+)/);
+      if (anchorErrorMatch) {
+        const [, errorCode, errorMessage] = anchorErrorMatch;
+        return `Transaction failed: ${errorMessage} (${errorCode})`;
+      }
+    }
+
+    // Handle simulation errors
+    if (error.message?.includes("Simulation failed")) {
+      // Extract key information from simulation logs
+      if (error.message.includes("insufficient lamports")) {
+        return "Insufficient SOL in session wallet for transaction fees. Please try again.";
+      }
+      if (error.message.includes("custom program error: 0x1")) {
+        return "Transaction failed due to insufficient funds or program constraints.";
+      }
+      return "Transaction simulation failed. Please check your wallet balance and try again.";
+    }
+
+    // Handle generic errors
+    if (error.message?.includes("Blockhash not found")) {
+      return "Network error. Please try again.";
+    }
+
+    if (error.message?.includes("Transaction was not confirmed")) {
+      return "Transaction timed out. Please check your transaction status.";
+    }
+
+    // Return a cleaned version of the original message
+    const message = error.message || String(error);
+    // Remove long hex strings and technical details
+    return message.split('.').slice(0, 2).join('.').substring(0, 200);
+  };
 
   const getMintInfo = async (mint: PublicKey) => {
     if (!provider) throw new Error("Wallet not connected");
@@ -69,6 +286,7 @@ export const useTrade = () => {
           admin: provider.wallet.publicKey,
           config: getConfigPDA(),
           xdegenMint: XdegentMint,
+          tokenProgram: TOKEN_PROGRAM_ID,
         })
         .transaction();
 
@@ -104,19 +322,6 @@ export const useTrade = () => {
       toast.success(
         `Account initialized successfully\nhttps://explorer.solana.com/tx/${tx}?cluster=devnet`
       );
-    },
-  });
-
-  const delegateConfig = useMutation({
-    mutationKey: ["delegate", "config"],
-    mutationFn: async () => {
-      const delegateTx = await program?.methods
-        .delegateConfig()
-        .accounts({
-          admin: provider?.wallet.publicKey,
-          config: getConfigPDA(),
-        })
-        .transaction();
     },
   });
 
@@ -193,6 +398,28 @@ export const useTrade = () => {
     },
   });
 
+  const getMintPDA = (trader: PublicKey, symbol: string) => {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("mint"),
+        trader.toBuffer(),
+        Buffer.from(symbol)
+      ],
+      programId
+    )[0]; 
+  }
+
+  const getTokenRecordPDA = (trader: PublicKey, mint: PublicKey) => {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("token_record"),
+        trader.toBuffer(),
+        mint.toBuffer(),
+      ],
+      programId
+    )[0]; 
+  }
+
   const buy = useMutation({
     mutationKey: ["buy"],
     mutationFn: async ({
@@ -202,19 +429,33 @@ export const useTrade = () => {
       buyAmount: number;
       tokenParams: TokenParams;
     }) => {
-      if (!provider || !provider.wallet?.publicKey || !program) {
+      if (!provider || !provider.wallet?.publicKey || !program || !provider || !sessionWallet || !provider.wallet?.publicKey) {
         throw new Error(
           "Wallet not connected. Please connect your wallet to use trading features."
         );
       }
 
-      const xdegenMintInfo = await getMintInfo(XdegentMint);
+      let xdegenMintInfo = await getMintInfo(XdegentMint);
       if (!xdegenMintInfo) {
         throw new Error(`Mint info not found for mint: ${tokenParams.mint}`);
       }
 
-      const tokenToBuyInfo = await getMint(mainnetConnection, tokenParams.mint);
+      let tokenToBuyInfo;
+      try {
+        console.log('Fetching mint info for:', tokenParams.mint.toBase58());
+        console.log('connection:', mainnetConnection.rpcEndpoint);
+        tokenToBuyInfo = await getMint(mainnetConnection, tokenParams.mint);
+      } catch (error) {
+        console.log('Primary RPC failed, retrying with Solana default mainnet RPC...');
+        try {
+          const fallbackConnection = new Connection("https://api.mainnet-beta.solana.com");
+          tokenToBuyInfo = await getMint(fallbackConnection, tokenParams.mint);
+        } catch (fallbackError) {
+          tokenToBuyInfo = { decimals: 8 };
+        }
+      }
       if (!tokenToBuyInfo) {
+        toast.error(`Token mint info not found for mint: ${tokenParams.mint}`);
         throw new Error(`Mint info not found for mint: ${tokenParams.mint}`);
       }
 
@@ -225,11 +466,12 @@ export const useTrade = () => {
         XdegentMint,
         provider.wallet.publicKey
       );
-      const adjustedBuyAmount =
-        buyAmount * Math.pow(10, xdegenMintInfo.decimals);
+      const adjustedBuyAmount = buyAmount * Math.pow(10, xdegenMintInfo.decimals);
 
-      const supply = tokenParams.supply * Math.pow(10, tokenParams.decimals);
-      tokenParams.supply = new BN(supply);
+      // Convert to string to preserve precision, then create BN
+      const supplyNumber = Number(tokenParams.supply) * Math.pow(10, tokenParams.decimals);
+      const supplyString = supplyNumber.toFixed(0);
+      tokenParams.supply = new BN(supplyString);
 
       let memeData;
       try {
@@ -247,7 +489,7 @@ export const useTrade = () => {
           .eq("wallet", provider.wallet.publicKey.toBase58())
           .maybeSingle();
 
-        console.log(memeData);
+        console.log('memeData:', memeData);
       } catch (error) {
         console.error("Error querying meme data:", error);
         throw new Error(
@@ -257,127 +499,114 @@ export const useTrade = () => {
         );
       }
 
-      const configAccount = await program.account.config.fetch(getConfigPDA());
+      // Check if config exists - throw error if not
+      const configPDA = getConfigPDA();
+      console.log('Config PDA: ', configPDA.toBase58());
+      
+      const configAccountInfo = await provider.connection.getAccountInfo(configPDA);
+      if (!configAccountInfo) {
+        throw new Error("Config account does not exist. Please initialize the program first.");
+      }
+
+      // Use optimized session management
+      const { sessionToken, needsDelegation, sessionPublicKey } = await manageSession(adjustedBuyAmount);
+
+      // Handle delegation if needed
+      if (needsDelegation) {
+        await handleTokenDelegation(sessionPublicKey, adjustedBuyAmount);
+      }
+
+      const configAccount = await program.account.config.fetch(configPDA);
       if (memeData.data) {
         console.log("minting token...");
-        const existingMint = new PublicKey(memeData.data.mint);
+        const existingMint = getMintPDA(provider.wallet.publicKey, tokenParams.symbol);
         const buyerMintAta = await getAssociatedTokenAddress(
           existingMint,
           provider.wallet.publicKey
         );
 
-        const transaction = new Transaction();
         const mintTokenTx = await program.methods
           .mintToken(new BN(adjustedBuyAmount), tokenParams.supply)
           .accountsPartial({
-            buyer: provider.wallet.publicKey,
-            admin: configAccount.admin,
-            config: getConfigPDA(),
+            sessionToken: sessionToken,
+            sessionSigner: sessionPublicKey,
+            trader: provider.wallet.publicKey,
+            config: configPDA,
             mint: existingMint,
             xdegenMint: XdegentMint,
             vault: configAccount.vault,
-            buyerXdegenAta: walletXdegenAta,
-            buyerMintAta: buyerMintAta,
+            traderXdegenAta: walletXdegenAta,
+            traderMintAta: buyerMintAta,
+            tokenRecord: getTokenRecordPDA(provider.wallet.publicKey, new PublicKey(memeData.data.mint)),
             tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .transaction();
+          }).transaction();
 
-        transaction.add(mintTokenTx);
-        const { blockhash, lastValidBlockHeight } =
-          await provider.connection.getLatestBlockhash("finalized");
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = provider.wallet.publicKey;
+        try {
+          const txIds = await sessionWallet.signAndSendTransaction!(mintTokenTx);
 
-        // Sign and send transaction
-        const signedTransaction = await provider.wallet.signTransaction(
-          transaction
-        );
-        const txId = await provider.connection.sendRawTransaction(
-          signedTransaction.serialize(),
-          {
-            skipPreflight: false,
-            preflightCommitment: "confirmed",
+          if (txIds && txIds.length > 0) {
+            console.log("Mint transaction sent:", txIds);
+            return txIds[0];
+          } else {
+            throw new Error("Failed to send buy transaction");
           }
-        );
-        await provider.connection.confirmTransaction(
-          {
-            signature: txId,
-            blockhash: blockhash,
-            lastValidBlockHeight: lastValidBlockHeight,
-          },
-          "confirmed"
-        );
-        console.log("your signature", txId);
-
-        return txId;
+        } catch (error) {
+          throw new Error(`Buy transaction failed: ${cleanTransactionError(error)}`);
+        }
       } else {
         console.log("Buying token initially");
-        const newMint = Keypair.generate();
+        const newMint = getMintPDA(provider.wallet.publicKey, tokenParams.symbol);
         const userMintAta = await getAssociatedTokenAddress(
-          newMint.publicKey,
+          newMint,
           provider.wallet.publicKey
         );
 
-        // Add buy instruction to the same transaction
-        const transaction = new Transaction();
         const buyTx = await program.methods
           .buy(tokenParams, new BN(adjustedBuyAmount))
           .accountsPartial({
+            sessionToken: sessionToken,
+            sessionSigner: sessionPublicKey,
             trader: provider.wallet.publicKey,
-            admin: configAccount.admin,
-            config: getConfigPDA(),
-            vault: configAccount.vault,
-            mint: newMint.publicKey,
+            config: configPDA,
+            vault: getVaultPDA(),
+            mint: newMint,
             traderMintAta: userMintAta,
-            metadata: getMetadataPDA(newMint.publicKey),
+            metadata: getMetadataPDA(newMint),
             xdegenMint: XdegentMint,
             traderXdegenAta: walletXdegenAta,
+            tokenRecord: getTokenRecordPDA(provider.wallet.publicKey, newMint),
             tokenProgram: TOKEN_PROGRAM_ID,
-          })
-          .transaction();
+            systemProgram: SystemProgram.programId,
+            tokenMetadataProgram: METADATA_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+          }).transaction();
+          
+        try {
+          const txIds = await sessionWallet.signAndSendTransaction!(buyTx);
 
-        transaction.add(buyTx);
-        const { blockhash, lastValidBlockHeight } =
-          await provider.connection.getLatestBlockhash("finalized");
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = provider.wallet.publicKey;
+          if (txIds && txIds.length > 0) {
+            console.log("Buy transaction sent:", txIds);
 
-        // Sign and send transaction
-        transaction.partialSign(newMint);
-        const signedTransaction = await provider.wallet.signTransaction(
-          transaction
-        );
-        const txId = await provider.connection.sendRawTransaction(
-          signedTransaction.serialize(),
-          {
-            skipPreflight: false,
-            preflightCommitment: "confirmed",
+            // Save to supabase
+            const { error } = await supabase.from("meme").insert({
+              mainMint: tokenParams.mint.toBase58(),
+              mint: newMint.toBase58(),
+              name: tokenParams.name,
+              wallet: provider.wallet.publicKey.toBase58(),
+            });
+
+            if (error) {
+              console.error("Supabase error:", error);
+            }
+
+            return txIds[0];
+          } else {
+            throw new Error("Failed to send buy transaction");
           }
-        );
-        await provider.connection.confirmTransaction(
-          {
-            signature: txId,
-            blockhash: blockhash,
-            lastValidBlockHeight: lastValidBlockHeight,
-          },
-          "confirmed"
-        );
-        console.log("your signature", txId);
-
-        // save to supabase
-        const { error } = await supabase.from("meme").insert({
-          mainMint: tokenParams.mint.toBase58(),
-          mint: newMint.publicKey.toBase58(),
-          name: tokenParams.name,
-          wallet: provider.wallet.publicKey.toBase58(),
-        });
-
-        if (error) {
-          console.error(error);
-          throw error;
+        } catch (error) {
+          throw new Error(`Buy transaction failed: ${cleanTransactionError(error)}`);
         }
-
-        return txId;
       }
     },
     onSuccess: async (tx) => {
@@ -397,11 +626,13 @@ export const useTrade = () => {
     ],
     mutationFn: async ({
       mint,
-      sellAmount,
+      tokenName,
+      tokenSymbol,
       burnAmount,
     }: {
       mint: PublicKey;
-      sellAmount: number;
+      tokenName: string;
+      tokenSymbol: string;
       burnAmount: number;
     }) => {
       if (!provider || !provider.wallet?.publicKey || !program) {
@@ -410,63 +641,123 @@ export const useTrade = () => {
         );
       }
 
-      const configAccount = await program.account.config.fetch(getConfigPDA());
-      const mintInfo = await getMintInfo(mint);
-      const adjustedSellAmount = sellAmount * Math.pow(10, mintInfo.decimals);
-      const adjustedBurnAmount = burnAmount * Math.pow(10, 9); // Assuming 9 decimals for Xdegen
+      let memeData;
+      try {
+        console.log(
+          "meme record",
+          provider.wallet.publicKey.toBase58(),
+          mint.toBase58()
+        );
+        memeData = await supabase
+          .from("meme")
+          .select()
+          .eq("mainMint", mint)
+          .eq("name", tokenName)
+          .eq("wallet", provider.wallet.publicKey.toBase58())
+          .maybeSingle();
 
+        console.log('memeData:', memeData);
+      } catch (error) {
+        console.error("Error querying meme data:", error);
+        throw new Error(
+          `Failed to query meme data: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+
+      if (memeData.data == null) {
+        throw new Error("Meme data not found for the provided mint and name");
+      }
+
+      let xdegenMintInfo = await getMintInfo(XdegentMint);
+      if (!xdegenMintInfo) {
+        // throw new Error(`Mint info not found for mint: ${XdegentMint.toBase58()}`);
+        xdegenMintInfo = { decimals: 9 } as any;
+      }
+
+      const mintPDA = getMintPDA(provider.wallet.publicKey, tokenSymbol)
       const userMintAta = await getAssociatedTokenAddress(
-        mint,
-        provider.wallet.publicKey
-      );
-      const userXdegenAta = await getAssociatedTokenAddress(
-        XdegentMint,
+        mintPDA,
         provider.wallet.publicKey
       );
 
-      const transaction = new Transaction();
-      const sellTx = await program.methods
-        .sell(new BN(adjustedSellAmount), new BN(adjustedBurnAmount))
-        .accountsPartial({
-          trader: provider.wallet.publicKey,
-          admin: configAccount.admin,
-          config: getConfigPDA(),
-          vault: configAccount.vault,
-          mint: mint,
-          traderMint: userMintAta,
-          xdegenMint: XdegentMint,
-          traderXdegenAta: userXdegenAta,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .transaction();
+      const mintInfo = await getMintInfo(mintPDA);
+      const adjustedBurnAmount = burnAmount * Math.pow(10, mintInfo.decimals);
+      console.log('burn amount', burnAmount, 'adjusted burn amount', adjustedBurnAmount)
 
-      transaction.add(sellTx);
-      const { blockhash, lastValidBlockHeight } =
-        await provider.connection.getLatestBlockhash("finalized");
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = provider.wallet.publicKey;
+      // Use optimized session management
+      const { sessionToken, needsDelegation, sessionPublicKey } = await manageSession();
 
-      // Sign and send transaction
-      const signedTransaction = await provider.wallet.signTransaction(
-        transaction
-      );
-      const txId = await provider.connection.sendRawTransaction(
-        signedTransaction.serialize(),
-        {
-          skipPreflight: false,
-          preflightCommitment: "confirmed",
+      // Handle delegation if needed
+      if (needsDelegation) {
+        await handleTokenDelegation(sessionPublicKey);
+      }
+
+      // Handle mint token delegation separately if needed
+      const mintTokenAccountInfo = await provider.connection.getAccountInfo(userMintAta);
+      if (mintTokenAccountInfo) {
+        const mintAccountData = AccountLayout.decode(mintTokenAccountInfo.data);
+        const currentMintDelegate = mintAccountData.delegate ? new PublicKey(mintAccountData.delegate) : null;
+        
+        if (!currentMintDelegate || !currentMintDelegate.equals(sessionPublicKey)) {
+          console.log('Approving session wallet as mint token delegate for ALL tokens...');
+          
+          try {
+            const mintBalanceInfo = await provider.connection.getTokenAccountBalance(userMintAta);
+            const currentMintBalance = mintBalanceInfo.value.amount;
+            
+            const approveMintIx = createApproveInstruction(
+              userMintAta,
+              sessionPublicKey,
+              provider.wallet.publicKey,
+              BigInt(currentMintBalance)
+            );
+
+            const approveMintTx = new Transaction().add(approveMintIx);
+            const signature = await provider.sendAndConfirm(approveMintTx);
+            console.log('Full mint token balance delegated to session wallet:', signature);
+            
+            localStorage.setItem(`mint_delegated_${mintPDA.toBase58()}`, 'true');
+          } catch (error) {
+            console.error('Mint token delegation failed:', error);
+            throw new Error(
+              `Failed to delegate mint authority: ${
+                error instanceof Error ? error.message : String(error)
+              }`
+            );
+          }
         }
-      );
-      await provider.connection.confirmTransaction(
-        {
-          signature: txId,
-          blockhash: blockhash,
-          lastValidBlockHeight: lastValidBlockHeight,
-        },
-        "confirmed"
-      );
-      console.log("your signature", txId);
-      return txId;
+      }
+
+      const configPDA = getConfigPDA();
+      const configAccount = await program.account.config.fetch(configPDA);
+
+      const sellTx = await program.methods
+        .sell(new BN(adjustedBurnAmount.toFixed(0)))
+        .accountsPartial({
+          sessionToken: sessionToken,
+          sessionSigner: sessionPublicKey,
+          trader: provider.wallet.publicKey,
+          config: configPDA,
+          vault: configAccount.vault,
+          mint: getMintPDA(provider.wallet.publicKey, tokenSymbol),
+          traderMintAta: userMintAta,
+          tokenRecord: getTokenRecordPDA(provider.wallet.publicKey, new PublicKey(memeData.data.mint)),
+          tokenProgram: TOKEN_PROGRAM_ID,
+        }).transaction();
+
+      try {
+        const txIds = await sessionWallet.signAndSendTransaction!(sellTx);
+        if (txIds && txIds.length > 0) {
+          console.log("Sell transaction sent:", txIds);
+          return txIds[0];
+        } else {
+          throw new Error("Failed to send sell transaction");
+        }
+      } catch (error) {
+        throw new Error(`Sell transaction failed: ${cleanTransactionError(error)}`);
+      }
     },
     onSuccess: async (tx) => {
       toast.success(
