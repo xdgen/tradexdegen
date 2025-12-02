@@ -33,6 +33,7 @@ interface Enroll {
 export const useAcademy = () => {
   const provider = useAnchor();
   const queryClient = useQueryClient();
+  // const {  } = use
   const program = useMemo(() => {
     if (!provider) return null;
     return new Program(
@@ -184,18 +185,20 @@ export const useAcademy = () => {
       return {
         academyPDA,
         tx: txId,
+        name: payload.title,
       };
     },
     onSuccess: async (data) => {
-      console.log("Academy created successfully:", data.academyPDA.toBase58());
-
       try {
         const response = await axiosAsync.post("/academies", {
-          contractAddress: data.academyPDA.toBase58(), // Ensure we're sending string, not PublicKey
+          contractAddress: data.academyPDA.toBase58(),
         });
         const dataResponse = response.data;
 
-        if (dataResponse?.status) {
+        if (dataResponse?.success) {
+          // 2. Create Room
+          // await createAcademyChannel(data.academyPDA.toBase58(), data.name);
+
           // Invalidate and refetch all academies to show the new one
           await queryClient.invalidateQueries({ queryKey: ["academy"] });
 
@@ -335,9 +338,7 @@ export const useAcademy = () => {
     mutationKey: ["enroll"],
     mutationFn: async (payload: Enroll) => {
       if (!provider || !provider.wallet?.publicKey || !program) {
-        throw new Error(
-          "Wallet not connected. Please connect your wallet to use trading features."
-        );
+        throw new Error("Wallet not connected.");
       }
 
       const enrollmentPDA = getEnrollmentPDA(
@@ -351,52 +352,77 @@ export const useAcademy = () => {
         throw new Error("You are already enrolled in this academy");
       }
 
-      const transaction = new Transaction();
-      const enrollStudentTx = await program.methods
-        .enroll()
-        .accountsPartial({
-          config: getConfigPDA(),
-          student: payload.studentPDA,
-          academy: payload.academyPDA,
-          enrollment: enrollmentPDA,
-        })
-        .transaction();
+      try {
+        const { blockhash, lastValidBlockHeight } =
+          await provider.connection.getLatestBlockhash();
 
-      transaction.add(enrollStudentTx);
-      const { blockhash, lastValidBlockHeight } =
-        await provider.connection.getLatestBlockhash("finalized");
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = provider.wallet.publicKey;
+        console.log("Creating enrollment transaction...");
 
-      // Sign and send transaction
-      const signedTransaction = await provider.wallet.signTransaction(
-        transaction
-      );
-      const txId = await provider.connection.sendRawTransaction(
-        signedTransaction.serialize(),
-        {
-          skipPreflight: false,
-          preflightCommitment: "confirmed",
+        const transaction = new Transaction();
+        const enrollStudentTx = await program.methods
+          .enroll()
+          .accountsPartial({
+            config: getConfigPDA(),
+            student: payload.studentPDA,
+            academy: payload.academyPDA,
+            enrollment: enrollmentPDA,
+          })
+          .transaction();
+
+        transaction.add(enrollStudentTx);
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = provider.wallet.publicKey;
+
+        const simulation = await provider.connection.simulateTransaction(
+          transaction
+        );
+        if (simulation.value.err) {
+          throw new Error(
+            `Transaction simulation failed: ${JSON.stringify(
+              simulation.value.err
+            )}`
+          );
         }
-      );
 
-      await provider.connection.confirmTransaction(
-        {
-          signature: txId,
-          blockhash: blockhash,
-          lastValidBlockHeight: lastValidBlockHeight,
-        },
-        "confirmed"
-      );
+        const signedTransaction = await provider.wallet.signTransaction(
+          transaction
+        );
+        const txId = await provider.connection.sendRawTransaction(
+          signedTransaction.serialize(),
+          {
+            skipPreflight: false,
+            preflightCommitment: "confirmed",
+          }
+        );
 
-      return {
-        tx: txId,
-        enrollmentPDA,
-        academyPDA: payload.academyPDA,
-      };
+        const confirmation = await provider.connection.confirmTransaction(
+          {
+            signature: txId,
+            blockhash: blockhash,
+            lastValidBlockHeight: lastValidBlockHeight,
+          },
+          "confirmed"
+        );
+
+        if (confirmation.value.err) {
+          throw new Error(
+            `Transaction confirmation failed: ${JSON.stringify(
+              confirmation.value.err
+            )}`
+          );
+        }
+
+        return {
+          tx: txId,
+          enrollmentPDA,
+          academyPDA: payload.academyPDA,
+        };
+      } catch (simulationError) {
+        console.error("Transaction simulation failed:", simulationError);
+        throw simulationError;
+      }
     },
     onSuccess: async (data) => {
-      console.log(data);
       try {
         const response = await axiosAsync.post("/students/enroll", {
           academyContract: data.academyPDA.toBase58(),
@@ -422,12 +448,15 @@ export const useAcademy = () => {
             queryClient.invalidateQueries({
               queryKey: ["academy", "all"],
             }),
-          ]);
-        }
 
-        toast.success(
-          `Student successfully enrolled to academy\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
-        );
+            // Invalidate student academies
+            queryClient.invalidateQueries({ queryKey: ["student-academies"] }),
+          ]);
+
+          toast.success(
+            `Student successfully enrolled to academy\nhttps://explorer.solana.com/tx/${data.tx}?cluster=devnet`
+          );
+        }
       } catch (error) {
         console.error("Error syncing enrollment with backend:", error);
         toast.error("Enrollment successful but backend sync failed");
@@ -530,14 +559,15 @@ export const useAcademy = () => {
 
   const getIsStudentEnrolled = (
     academyPDA: PublicKey,
-    studentPDA: PublicKey
+    studentPDA: PublicKey,
+    options?: { enabled?: boolean }
   ) => {
     return useQuery({
       queryKey: [
         "enrollment",
         "check",
-        academyPDA.toBase58(),
-        studentPDA.toBase58(),
+        academyPDA?.toBase58(),
+        studentPDA?.toBase58(),
       ],
       queryFn: async (): Promise<boolean> => {
         if (!program) {
@@ -549,8 +579,9 @@ export const useAcademy = () => {
 
         return enrollmentExists;
       },
-      enabled: !!program && !!academyPDA && !!studentPDA,
-      staleTime: 1000 * 30, // 30 second cache for enrollment status
+      enabled:
+        !!program && !!academyPDA && !!studentPDA && (options?.enabled ?? true),
+      staleTime: 1000 * 30,
     });
   };
 

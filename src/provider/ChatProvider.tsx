@@ -7,7 +7,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { Channel, LocalMessage, StreamChat } from "stream-chat";
+import { Channel, StreamChat } from "stream-chat";
 import { useAuth } from "./AuthProvider";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useQuery, useQueries } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ import { axiosAsync } from "../lib/axios";
 interface EnhancedAcademy extends Academy {
   memberCount?: number;
   unreadCount?: number;
-  lastMessage?: LocalMessage;
+  lastMessage?: any;
   messageCount?: number;
   name?: string;
 }
@@ -32,7 +32,6 @@ interface ChatContextType {
   loading: boolean;
   error: string | null;
   refreshAcademies: () => void;
-  initializeAcademyChannel: (academyId: string) => Promise<Channel>;
   isFetchingAcademies: boolean;
   academiesError: Error | null;
 }
@@ -53,7 +52,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Initialize Stream client
   useEffect(() => {
     const streamClient = StreamChat.getInstance(
-      import.meta.env.VITE_STREAM_API_KEY!
+      process.env.VITE_STREAM_API_KEY!
     );
     setClient(streamClient);
 
@@ -90,8 +89,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     retry: 2,
   });
 
-  // Extract academies from enrollments - use useMemo instead of useCallback
-  const basicAcademies = useMemo((): EnhancedAcademy[] => {
+  // Extract academies from enrollments
+  const extractAcademiesFromEnrollments = useMemo((): EnhancedAcademy[] => {
     if (!studentAcademiesData?.enrollments) return [];
 
     return studentAcademiesData.enrollments
@@ -106,9 +105,41 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }));
   }, [studentAcademiesData]);
 
-  // TanStack Query: Enrich each academy with Stream Chat data
+  // Connect user to Stream Chat
+  const connectUser = useCallback(async () => {
+    if (!client || !userProfile?.streamToken || !userProfile?.id) {
+      console.log("Missing required connection data");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("🔄 Connecting to Stream Chat...");
+
+      await client.connectUser(
+        {
+          id: userProfile.id,
+          name: `User ${userProfile.wallet?.slice(0, 8)}...` || "Anonymous",
+          role: userProfile.role.toLowerCase(),
+        },
+        userProfile.streamToken
+      );
+
+      setIsConnected(true);
+      console.log("✅ Successfully connected to Stream Chat");
+    } catch (error) {
+      console.error("❌ Failed to connect to Stream Chat:", error);
+      setError("Failed to connect to chat service");
+      setIsConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [client, userProfile]);
+
+  // TanStack Query: Get academy channel data
   const academyChannelQueries = useQueries({
-    queries: (basicAcademies || []).map((academy) => ({
+    queries: (extractAcademiesFromEnrollments || []).map((academy) => ({
       queryKey: ["academy-channel", academy.streamId, academy.id],
       queryFn: async (): Promise<EnhancedAcademy> => {
         if (!client || !isConnected) {
@@ -160,8 +191,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     })),
   });
 
-  // Combine all academy data when queries complete
+  // Combine academy data
   useEffect(() => {
+    const basicAcademies = extractAcademiesFromEnrollments;
+
     if (academyChannelQueries.length > 0) {
       const allQueriesLoaded = academyChannelQueries.every(
         (query) => !query.isLoading
@@ -169,127 +202,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       if (allQueriesLoaded) {
         const enrichedAcademies: EnhancedAcademy[] = academyChannelQueries
-          .map((query, index) => {
-            if (query.data) {
-              return query.data;
-            }
-            // Fallback to basic academy data if query failed
-            return basicAcademies[index] || null;
-          })
+          .map((query, index) => query.data || basicAcademies[index] || null)
           .filter(Boolean) as EnhancedAcademy[];
 
-        // Only update if academies have actually changed
-        setAcademies((prev) => {
-          if (JSON.stringify(prev) === JSON.stringify(enrichedAcademies)) {
-            return prev;
-          }
-          return enrichedAcademies;
-        });
-
-        const hasErrors = academyChannelQueries.some((query) => query.error);
-        if (hasErrors) {
-          console.warn(
-            "Some academy channels failed to load, using basic academy data"
-          );
-        }
+        setAcademies(enrichedAcademies);
       }
     } else {
-      // If no channel queries (not connected), use basic academy data
-      setAcademies((prev) => {
-        if (JSON.stringify(prev) === JSON.stringify(basicAcademies)) {
-          return prev;
-        }
-        return basicAcademies;
-      });
+      setAcademies(basicAcademies);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    basicAcademies,
-    // Track individual query states instead of the whole array
-    academyChannelQueries.map((q) => q.isLoading).join(","),
-    academyChannelQueries.map((q) => q.data?.id).join(","),
-    academyChannelQueries.map((q) => q.error?.message).join(","),
+    studentAcademiesData,
+    academyChannelQueries,
+    extractAcademiesFromEnrollments,
   ]);
 
-  // Connect user to Stream Chat using the streamToken from userProfile
-  const connectUser = useCallback(async () => {
-    if (!client || !userProfile?.streamToken || !userProfile?.id) {
-      console.log("Missing required connection data");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      console.log("🔄 Connecting to Stream Chat...");
-
-      await client.connectUser(
-        {
-          id: userProfile.id,
-          name: `User ${userProfile.wallet?.slice(0, 8)}...` || "Anonymous",
-          role: userProfile.role.toLowerCase(),
-        },
-        userProfile.streamToken
-      );
-
-      setIsConnected(true);
-      console.log("✅ Successfully connected to Stream Chat");
-    } catch (error) {
-      console.error("❌ Failed to connect to Stream Chat:", error);
-      setError("Failed to connect to chat service");
-      setIsConnected(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [client, userProfile]);
-
-  /**
-   * Initialize academy channel when user clicks on an academy
-   */
-  const initializeAcademyChannel = useCallback(
-    async (academyId: string): Promise<Channel> => {
-      if (!client || !isConnected) {
-        throw new Error("Stream Chat not connected");
-      }
-
-      const academy = academies.find((a) => a.id === academyId);
-      if (!academy) {
-        throw new Error("Academy not found");
-      }
-
-      if (!academy.streamId) {
-        throw new Error("Academy streamId not available");
-      }
-
-      try {
-        // Create channel instance
-        const channel = client.channel("messaging", academy.streamId);
-
-        // Watch the channel to initialize it and get real-time updates
-        await channel.watch();
-
-        // Set as current channel
-        setCurrentChannel(channel);
-
-        return channel;
-      } catch (err) {
-        console.error("Failed to initialize academy channel:", err);
-        throw new Error("Failed to initialize chat channel");
-      }
-    },
-    [client, isConnected, academies]
-  );
-
-  /**
-   * Refresh academies manually
-   */
   const refreshAcademies = useCallback(() => {
     refetchStudentAcademies();
   }, [refetchStudentAcademies]);
 
-  /**
-   * Disconnect user from Stream Chat
-   */
   const disconnectUser = useCallback(() => {
     if (client) {
       client.disconnectUser();
@@ -297,11 +227,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setAcademies([]);
       setCurrentChannel(null);
       setError(null);
-      console.log("🔴 Disconnected from Stream Chat");
     }
   }, [client]);
 
-  // Auto-connect when conditions are met - removed connectUser from dependencies
+  // Auto-connect
   useEffect(() => {
     if (
       isAuthenticated &&
@@ -313,7 +242,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     ) {
       connectUser();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isAuthenticated,
     client,
@@ -321,17 +249,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     loading,
     userProfile?.streamToken,
     connected,
+    connectUser,
   ]);
 
-  // Auto-disconnect when authentication is lost - removed disconnectUser from dependencies
+  // Auto-disconnect
   useEffect(() => {
     if (!isAuthenticated && isConnected) {
       disconnectUser();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isConnected]);
+  }, [isAuthenticated, isConnected, disconnectUser]);
 
-  // Derived loading and error states
   const isFetchingAcademies =
     isFetchingStudentAcademies ||
     academyChannelQueries.some((query) => query.isLoading);
@@ -351,7 +278,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     loading,
     error,
     refreshAcademies,
-    initializeAcademyChannel,
     isFetchingAcademies,
     academiesError,
   };

@@ -1,7 +1,7 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 import { AcademyClass } from "../../data";
@@ -62,12 +62,13 @@ export default function DetailsPage() {
   const { connected, publicKey } = useWallet();
   const { role } = useAuth();
   const params = useParams();
+  console.log(params);
   const navigate = useNavigate();
   const { getAcademyByPDA, enroll, getStudentPDA, getIsStudentEnrolled } =
     useAcademy();
 
   // Early return if no valid ID
-  if (!params.id || params.id === "undefined") {
+  if (!params.pda || params.pda === "undefined") {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-6">
         <div className="text-center">
@@ -83,15 +84,26 @@ export default function DetailsPage() {
     );
   }
 
-  const academyPDA = new PublicKey(params.id);
+  const academyPDA = new PublicKey(params.pda);
   const studentPDA = publicKey ? getStudentPDA(publicKey) : null;
 
   const { data: academyData, isLoading: isFetchingAcademyData } =
     getAcademyByPDA(academyPDA);
 
   // Check if student is already enrolled - only enable if connected as student
-  const { data: isEnrolled, isLoading: isCheckingEnrollment } =
-    getIsStudentEnrolled(academyPDA, studentPDA!);
+  const {
+    data: isEnrolled,
+    isLoading: isCheckingEnrollment,
+    refetch: refetchEnrollmentStatus,
+  } = getIsStudentEnrolled(academyPDA, studentPDA!, {
+    enabled: !!studentPDA && connected && role === "STUDENT",
+  });
+
+  useEffect(() => {
+    if (enroll.isSuccess) {
+      refetchEnrollmentStatus();
+    }
+  }, [enroll.isSuccess, refetchEnrollmentStatus]);
 
   // Memoize the item creation to prevent unnecessary re-renders
   const item = useCallback((): AcademyClass | null => {
@@ -100,11 +112,11 @@ export default function DetailsPage() {
     return {
       id: academyPDA.toBase58(),
       pda: academyPDA.toBase58(),
-      owner: academyData.owner.toBase58(),
+      owner: academyData.owner?.toBase58() || "",
       title: academyData.title,
       description: academyData.description,
       banner: academyData.banner,
-      facilitator: academyData.tutors[0] || "Unknown",
+      facilitator: academyData.tutors?.[0] || "Unknown",
       isPaid: !!academyData.fee,
       price: academyData.fee
         ? academyData.fee.toNumber() / LAMPORTS_PER_SOL
@@ -118,7 +130,7 @@ export default function DetailsPage() {
         academyData.endDate.toNumber()
       ),
       students: academyData.totalStudents.toNumber(),
-      mentors: academyData.tutors.length > 0 ? academyData.tutors : null,
+      mentors: academyData.tutors?.length > 0 ? academyData.tutors : null,
     };
   }, [academyData, academyPDA]);
 
@@ -198,7 +210,7 @@ export default function DetailsPage() {
         return (
           <button
             onClick={handleEnroll}
-            disabled={enroll.isPending}
+            disabled={enroll.isPending || !studentPDA}
             className="px-4 py-2 rounded-lg font-semibold transition bg-fuchsia-600 hover:bg-fuchsia-700 text-white disabled:opacity-50"
           >
             {enroll.isPending ? "Registering..." : "Register for Class"}

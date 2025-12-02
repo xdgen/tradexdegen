@@ -1,10 +1,10 @@
 import React, { Suspense } from "react";
 import Sidebar from "./sidebar";
 import { useAuth } from "../../provider/AuthProvider";
-import { ChatProvider } from "../../provider/ChatProvider";
 import { ChatWidget } from "../chat/chatWidget";
 import SetUserRoleDialog from "../dialogs/setUserRoleDialog";
 import StudentAcademyRegisterDialog from "../dialogs/studentAcademyRegistrationDialog";
+import { LiveKitChatProvider } from "../../provider/LiveKitChatProvider";
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -19,7 +19,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   } = useAuth();
 
   return (
-    <ChatProvider>
+    <LiveKitChatProvider>
       <div className="h-auto w-full flex flex-row">
         <div className="hidden md:flex h-full fixed z-50">
           <Sidebar />
@@ -43,7 +43,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
         isOpen={isStudentDialogOpen}
         closeDialog={closeStudentDialog}
       />
-    </ChatProvider>
+    </LiveKitChatProvider>
   );
 };
 

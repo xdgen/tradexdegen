@@ -28,7 +28,7 @@ const appRoutes = [
     ),
   },
   {
-    path: "/class/:id",
+    path: "/class/:pda",
     element: (
       <Layout>
         <DetailsPage />
