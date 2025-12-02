@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosAsync } from "../lib/axios";
 import { useAuth } from "./AuthProvider";
@@ -142,11 +148,11 @@ export function LiveKitChatProvider({ children }: { children: ReactNode }) {
     setCurrentRoom(null);
   };
 
-  useEffect(() => {
-    if (role === "ACADEMY" && userProfile?.academy && !currentRoom) {
-      enterRoom(userProfile.academyId, userProfile.academyName);
-    }
-  }, [role, userProfile?.academyId, currentRoom]);
+  // useEffect(() => {
+  //   if (role === "ACADEMY" && userProfile?.academy && !currentRoom) {
+  //     enterRoom(userProfile.academyId, userProfile.academyName);
+  //   }
+  // }, [role, userProfile?.academyId, currentRoom]);
 
   return (
     <LiveKitChatContext.Provider
