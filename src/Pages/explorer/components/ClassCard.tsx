@@ -18,7 +18,7 @@ const statusColor: Record<AcademyClass["status"], string> = {
 
 export default function ClassCard({ data, isLoading }: Props) {
   const navigate = useNavigate();
-  const { id, pda, title, banner, facilitator, isPaid, price, status } = data;
+  const { pda, title, banner, facilitator, isPaid, price, status } = data;
 
   return (
     <button

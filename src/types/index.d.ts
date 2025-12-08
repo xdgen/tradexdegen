@@ -87,5 +87,5 @@ interface UserProfile {
 
 interface StudentAcademies {
   id: string;
-  enrollments: EnrollmentWithRelations[];
+  enrollments: Required<EnrollmentWithRelations>[];
 }

@@ -37,6 +37,7 @@ interface FilepondUploaderProps {
 const FilepondUploader = ({ label, setImage }: FilepondUploaderProps) => {
   const [files, setFiles] = React.useState<FilePondFile[]>([]);
   const [mounted, setMounted] = React.useState(false);
+  // console.log(files, "files");
 
   React.useEffect(() => {
     setMounted(true);

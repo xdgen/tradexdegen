@@ -87,10 +87,10 @@ export const AuthProvider = ({ children }: IAuthProvider) => {
   }, [profileResponse]);
 
   useEffect(() => {
-    if (profileError) {
+    if (profileError && isAuthenticated) {
       toast.error(`Failed to fetch user profile: ${profileError}`);
     }
-  }, [profileError]);
+  }, [profileError, isAuthenticated]);
 
   const updateAuthData = (data: AuthResponse, publicKey: PublicKey) => {
     setAuthData({

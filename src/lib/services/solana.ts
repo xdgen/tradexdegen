@@ -9,6 +9,10 @@ import {
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 
+const calculateSolToLamports = (amountInSol: number) => {
+  return Math.round(amountInSol * LAMPORTS_PER_SOL);
+};
+
 export const sendSol = async (
   wallet: WalletContextState,
   connection: Connection,
@@ -19,8 +23,7 @@ export const sendSol = async (
     throw new Error("Wallet not connected");
 
   const recipient = new PublicKey(recipientAddress);
-  const lamports = Math.round(amountSol * LAMPORTS_PER_SOL);
-  console.log(lamports, "lamports to send", amountSol, "SOL");
+  const lamports = calculateSolToLamports(amountSol);
 
   const tx = new Transaction().add(
     SystemProgram.transfer({

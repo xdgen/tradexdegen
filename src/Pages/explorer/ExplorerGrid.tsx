@@ -58,6 +58,7 @@ export default function ExplorerGrid() {
         };
       }
     );
+    console.log(getAllAcademies.data);
 
     setItems(formattedData);
   }, [getAllAcademies.data]);
