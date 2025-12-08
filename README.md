@@ -25,8 +25,12 @@ This repository contains all the necessary files, smart contracts, and user inte
 - **Demo Trading:** Practice trading without financial risks using demo assets.
 - **Solana Blockchain Integration:** Real-time token data fetching using Solana's blockchain infrastructure.
 - **Real-Time Charts:** View live token price charts, liquidity pools, and market movements.
-- **Leaderboard & Competitions:** Engage with fellow users and track your progress on the leaderboard.
 - **Token Swapping:** Simulate Uniswap/Sushiswap-like swapping with demo tokens.
+- **Dashboard:** Comprehensive trading dashboard with wallet integration, token views, and PNL tracking.
+- **Chat & Community:** Integrated chat system using Dialect SDK and community features.
+- **Academy:** Educational platform for learning trading strategies.
+- **Leverage Trading:** Advanced leverage trading features.
+- **Wallet Integration:** Support for multiple wallets via Reown AppKit.
 
 ![swap](https://github.com/user-attachments/assets/54e3523a-7bfb-4823-ac89-c37213077644)
 
@@ -57,10 +61,11 @@ To run the platform locally, follow these steps:
 
 ## Technologies Used
 
-- **Frontend:** React.js + Vite
-- **Backend:** Node.js, Express.js
-- **Blockchain Integration:** Solana API, Rust
-- **Database:** MongoDB
+- **Frontend:** React.js + Vite + TypeScript
+- **UI Framework:** Tailwind CSS, Radix UI
+- **Blockchain Integration:** Solana Web3.js, Reown AppKit
+- **Database:** Supabase
+- **Additional Libraries:** Dialect SDK, Pinata, Wagmi, RainbowKit
 
 ## How It Works
 
@@ -88,46 +93,10 @@ Please ensure that your code is well-documented and follows the established styl
 
 ## Useful Links
 
-- **Website:** [xdegen.io](https://xdegen.xyz)
-- **Twitter:** [Follow us on Twitter](https://x.com/X_dgen?)
-
+- **Website:** [xdegen.io](https://xdegen.io)
+- **Twitter:** [Follow us on Twitter](https://x.com/X_dgen)
 - **Community:** [Join us on telegram](https://t.me/XDEGENCOMMUNITY)
 
-I've successfully created the Academy Stats page for your community degen platform. Here's what I implemented:
-
-## Academy Stats Features
-
-**Location**: `/academy-stats` (accessible only to users with "academy" role)
-
-**Displayed Statistics**:
-
-- **Students No.**: Total number of students registered under the academy
-- **Accumulated Fee Made**: Total fees collected from students
-- **Total Earnings**: Calculated earnings (fees × 1.2 multiplier for demo)
-- **Active Students**: Estimated active students (80% of total for demo)
-
-**Message Functionality**:
-
-- **Send Message to Students** button that opens a dialog
-- Allows academy to compose and send messages to all their students
-- Integrated with Dialect for messaging (currently using placeholder - ready for full Dialect SDK implementation)
-
-## Technical Implementation
-
-- **Role-based Access**: Checks user role and restricts access to academy users only
-- **Data Fetching**: Queries Supabase for real-time stats (students count, fees)
-- **UI Components**: Uses existing design system (Cards, Buttons, Dialogs)
-- **Responsive Design**: Dark theme matching your platform's aesthetic
-- **Error Handling**: Proper loading states and error messages
-
-## Database Assumptions
-
-The implementation assumes Supabase tables:
-
-- `users` table with `role` and `academy_id` fields
-- `fees` table with `academy_id` and `amount` fields
-
-You can customize the queries and add more stats as needed. The Dialect messaging is set up for future integration with the full SDK for sending messages to student groups.
 
 Thank you for being part of the XDEGEN journey! We can't wait to see you thrive in the DeFi and Degen trading space!
 ![WhatsApp Image 2024-10-01 at 10 59 39 PM](https://github.com/user-attachments/assets/2a0b8fee-3424-46e7-8bbe-12ee1ed5c7bc)

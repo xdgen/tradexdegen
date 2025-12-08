@@ -10,11 +10,15 @@ import {
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { getTokens } from "../testToken/tokenBalance";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { getAssociatedTokenAddress, getMint } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import supabase from "../testToken/database";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Program, BorshCoder } from '@coral-xyz/anchor';
+import TradeIDL from "../../lib/contracts/trade/trade.json";
+import type { XdegenDemo, XdegenDemo as XdegenTrade } from "../../lib/contracts/trade/trade";
+import { useAnchor } from '../../hooks/useAnchor';
 
 interface Token {
   name: string;
@@ -22,14 +26,14 @@ interface Token {
   symbol: string;
   value: string;
   mintAddress: string;
-  h24: number | string; // Fixed: can be number or string
+  h24: number | string;
   imageUrl: string;
 }
 
 interface TotalData {
   amountTotal: number;
   solTotal: number;
-  totalPercentage: string | number; // Fixed: can be number or string
+  totalPercentage: string | number;
 }
 
 type WalletTab = "tokens" | "transactions";
@@ -47,42 +51,12 @@ interface WalletTransaction {
 // Constants
 const XDEGEN_MINT = '3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce';
 const SOL_MINT = 'So11111111111111111111111111111111111111112';
-const REFRESH_INTERVAL = 30000; // 30 seconds instead of 5 seconds
-
-const sampleTransactions: WalletTransaction[] = [
-  {
-    signature: "sample-buy-sol",
-    timestamp: Date.now(),
-    tokenSymbol: "SOL",
-    mint: SOL_MINT,
-    amount: 0.058,
-    usdValue: 6.54,
-    direction: "buy",
-  },
-  {
-    signature: "sample-buy-adns",
-    timestamp: Date.now() - 45 * 60 * 1000,
-    tokenSymbol: "ADNS",
-    mint: "adns-mint",
-    amount: 8243,
-    usdValue: 2.71,
-    direction: "buy",
-  },
-  {
-    signature: "sample-sell-usdc",
-    timestamp: Date.now() - 90 * 60 * 1000,
-    tokenSymbol: "USDC",
-    mint: "usdc-mint",
-    amount: 24.7875,
-    usdValue: 24.79,
-    direction: "sell",
-  },
-];
+const REFRESH_INTERVAL = 30000;
+const TRADE_PROGRAM_ID = new PublicKey(TradeIDL.address);
 
 // Utility functions
 const formatCurrency = (amount: number) => amount.toFixed(2);
 
-// Fixed utility functions to handle both numbers and strings
 const formatPercentage = (percentage: string | number, amount: number) => {
   const percentageStr = String(percentage);
   const percentageNum = parseFloat(percentageStr);
@@ -100,6 +74,7 @@ const getPercentageColor = (percentage: string | number) => {
 export const WalletBar = () => {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
+  const provider = useAnchor();
   const [tokens, setTokens] = useState<Token[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<WalletTab>("tokens");
@@ -107,6 +82,8 @@ export const WalletBar = () => {
   const [solPrice, setSolPrice] = useState<number | null>(null);
   const [total, setTotal] = useState<TotalData>();
   const [open, setOpen] = useState(false);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
 
   // Memoized public key string
   const walletAddress = useMemo(() => publicKey?.toBase58(), [publicKey]);
@@ -119,7 +96,7 @@ export const WalletBar = () => {
       setSolPrice(data.solana.usd);
     } catch (error) {
       console.error("Failed to fetch SOL price:", error);
-      setSolPrice(100); // Default to $100 SOL
+      setSolPrice(100);
     }
   }, []);
 
@@ -165,6 +142,228 @@ export const WalletBar = () => {
     }
   }, [walletAddress]);
 
+  // Fetch transactions from the trade program
+  const fetchTransactions = useCallback(async () => {
+    if (!publicKey || !provider) {
+      setTransactions([]);
+      return;
+    }
+
+    setIsLoadingTransactions(true);
+    try {
+      const coder = new BorshCoder(TradeIDL as any);
+      
+      // Get all transactions for the user's wallet
+      const signatures = await connection.getSignaturesForAddress(publicKey, {
+        limit: 50,
+      });
+
+      const txRecords: WalletTransaction[] = [];
+
+      // Process transactions in batches to avoid rate limiting
+      const batchSize = 10;
+      for (let i = 0; i < signatures.length; i += batchSize) {
+        const batch = signatures.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (sigInfo) => {
+          try {
+            const tx = await connection.getTransaction(sigInfo.signature, {
+              maxSupportedTransactionVersion: 0,
+              commitment: 'confirmed'
+            });
+
+            if (!tx) return null;
+
+            // Check if this transaction involves our trade program
+            const programIndex = tx.transaction.message.staticAccountKeys.findIndex(
+              key => key.equals(TRADE_PROGRAM_ID)
+            );
+
+            if (programIndex === -1) return null;
+
+            const accountKeys = tx.transaction.message.getAccountKeys();
+            const instructions = tx.transaction.message.compiledInstructions;
+
+            for (const ix of instructions) {
+              // Check if this instruction is for our program
+              if (ix.programIdIndex !== programIndex) continue;
+
+              try {
+                const decoded = coder.instruction.decode(ix.data);
+                if (!decoded) continue;
+
+                if (decoded.name === 'buy') {
+                  const { amount, data } = decoded.data as any;
+                  // For buy transactions, the token mint is usually at account index 5 or 6
+                  const mintAccount = accountKeys.get(ix.accountKeyIndexes[5]) || 
+                                    accountKeys.get(ix.accountKeyIndexes[6]);
+                  
+                  if (mintAccount) {
+                    txRecords.push({
+                      signature: sigInfo.signature,
+                      timestamp: sigInfo.blockTime ? sigInfo.blockTime * 1000 : Date.now(),
+                      tokenSymbol: data?.symbol || 'Unknown',
+                      mint: mintAccount.toBase58(),
+                      amount: Number(amount) / Math.pow(10, data?.decimals || 9),
+                      direction: 'buy'
+                    });
+                  }
+                } else if (decoded.name === 'sell') {
+                  const { burnAmount } = decoded.data as any;
+                  // For sell transactions, the token mint is usually at account index 4 or 5
+                  const mintAccount = accountKeys.get(ix.accountKeyIndexes[4]) || 
+                                    accountKeys.get(ix.accountKeyIndexes[5]);
+                  
+                  if (mintAccount) {
+                    txRecords.push({
+                      signature: sigInfo.signature,
+                      timestamp: sigInfo.blockTime ? sigInfo.blockTime * 1000 : Date.now(),
+                      tokenSymbol: 'Token',
+                      mint: mintAccount.toBase58(),
+                      amount: Number(burnAmount) / Math.pow(10, 9), // assuming 9 decimals
+                      direction: 'sell'
+                    });
+                  }
+                }
+              } catch (decodeError) {
+                // Skip if we can't decode this instruction
+                console.debug('Failed to decode instruction:', decodeError);
+              }
+            }
+          } catch (error) {
+            console.error('Error processing transaction:', error);
+          }
+          return null;
+        });
+
+        await Promise.all(batchPromises);
+      }
+
+      // Sort transactions by timestamp (newest first)
+      txRecords.sort((a, b) => b.timestamp - a.timestamp);
+      setTransactions(txRecords);
+
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      setTransactions([]);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [publicKey, provider, connection]);
+
+  // Alternative approach: Fetch by program ID and filter by user
+  const fetchTransactionsByProgram = useCallback(async () => {
+    if (!publicKey || !provider) {
+      setTransactions([]);
+      return;
+    }
+
+    setIsLoadingTransactions(true);
+    try {
+      const coder = new BorshCoder(TradeIDL as any);
+      
+      // Get transactions for the program and filter by user
+      const signatures = await connection.getSignaturesForAddress(TRADE_PROGRAM_ID, {
+        limit: 100,
+      });
+
+      const txRecords: WalletTransaction[] = [];
+
+      for (const sigInfo of signatures) {
+        try {
+          const tx = await connection.getTransaction(sigInfo.signature, {
+            maxSupportedTransactionVersion: 0,
+            commitment: 'confirmed'
+          });
+
+          if (!tx) continue;
+
+          // Check if user's wallet is involved in this transaction
+          const userInvolved = tx.transaction.message.staticAccountKeys.some(
+            key => key.equals(publicKey)
+          );
+
+          if (!userInvolved) continue;
+
+          const accountKeys = tx.transaction.message.getAccountKeys();
+          const instructions = tx.transaction.message.compiledInstructions;
+
+          for (const ix of instructions) {
+            try {
+              const decoded = coder.instruction.decode(ix?.data);
+              if (!decoded) continue;
+
+              let transactionData: Partial<WalletTransaction> = {
+                signature: sigInfo.signature,
+                timestamp: sigInfo.blockTime ? sigInfo.blockTime * 1000 : Date.now(),
+              };
+
+              if (decoded.name === 'buy') {
+                const { data } = decoded.data as any;
+                const mintAccount = accountKeys.get(ix.accountKeyIndexes[5]);
+
+                transactionData = {
+                  ...transactionData,
+                  tokenSymbol: data?.symbol || 'Token',
+                  mint: mintAccount?.toBase58() || '',
+                  amount: data.supply.toNumber() / Math.pow(10, data?.decimals || 9),
+                  direction: 'buy' as const
+                };
+              } else if (decoded.name === 'mint_token') {
+                const { mint_amount } = decoded.data as any;
+                const mintAccount = accountKeys.get(ix.accountKeyIndexes[5]);
+                console.log('buy data', decoded.data)
+
+                const mintInfo = await getMint(connection, mintAccount!)
+                transactionData = {
+                  ...transactionData,
+                  tokenSymbol: 'Token',
+                  mint: mintAccount?.toBase58() || '',
+                  amount: mint_amount.toNumber() / Math.pow(10, mintInfo?.decimals || 9),
+                  direction: 'buy' as const
+                };
+
+              } else if (decoded.name === 'sell') {
+                const { burnAmount } = decoded.data as any;
+                const mintAccount = accountKeys.get(ix.accountKeyIndexes[4]);
+                console.log('burnAmount', burnAmount)
+
+                transactionData = {
+                  ...transactionData,
+                  tokenSymbol: 'Token',
+                  mint: mintAccount?.toBase58() || '',
+                  amount: Number(burnAmount) / Math.pow(10, 9),
+                  direction: 'sell' as const
+                };
+              }
+
+              // Only add if we have required data
+              if (transactionData.direction && transactionData.mint) {
+                txRecords.push(transactionData as WalletTransaction);
+              }
+            } catch (decodeError) {
+              // Skip undecodable instructions
+            }
+          }
+        } catch (error) {
+          console.error('Error processing transaction:', error);
+        }
+      }
+
+      // Sort by timestamp and remove duplicates
+      const uniqueTxs = Array.from(new Map(
+        txRecords.map(tx => [tx.signature, tx])
+      ).values()).sort((a, b) => b.timestamp - a.timestamp);
+
+      setTransactions(uniqueTxs);
+
+    } catch (error) {
+      console.error('Failed to fetch program transactions:', error);
+      setTransactions([]);
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [publicKey, provider, connection]);
+
   // Combined refresh function
   const refreshAllBalances = useCallback(async () => {
     if (!connected) return;
@@ -175,6 +374,14 @@ export const WalletBar = () => {
       fetchSolPrice(),
     ]);
   }, [connected, fetchXsolBalance, fetchTokenBalances, fetchSolPrice]);
+
+  // Refresh transactions when tab changes to transactions
+  useEffect(() => {
+    if (activeTab === "transactions" && publicKey && provider) {
+      fetchTransactionsByProgram();
+      // fetchTransactions()
+    }
+  }, [activeTab, publicKey, provider, fetchTransactionsByProgram]);
 
   // Initial load when wallet connects
   useEffect(() => {
@@ -199,7 +406,7 @@ export const WalletBar = () => {
   // Calculate XSOL value in USD
   const xsolValueUSD = useMemo(() => {
     if (!solPrice) return 0;
-    return xsolBalance * solPrice; // Since 1 XSOL = 1 SOL in value
+    return xsolBalance * solPrice;
   }, [xsolBalance, solPrice]);
 
   const percentageDisplay = useMemo(() => 
@@ -230,7 +437,7 @@ export const WalletBar = () => {
     []
   );
 
-  const transactionList = useMemo(() => sampleTransactions, []);
+  const transactionList = useMemo(() => transactions, [transactions]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -270,7 +477,9 @@ export const WalletBar = () => {
                       ? isLoading
                         ? "Loading balances..."
                         : `${tokenCount} token${tokenCount !== 1 ? "s" : ""}`
-                      : `${transactionList.length} recent activity`}
+                      : isLoadingTransactions
+                      ? "Loading transactions..."
+                      : `${transactionList.length} transaction${transactionList.length !== 1 ? "s" : ""}`}
                   </p>
                 </div>
                 <div className="flex w-full sm:w-auto bg-black/30 rounded-full p-1">
@@ -308,6 +517,10 @@ export const WalletBar = () => {
                       />
                     ))
                   )
+                ) : transactionList.length === 0 ? (
+                  <div className="text-center text-gray-400 py-8">
+                    {isLoadingTransactions ? "Loading transactions..." : "No transactions found"}
+                  </div>
                 ) : (
                   transactionList.map((tx) => (
                     <TransactionItem
